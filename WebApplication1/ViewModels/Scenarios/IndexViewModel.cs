@@ -7,6 +7,8 @@ namespace WebApplication1.ViewModels.Scenarios
     public class IndexViewModel
     {
         public Guid Id { get; set; }
+        [Display(Name = "Активность")]
+        public bool IsEnabled { get; set; }
         [Display(Name = "Название")]
         public string Name { get; set; }
         [Display(Name = "Точное соответствие")]

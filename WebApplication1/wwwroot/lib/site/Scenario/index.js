@@ -14,6 +14,25 @@ $("a.removeScenario").click(function (evt) {
 	$('#warningRemoveModal').modal("show");
 });
 
+$("a.toogleIsEnabled").click(function () {
+	var link = $(this);
+	var container = $(this).closest("tr");
+	var idScenario = container.attr("data-idScenario");
+	$.ajax({
+		url: "/Scenario/ToogleIsEnabled?idScenario=" + idScenario,
+		contentType: "application/json; charset=utf-8",
+		type: "POST",
+		success: function (data) {
+			if (data.error == 0) {
+				if (data.isEnabled == 0)
+					link.text("Отключен");
+				else
+					link.text("Активен");
+			}
+		}
+	});
+});
+
 $('#warningRemoveModal').on('hide.bs.modal', function (evt) {
 	$(this).removeAttr("data-idRemovingScenario");
 });

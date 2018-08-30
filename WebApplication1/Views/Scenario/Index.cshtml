@@ -63,6 +63,9 @@
                 <th>
                     @Html.DisplayNameFor(model => model.Action)
                 </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsEnabled)
+                </th>
                 <th></th>
             </tr>
         </thead>
@@ -111,6 +114,18 @@
                                     break;
                                 }
                         }
+                    </td>
+                    <td>
+                        <a class="toogleIsEnabled" href="#">
+                            @if (item.IsEnabled)
+                            {
+                                <text>Активен</text>
+                            }
+                            else
+                            {
+                                <text>Отключен</text>
+                            }
+                        </a>
                     </td>
                     <td>
                         <a asp-action="Edit" asp-route-idScenario="@item.Id">

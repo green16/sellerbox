@@ -57,6 +57,7 @@ namespace WebApplication1.Common.Helpers
             if (!string.IsNullOrWhiteSpace(message.Text))
             {
                 var scenario = dbContext.Scenarios
+                    .Where(x => x.IsEnabled)
                     .Where(x => x.IdGroup == idGroup)
                     .Include(x => x.Group)
                     .Include(x => x.Group.GroupAdmins)
