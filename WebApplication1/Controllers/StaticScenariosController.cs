@@ -27,6 +27,7 @@ namespace WebApplication1.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
             ViewBag.IsBirthdayEnabled = (await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled ?? false;
+            ViewBag.IsBirthdayWallEnabled = (await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled ?? false;
             return View();
         }
 
@@ -40,6 +41,18 @@ namespace WebApplication1.Controllers
             await _context.SaveChangesAsync();
 
             return Json(new { birthdayScenario.IsEnabled });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToogleBirthdayWallIsEnabled()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            BirthdayWallScenarios birthdayWallScenario = await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            birthdayWallScenario.IsEnabled = !birthdayWallScenario.IsEnabled;
+            await _context.SaveChangesAsync();
+
+            return Json(new { birthdayWallScenario.IsEnabled });
         }
 
         [HttpGet]

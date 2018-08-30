@@ -15,5 +15,6 @@ namespace WebApplication1.Models.Database
         public virtual ICollection<Subscribers> Subscribers { get; set; }
         public virtual ICollection<BirthdayScenarios> BirthdayScenarios { get; set; }
         public virtual ICollection<GroupAdmins> GroupAdmins { get; set; }
+        public virtual ICollection<BirthdayWallScenarios> BirthdayWallScenarios { get; set; }
     }
 }

@@ -174,6 +174,28 @@ namespace WebApplication1.Migrations
                     b.ToTable("BirthdayScenarios");
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayWallScenarios", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("IdGroup");
+
+                    b.Property<Guid>("IdMessagesGroup");
+
+                    b.Property<bool>("IsEnabled");
+
+                    b.Property<byte>("SendAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.HasIndex("IdMessagesGroup");
+
+                    b.ToTable("BirthdayWallScenarios");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.Database.ChainContents", b =>
                 {
                     b.Property<Guid>("Id")
@@ -356,13 +378,33 @@ namespace WebApplication1.Migrations
 
                     b.Property<string>("Keyboard");
 
+                    b.Property<Guid?>("MessagesGroupsId");
+
                     b.Property<string>("Text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("IdGroup");
 
+                    b.HasIndex("MessagesGroupsId");
+
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.MessagesGroups", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("IdGroup");
+
+                    b.Property<string>("Name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.ToTable("MessagesGroups");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.RepostScenarios", b =>
@@ -779,6 +821,19 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayWallScenarios", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany("BirthdayWallScenarios")
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.Database.MessagesGroups", "MessagesGroup")
+                        .WithMany()
+                        .HasForeignKey("IdMessagesGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("WebApplication1.Models.Database.ChainContents", b =>
                 {
                     b.HasOne("WebApplication1.Models.Database.Chains", "Chain")
@@ -845,6 +900,18 @@ namespace WebApplication1.Migrations
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.Messages", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.MessagesGroups")
+                        .WithMany("Messages")
+                        .HasForeignKey("MessagesGroupsId");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.MessagesGroups", b =>
                 {
                     b.HasOne("WebApplication1.Models.Database.Groups", "Group")
                         .WithMany()

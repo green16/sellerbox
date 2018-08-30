@@ -45,6 +45,8 @@
     <Compile Remove="Migrations\20180709083230_RenameBirthdayHistory.Designer.cs" />
     <Compile Remove="Migrations\20180710093929_Add_GroupAdmins.cs" />
     <Compile Remove="Migrations\20180710093929_Add_GroupAdmins.Designer.cs" />
+    <Compile Remove="Migrations\20180830145318_Add_MessagesGroups__Add_BirthdayWallScenarios.cs" />
+    <Compile Remove="Migrations\20180830145318_Add_MessagesGroups__Add_BirthdayWallScenarios.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

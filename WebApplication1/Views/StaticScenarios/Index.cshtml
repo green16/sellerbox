@@ -37,5 +37,25 @@
                 </a>
             </td>
         </tr>
+        <tr>
+            <td>
+                2
+            </td>
+            <td>
+                <a asp-action="BirthdayWall">Дни рождения на стене</a>
+            </td>
+            <td>
+                <a class="toogleBirthdayWallIsEnabled" href="#">
+                    @if (ViewBag.IsBirthdayWallEnabled)
+                    {
+                        <text>Активен</text>
+                    }
+                    else
+                    {
+                        <text>Отключен</text>
+                    }
+                </a>
+            </td>
+        </tr>
     </tbody>
 </table>
