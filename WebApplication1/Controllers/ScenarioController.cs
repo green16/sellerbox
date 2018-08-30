@@ -217,6 +217,19 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> ToogleIsEnabled([FromQuery]Guid? idScenario)
+        {
+            if (!idScenario.HasValue)
+                return Json(new { error = 1 });
+
+            var scenario = await _context.Scenarios.FirstOrDefaultAsync(x => x.Id == idScenario.Value);
+            scenario.IsEnabled = !scenario.IsEnabled;
+            await _context.SaveChangesAsync();
+
+            return Json(new { error = 0, scenario.IsEnabled });
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Delete([FromQuery]Guid? idScenario)
         {
             if (!idScenario.HasValue)
