@@ -196,6 +196,7 @@ namespace WebApplication1.Controllers
                     Action = x.Action,
                     ChainName = x.Chain == null ? "" : x.Chain.Name,
                     InputMessage = x.InputMessage,
+                    IsEnabled = x.IsEnabled,
                     IsStrictMatch = x.IsStrictMatch,
                     Name = x.Name
                 }).ToArrayAsync();
