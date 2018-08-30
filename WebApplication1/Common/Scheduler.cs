@@ -282,6 +282,7 @@ namespace WebApplication1.Common
             DateTime dt = DateTime.Now;
 
             var birthdayScenarios = await dbContext.BirthdayScenarios
+                .Where(x => x.IsEnabled)
                 .Include(x => x.Group)
                 .Include(x => x.Group.GroupAdmins)
                 .Where(x => x.Group.GroupAdmins.Any() && x.SendAt <= dt.Hour)
@@ -307,7 +308,7 @@ namespace WebApplication1.Common
 
                 MessageHelper messageHelper = new MessageHelper(dbContext);
                 await messageHelper.SendMessages(idGroup, birthdayScenario.IdMessage, vkUsersIds);
-                
+
                 await dbContext.BirthdayHistory.AddRangeAsync(vkUsersIds.Select(x => new BirthdayHistory()
                 {
                     DtSend = dt,

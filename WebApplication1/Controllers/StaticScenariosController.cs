@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 using WebApplication1.Common;
 using WebApplication1.Common.Helpers;
 using WebApplication1.Common.Services;
@@ -22,9 +22,24 @@ namespace WebApplication1.Controllers
             _userHelperService = userHelperService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            ViewBag.IsBirthdayEnabled = (await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled ?? false;
             return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToogleBirthdayIsEnabled()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            BirthdayScenarios birthdayScenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            birthdayScenario.IsEnabled = !birthdayScenario.IsEnabled;
+            await _context.SaveChangesAsync();
+
+            return Json(new { birthdayScenario.IsEnabled });
         }
 
         [HttpGet]
@@ -32,7 +47,7 @@ namespace WebApplication1.Controllers
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            BirthdayScenarios scenario = _context.BirthdayScenarios.FirstOrDefault(x => x.IdGroup == groupInfo.Key);
+            BirthdayScenarios scenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
 
             BirthdaySchedulerViewModel model = null;
             if (scenario != null)

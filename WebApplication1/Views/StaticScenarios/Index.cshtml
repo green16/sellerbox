@@ -1,3 +1,41 @@
-﻿<div>
-    <a asp-action="Birthday">Дни рождения</a>
-</div>
+﻿@section scripts {
+    <script src="~/lib/site/StaticScenarios/index.js"></script>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                №
+            </th>
+            <th>
+                Название
+            </th>
+            <th>
+                Активность
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                1
+            </td>
+            <td>
+                <a asp-action="Birthday">Дни рождения</a>
+            </td>
+            <td>
+                <a class="toogleBirthdayIsEnabled" href="#">
+                    @if (ViewBag.IsBirthdayEnabled)
+                    {
+                        <text>Активен</text>
+                    }
+                    else
+                    {
+                        <text>Отключен</text>
+                    }
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
