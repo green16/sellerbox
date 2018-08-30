@@ -1,0 +1,37 @@
+﻿@model WebApplication1.ViewModels.MessagingViewModel
+@{
+    ViewData["Title"] = "View";
+}
+@section scripts {
+    <script src="~/lib/signalr/signalr.js"></script>
+    <script type=text/javascript>
+        var MaxRequestBodySize = @WebApplication1.Controllers.MessagingController.MaxRequestBodySize;
+        var idGroup = @ViewBag.IdGroup;
+    </script>
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
+    <script src="~/lib/site/Messaging/worker.js"></script>
+}
+
+<div class="progress" hidden>
+    <div id="sendingProgress" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0" style="width: 100%"></div>
+</div>
+
+@using (Html.BeginForm("SendMessages", "Messaging", FormMethod.Post))
+{
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
+
+    <input asp-for="IdGroup" type="hidden" />
+
+    <hr />
+
+    <div class="form-group">
+        <div class="checkbox">
+            <input type="checkbox" name="@nameof(Model.IsSelfSendString)" @{if (Model.IsSelfSend) { <text> checked</text>} }>
+            Тестовая отправка
+        </div>
+    </div>
+
+    <input type="submit" class="btn btn-primary" value="Отправить" />
+}

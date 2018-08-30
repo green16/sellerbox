@@ -1,0 +1,121 @@
+﻿@using WebApplication1.ViewModels.Chains;
+
+@model ChainViewModel
+
+@section scripts {
+    <script src="~/lib/site/Chains/addStep2.js"></script>
+}
+
+<div class="modal fade" id="warningRemoveModal" tabindex="-1" role="dialog" aria-labelledby="warningRemoveModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warningRemoveModalTitle">Внимание</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить данное сообщение?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Нет</button>
+                <button type="button" class="btn btn-primary" id="warningRemoveModalYesButton">Да</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="text-center">Сообщения</h3>
+@{
+    bool hasElements = Model.Content != null && Model.Content.Any();
+}
+<h5 @{if (hasElements) { <text> hidden</text>}}>
+    В цепочке нет сообщений.
+    <a asp-action="AddMessage" asp-route-idChain="@Model.Id">Добавить первое</a>
+</h5>
+@if (hasElements)
+{
+    int idx = 1;
+    foreach (ChainContentIndexViewModel chainContent in Model.Content)
+    {
+        <div data-idChainContent="@chainContent.Id" class="container bg-light">
+            <div style="float: left">
+                <p>Сообщение №@idx</p>
+            </div>
+            <div style="float: right">
+                <span>Отправить через: </span>
+                <span style="color: blue">@chainContent.SendAfterHours</span>
+                <span> ч </span>
+                <span style="color: blue">@chainContent.SendAfterMinutes</span>
+                <span> мин</span>
+                @if (chainContent.IsOnlyDayTime)
+                {
+                    <span>(только днем(9.00 - 20.00 по МСК))</span>
+                }
+                else
+                {
+                    <span>(круглосуточно)</span>
+                }
+                <br />
+                <span>Подписчиков: @chainContent.SubscribersInChainContent</span>
+            </div>
+
+            <br clear="all" />
+
+            <br />
+
+            <div class="rounded d-inline p-2 bg-dark text-white">
+                @chainContent.MessageText
+            </div>
+
+            <br />
+            <br />
+
+            <div class="text-center">
+                <div>
+                    @if (string.IsNullOrEmpty(chainContent.GoToChainName))
+                    {
+                        <span>Не переключать в следующую цепочку</span>
+                    }
+                    else
+                    {
+                        <span>Переключить в цепочку: </span>
+                        <span style="color: blue">@chainContent.GoToChainName</span>
+                    }
+                </div>
+                <div>
+                    @if (string.IsNullOrEmpty(chainContent.ExcludeFromChainName))
+                    {
+                        <span>Не исключать из цепочки</span>
+                    }
+                    else
+                    {
+                        <span>Исключить из цепочки: </span>
+                        <span style="color: blue">@chainContent.ExcludeFromChainName</span>
+                    }
+                </div>
+            </div>
+
+            <div class="btn-group" role="group">
+                @using (Html.BeginForm("EditMessageByIds", "Chains", new { idChain = Model.Id, idChainContent = chainContent.Id }))
+                {
+                    <button type="submit" class="btn btn-info">Редактировать</button>
+                }
+                <button type="button" class="btn btn-danger removeChainContentButton" data-toggle="modal" data-target="#warningRemoveModal">Удалить</button>
+            </div>
+        </div>
+
+        <br clear="all" />
+        idx++;
+    }
+}
+@if (hasElements)
+{
+    <br />
+
+    using (Html.BeginForm("AddMessage", "Chains", new { idChain = Model.Id }, FormMethod.Post))
+    {
+        <button type="submit" class="btn btn-primary">Добавить сообщение</button>
+    }
+}

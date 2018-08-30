@@ -1,0 +1,97 @@
+﻿@model IEnumerable<WebApplication1.ViewModels.Chains.IndexViewModel>
+
+@section scripts {
+    <script src="~/lib/site/Chains/index.js"></script>
+}
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="modal fade" id="warningRemoveModal" tabindex="-1" role="dialog" aria-labelledby="warningRemoveModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warningRemoveModalTitle">Внимание</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить данную цепочку?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Нет</button>
+                <button type="button" class="btn btn-primary" id="warningRemoveModalYesButton">Да</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    bool hasElements = Model != null && Model.Any();
+    if (hasElements)
+    {
+        using (Html.BeginForm("Create", "Chains", FormMethod.Get))
+        {
+            <button type="submit" class="btn btn-primary">Добавить цепочку</button>
+        }
+    }
+}
+<div>
+    <h5 @{if (hasElements) { <text> hidden</text>}}>
+        Нет ни одной цепочки.
+        <a asp-action="Create">Добавьте первую</a>
+    </h5>
+    @if (hasElements)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        №
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Name)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.IsEnabled)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SubscribersInChain)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{int idx = 0; }
+                @foreach (var item in Model)
+                {
+                    idx++;
+                <tr data-idChain="@item.Id">
+                    <td>
+                        @idx
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.IsEnabled, "CheckBoxTemplate")
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.SubscribersInChain)
+                    </td>
+                    <td>
+                        <a asp-action="EditById" asp-route-idChain="@item.Id">
+                            <img src="~/images/Edit.png" />
+                        </a> |
+                        <a class="removeChain" href="#">
+                            <img src="~/images/Trash.png" />
+                        </a>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

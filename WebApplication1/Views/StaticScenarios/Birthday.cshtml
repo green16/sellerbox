@@ -1,0 +1,47 @@
+﻿@model WebApplication1.ViewModels.StaticScenarios.BirthdaySchedulerViewModel
+
+@{
+    ViewData["Title"] = "Birthday";
+}
+
+@section scripts {
+    <script type=text/javascript>
+        var MaxRequestBodySize = @WebApplication1.Controllers.MessagingController.MaxRequestBodySize;
+    </script>
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
+}
+
+<h2>Поздравление с Днём Рождения</h2>
+
+<form asp-action="SaveBirthday" asp-controller="StaticScenarios" asp-antiforgery="true">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="DaysBefore" class="input-group-text"></label>
+        </div>
+        <input type="number" min="0" class="form-control" asp-for="DaysBefore">
+    </div>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="SendAt" class="input-group-text"></label>
+        </div>
+        <select class="custom-select" asp-for="SendAt">
+            <option value="0" selected>00:00</option>
+            @for (int h = 1; h < 24; h++)
+            {
+                <option value="@h">@h.ToString("00"):00</option>
+            }
+        </select>
+    </div>
+
+    @if (Model.IdMessage.HasValue)
+    {
+        <input type="hidden" asp-for="IdMessage" value="@Model.IdMessage" />
+    }
+
+    @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

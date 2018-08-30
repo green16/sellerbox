@@ -1,0 +1,73 @@
+﻿@model ReflectionIT.Mvc.Paging.IPagingList
+@* Boostrap 4 based pager *@
+
+@{
+    var start = Model.StartPageIndex;
+    var stop = Model.StopPageIndex;
+}
+
+@if (Model.PageCount > 1)
+{
+    <nav style="display: inline-flex">
+        <ul class="pagination" style="margin:0">
+
+            @if (start > 1)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action(Model.Action, Model.GetRouteValueForPage(1))" aria-label="First" class="page-link">
+                        <span aria-hidden="true">1</span>
+                    </a>
+                </li>
+            }
+
+            @if (Model.PageIndex > 1)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action(Model.Action, Model.GetRouteValueForPage(Model.PageIndex - 1))" aria-label="Previous" class="page-link">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            }
+
+            @for (int i = start; i <= stop; i++)
+            {
+                <li class="page-item @((Model.PageIndex == i) ? "active" : null)">
+                    @Html.ActionLink(i.ToString(), Model.Action, Model.GetRouteValueForPage(i), new { @class = "page-link" })
+                </li>
+            }
+
+            @if (Model.PageIndex < Model.PageCount)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action(Model.Action, Model.GetRouteValueForPage(Model.PageIndex + 1))" aria-label="Next" class="page-link">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            }
+
+            @if (stop < Model.PageCount)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action(Model.Action, Model.GetRouteValueForPage(Model.PageCount))" aria-label="Last" class="page-link">
+                        <span aria-hidden="true">@Model.PageCount</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+    int startFrom = (Model.PageIndex - 1) * Model.PageSize + 1;
+    int endBy = (Model.PageIndex) * Model.PageSize;
+    if (endBy > Model.TotalRecordCount)
+    {
+        endBy = Model.TotalRecordCount;
+    }
+
+    <span style="align-items: center">
+        (@startFrom
+        @if (startFrom != endBy)
+        {
+            <text> - @endBy</text>
+        }
+        из @Model.TotalRecordCount подписчиков)
+    </span>
+}

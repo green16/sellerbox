@@ -1,0 +1,110 @@
+﻿@model WebApplication1.ViewModels.Shared.MessageViewModel
+
+@{ string prefix = !string.IsNullOrWhiteSpace(Model.PropertiesPrefix) ? $"{Model.PropertiesPrefix}." : string.Empty;}
+
+<div class="message-part" @{if (!string.IsNullOrWhiteSpace(prefix)) { <text> data-dataPrefix="@prefix.Substring(0, prefix.Length - 1)" </text>  }}>
+    <div class="input-group">
+        <textarea name="@($"{prefix}Message")" class="form-control" placeholder="Введите текст сообщения">@Model.Message</textarea>
+    </div>
+
+    <br />
+
+    <div class="btn-group keywordButtons" role="group">
+        @foreach (var availableKeyword in WebApplication1.Common.Helpers.MessageHelper.AvailableKeywords)
+        {
+            <button type="button" class="btn btn-secondary" data-keyword="@availableKeyword.Key">@availableKeyword.Value</button>
+        }
+    </div>
+
+    <br />
+
+    <h5>Выберите файл для загрузки</h5>
+
+    <div class="input-group file-input-group">
+        <div class="custom-file">
+            <label class="custom-file-label selected-file-label">
+                <input type="file" accept="image/jpeg,image/png,image/gif" name="file" class="custom-file-input" hidden>
+                Выберите файл
+            </label>
+        </div>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary upload-button" disabled>Загрузить</button>
+        </div>
+    </div>
+    <div class="alert alert-danger alert-fileTooBig" role="alert" hidden>
+        Файл слишком большой.
+    </div>
+
+    <div class="progress" hidden>
+        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    @{
+        bool hasElements = Model != null && Model.Files != null && Model.Files.Any();
+    }
+    <div @if (!hasElements) { <text> hidden</text> }>
+        <br />
+        <h6>Прикреплённые файлы</h6>
+        <div class="list-group uploadedFilesList">
+            @if (hasElements)
+            {
+                foreach (var file in Model.Files)
+                {
+                    await Html.RenderPartialAsync("FileRow", file);
+                }
+            }
+        </div>
+    </div>
+
+    <br />
+
+    <div class="form-group">
+        <div class="checkbox">
+            <input type="checkbox" name="@($"{prefix}{nameof(Model.IsImageFirstString)}")" @{if (Model.IsImageFirst) { <text> checked</text>} } />
+            Вначале изображение
+        </div>
+    </div>
+
+    <h6>Клавиатура</h6>
+    <div id="messageKeyboad" class="container" data-prefix="@Model.PropertiesPrefix">
+        @{
+            int rowsCount = 1;
+            bool hasKeyboard = Model.Keyboard != null && Model.Keyboard.Any();
+            if (hasKeyboard)
+            {
+                rowsCount = Model.Keyboard.Count;
+            }
+            for (int rowIdx = 0; rowIdx < rowsCount; rowIdx++)
+            {
+                <div class="row flex-nowrap" data-idRow="@rowIdx">
+                    @{
+                        bool allowAddColumn = true;
+                        if (hasKeyboard)
+                        {
+                            var currentRow = Model.Keyboard[rowIdx];
+                            if (currentRow != null && currentRow.Any())
+                            {
+                                allowAddColumn = currentRow.Count < 4;
+                                for (int colIdx = 0; colIdx < currentRow.Count; colIdx++)
+                                {
+                                    <div class="column col-3" data-idColumn="@colIdx">
+                                        @{await Html.RenderPartialAsync("KeyboardButton", currentRow[colIdx]);}
+                                    </div>
+                                }
+                            }
+                        }
+                    }
+                    <div class="column" @{if (!allowAddColumn) { <text> hidden</text>} }>
+                        <button type="button" class="btn btn-outline-info messageKeyboadAppendColumnButton">
+                            <img src="~/images/Add.png" alt="Добавить кнопку" style="vertical-align: middle">Добавить кнопку
+                        </button>
+                    </div>
+                    <div class="column" @{if (rowsCount > 1 && rowIdx != rowsCount - 1) { <text> hidden</text> } }>
+                        <button type="button" class="btn btn-outline-info messageKeyboadAppendRowButton">
+                            <img src="~/images/Add.png" alt="Добавить строку" style="vertical-align: middle">Добавить строку
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

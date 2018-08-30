@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Контакты";
+}
+<h2 class="text-center">@ViewData["Title"]</h2>
+@section Scripts {
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <script src="~/lib/site/Home/contacts.js"></script>
+}
+<div class="row" style="height: 400px">
+    <div id="map" class="col-sm-8"></div>
+    <div class="col-sm-4 align-self-center">
+        <address>
+            <strong>Головной офис:</strong><br />
+            г.Сыктывкар, ул.Пушкина, д.47<br />
+
+            <strong>Телефон:</strong>
+            <a href="tel:+78212201688">+7 (8212) 20-16-88</a> / <a href="tel:88007553331">8-800-755-333-1</a><br />
+
+            <strong>Электронная почта: </strong>
+            <a href="mailto:sellerbox@it-rkomi.ru">sellerbox@it-rkomi.ru</a>
+        </address>
+    </div>
+</div>

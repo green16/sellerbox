@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+    <UserSecretsId>8be3d50d-0e91-4e37-992e-6c5e0cb673a8</UserSecretsId>
+    <TypeScriptToolsVersion>2.8</TypeScriptToolsVersion>
+    <PackageId>Sellerbox</PackageId>
+    <Authors></Authors>
+    <Company>Информационные технологии</Company>
+    <Product>Sellerbox</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20180605085413_InitialCreate.cs" />
+    <Compile Remove="Migrations\20180605085413_InitialCreate.Designer.cs" />
+    <Compile Remove="Migrations\20180606094841_RemoveIdentityForVkUsersAndGroups.cs" />
+    <Compile Remove="Migrations\20180606094841_RemoveIdentityForVkUsersAndGroups.Designer.cs" />
+    <Compile Remove="Migrations\20180606100402_RemoveIdentityForVkUsersAndGroups.cs" />
+    <Compile Remove="Migrations\20180606100402_RemoveIdentityForVkUsersAndGroups.Designer.cs" />
+    <Compile Remove="Migrations\20180622103017_AddReposts.cs" />
+    <Compile Remove="Migrations\20180622103017_AddReposts.Designer.cs" />
+    <Compile Remove="Migrations\20180622145849_AddSubscriberReposts.cs" />
+    <Compile Remove="Migrations\20180622145849_AddSubscriberReposts.Designer.cs" />
+    <Compile Remove="Migrations\20180625121405_SubscriberInChains_Changes_Set_NotNull.cs" />
+    <Compile Remove="Migrations\20180625121405_SubscriberInChains_Changes_Set_NotNull.Designer.cs" />
+    <Compile Remove="Migrations\20180706110708_Config_AddIdGroup.cs" />
+    <Compile Remove="Migrations\20180706110708_Config_AddIdGroup.Designer.cs" />
+    <Compile Remove="Migrations\20180706111816_Config_AddIdGroup.cs" />
+    <Compile Remove="Migrations\20180706111816_Config_AddIdGroup.Designer.cs" />
+    <Compile Remove="Migrations\20180709063714_AddBirthdayScenarios.cs" />
+    <Compile Remove="Migrations\20180709063714_AddBirthdayScenarios.Designer.cs" />
+    <Compile Remove="Migrations\20180709082609_AddBirthdayHistory.cs" />
+    <Compile Remove="Migrations\20180709082609_AddBirthdayHistory.Designer.cs" />
+    <Compile Remove="Migrations\20180709083230_RenameBirthdayHistory.cs" />
+    <Compile Remove="Migrations\20180709083230_RenameBirthdayHistory.Designer.cs" />
+    <Compile Remove="Migrations\20180710093929_Add_GroupAdmins.cs" />
+    <Compile Remove="Migrations\20180710093929_Add_GroupAdmins.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.1.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="NLog" Version="4.5.6" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="4.5.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AspNet.Security.OAuth.Vkontakte\AspNet.Security.OAuth.Vkontakte.csproj" />
+    <ProjectReference Include="..\ReflectionIT.Mvc.Paging\ReflectionIT.Mvc.Paging.csproj" />
+    <ProjectReference Include="..\VkConnector\VkConnector.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Views\Shared\DisplayTemplates\" />
+    <Folder Include="wwwroot\files\" />
+    <Folder Include="wwwroot\lib\signalr\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\Shared\KeyboardButton.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Views\Subscribers\Index.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Views\Subscribers\Members.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Views\Subscribers\Unmembered.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
+
+</Project>
