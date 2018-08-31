@@ -47,14 +47,6 @@
 
     <h4>Действие после срабатывания сценария</h4>
 
-    <h5>Ответить</h5>
-    @if (Model.IdMessage.HasValue)
-    {
-        <input asp-for="IdMessage" type="hidden" value="@Model.IdMessage.Value" />
-    }
-
-    @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model.Message)
-
     <h5>Выполнить действие</h5>
     <div class="input-group mb-3" id="actionTypes">
         <div class="form-check form-check-inline">
@@ -75,8 +67,17 @@
         </div>
     </div>
 
-    <div id="action" @{ if (Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
-        <div id="chain2" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.AddToChain) { <text> hidden</text>} }>
+    <div id="action">
+        <div id="onlyReply" @{ if (Model.Action != ScenarioActions.Message) { <text> hidden</text>} }>
+            @if (Model.IdMessage.HasValue)
+            {
+                <input asp-for="IdMessage" type="hidden" value="@Model.IdMessage.Value" />
+            }
+
+            @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model.Message)
+        </div>
+
+        <div id="chain2" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.AddToChain || Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
             <div class="input-group-prepend">
                 <label asp-for="IdChain2" class="input-group-text"></label>
             </div>
@@ -89,7 +90,7 @@
             </select>
         </div>
 
-        <div id="chain1" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.RemoveFromChain) { <text> hidden</text>} }>
+        <div id="chain1" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.RemoveFromChain || Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
             <div class="input-group-prepend">
                 <label asp-for="IdChain" class="input-group-text"></label>
             </div>
@@ -102,8 +103,8 @@
             </select>
         </div>
 
-        <div>
-            @if (Model.IdErrorMessage.HasValue)
+        <div id="onError" @{ if (Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
+            @if (Model.IdErrorMessage.HasValue && Model.Action != ScenarioActions.Message)
             {
                 <input asp-for="IdErrorMessage" type="hidden" value="@Model.IdErrorMessage.Value" />
             }
@@ -111,6 +112,6 @@
             @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model.ErrorMessage)
         </div>
     </div>
-    
+
     <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>

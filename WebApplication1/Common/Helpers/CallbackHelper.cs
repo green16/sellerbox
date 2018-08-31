@@ -52,7 +52,7 @@ namespace WebApplication1.Common.Helpers
             await dbContext.SaveChangesAsync();
         }
 
-        public static async Task<Messages> ReplyToMessage(DatabaseContext dbContext, int idGroup, MessageNew message)
+        public static async Task<Guid?> ReplyToMessage(DatabaseContext dbContext, int idGroup, MessageNew message)
         {
             if (!string.IsNullOrWhiteSpace(message.Text))
             {
@@ -62,8 +62,6 @@ namespace WebApplication1.Common.Helpers
                     .Include(x => x.Group)
                     .Include(x => x.Group.GroupAdmins)
                     .Where(x => x.Group.GroupAdmins.Any())
-                    .Include(x => x.Message)
-                    .Include(x => x.ErrorMessage)
                     .FirstOrDefault(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Text.ToLower()) || (!x.IsStrictMatch && message.Text.ToLower().Contains(x.InputMessage.ToLower())));
 
                 if (scenario != null)
@@ -91,10 +89,10 @@ namespace WebApplication1.Common.Helpers
             await dbContext.SaveChangesAsync();
         }
 
-        private static async Task<Messages> ScenarioReply(DatabaseContext dbContext, int idGroup, MessageNew message, Scenarios scenario)
+        private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, int idGroup, MessageNew message, Scenarios scenario)
         {
             if (scenario.Action == ScenarioActions.Message)
-                return scenario.Message;
+                return scenario.IdMessage;
 
             var subscriber = dbContext.Subscribers.FirstOrDefault(x => x.IdGroup == idGroup && x.IdVkUser == message.IdUser);
 
@@ -113,11 +111,10 @@ namespace WebApplication1.Common.Helpers
                 case ScenarioActions.AddToChain:
                     {
                         if (isSubscriberInChain)
-                            return scenario.ErrorMessage;
+                            return scenario.IdErrorMessage;
 
                         await AddSubscriberToChain(dbContext, subscriber.Id, scenario.IdChain.Value);
-
-                        return scenario.Message;
+                        break;
                     }
                 case ScenarioActions.ChangeChain:
                     {
@@ -131,16 +128,16 @@ namespace WebApplication1.Common.Helpers
                         }
 
                         if (isSubscriberInChain)
-                            return scenario.ErrorMessage;
+                            return scenario.IdErrorMessage;
 
                         await AddSubscriberToChain(dbContext, subscriber.Id, scenario.IdChain.Value);
 
-                        return scenario.Message;
+                        break;
                     }
                 case ScenarioActions.RemoveFromChain:
                     {
                         if (!isSubscriberInChain2)
-                            return scenario.ErrorMessage;
+                            return scenario.IdErrorMessage;
 
                         var subscriberInChain = dbContext.SubscribersInChains
                                 .Include(x => x.ChainStep)
@@ -148,11 +145,13 @@ namespace WebApplication1.Common.Helpers
                         dbContext.SubscribersInChains.RemoveRange(subscriberInChain);
                         await dbContext.SaveChangesAsync();
 
-                        return scenario.Message;
+                        break;
                     }
                 default:
                     throw new NotImplementedException();
             }
+
+            return null;
         }
 
         public static async Task AddWallPost(DatabaseContext dbContext, int idGroup, WallPostNew newPost)

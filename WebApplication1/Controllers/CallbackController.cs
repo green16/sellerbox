@@ -84,13 +84,13 @@ namespace WebApplication1.Controllers
                             await _context.SaveChangesAsync();
                         }
 
-                        var answerMessage = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, innerMessage);
-                        bool markAsRead = answerMessage != null;
+                        var idAnswerMessage = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, innerMessage);
+                        bool markAsRead = idAnswerMessage.HasValue;
 
-                        if (answerMessage != null)
+                        if (idAnswerMessage.HasValue)
                         {
                             MessageHelper messageHelper = new MessageHelper(_context);
-                            await messageHelper.SendMessages(message.IdGroup, answerMessage.Id, innerMessage.IdUser);
+                            await messageHelper.SendMessages(message.IdGroup, idAnswerMessage.Value, innerMessage.IdUser);
                         }
                         else if (markAsRead)
                             await VkConnector.Methods.Messages.MarkAsRead(accessToken, message.IdGroup, innerMessage.IdUser);
