@@ -15,6 +15,8 @@ namespace WebApplication1.Common
 
         public DbSet<VkUsers> VkUsers { get; set; }
         public DbSet<Subscribers> Subscribers { get; set; }
+
+        public DbSet<MessagesGroups> MessagesGroups { get; set; }
         public DbSet<Messages> Messages { get; set; }
         public DbSet<FilesInMessage> FilesInMessage { get; set; }
         public DbSet<Files> Files { get; set; }
@@ -35,6 +37,8 @@ namespace WebApplication1.Common
 
         public DbSet<BirthdayScenarios> BirthdayScenarios { get; set; }
         public DbSet<BirthdayHistory> BirthdayHistory { get; set; }
+
+        public DbSet<BirthdayWallScenarios> BirthdayWallScenarios { get; set; }
 
         public DbSet<SyncHistory> SyncHistory { get; set; }
         public DatabaseContext()
@@ -85,6 +89,11 @@ namespace WebApplication1.Common
             modelBuilder.Entity<BirthdayScenarios>()
                 .HasOne(x => x.Group)
                 .WithMany(x => x.BirthdayScenarios)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BirthdayWallScenarios>()
+                .HasOne(x => x.Group)
+                .WithMany(x => x.BirthdayWallScenarios)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CheckedSubscribersInRepostScenarios>()

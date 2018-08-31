@@ -26,7 +26,13 @@ namespace WebApplication1.Controllers
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            ViewBag.IsBirthdayEnabled = (await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled ?? false;
+            bool? isBirthdayEnabled = (await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled;
+            ViewBag.HasBirthday = isBirthdayEnabled != null;
+            ViewBag.IsBirthdayEnabled = isBirthdayEnabled ?? false;
+
+            bool? isBirthdayWallEnabled = (await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled;
+            ViewBag.HasBirthdayWall = isBirthdayWallEnabled != null;
+            ViewBag.IsBirthdayWallEnabled = isBirthdayWallEnabled ?? false;
             return View();
         }
 
@@ -36,10 +42,26 @@ namespace WebApplication1.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
             BirthdayScenarios birthdayScenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            if (birthdayScenario == null)
+                return null;
             birthdayScenario.IsEnabled = !birthdayScenario.IsEnabled;
             await _context.SaveChangesAsync();
 
             return Json(new { birthdayScenario.IsEnabled });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToogleBirthdayWallIsEnabled()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            BirthdayWallScenarios birthdayWallScenario = await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            if (birthdayWallScenario == null)
+                return null;
+            birthdayWallScenario.IsEnabled = !birthdayWallScenario.IsEnabled;
+            await _context.SaveChangesAsync();
+
+            return Json(new { birthdayWallScenario.IsEnabled });
         }
 
         [HttpGet]
