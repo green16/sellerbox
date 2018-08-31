@@ -25,16 +25,24 @@
                 <a asp-action="Birthday">Дни рождения</a>
             </td>
             <td>
-                <a class="toogleBirthdayIsEnabled" href="#">
-                    @if (ViewBag.IsBirthdayEnabled)
-                    {
-                        <text>Активен</text>
-                    }
-                    else
-                    {
-                        <text>Отключен</text>
-                    }
-                </a>
+                @if (ViewBag.HasBirthday)
+                {
+                    <a class="toogleBirthdayIsEnabled" href="#">
+                        @if (ViewBag.IsBirthdayEnabled)
+                        {
+                            <text>Активен</text>
+                        }
+                        else
+                        {
+                            <text>Отключен</text>
+                        }
+
+                    </a>
+                }
+                else
+                {
+                    <text>Не подключен</text>
+                }
             </td>
         </tr>
         <tr>
@@ -45,16 +53,23 @@
                 <a asp-action="BirthdayWall">Дни рождения на стене</a>
             </td>
             <td>
-                <a class="toogleBirthdayWallIsEnabled" href="#">
-                    @if (ViewBag.IsBirthdayWallEnabled)
-                    {
-                        <text>Активен</text>
-                    }
-                    else
-                    {
-                        <text>Отключен</text>
-                    }
-                </a>
+                @if (ViewBag.HasBirthdayWall)
+                {
+                    <a class="toogleBirthdayWallIsEnabled" href="#">
+                        @if (ViewBag.IsBirthdayWallEnabled)
+                        {
+                            <text>Активен</text>
+                        }
+                        else
+                        {
+                            <text>Отключен</text>
+                        }
+                    </a>
+                }
+                else
+                {
+                    <text>Не подключен</text>
+                }
             </td>
         </tr>
     </tbody>
