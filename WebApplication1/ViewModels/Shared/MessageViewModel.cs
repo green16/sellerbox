@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using VkNet.Enums.SafetyEnums;
 
 namespace WebApplication1.ViewModels.Shared
 {
     public class MessageViewModel : IValidatableObject
     {
+        public Guid? IdMessage { get; set; }
+
         public bool DisableValidation { get; set; }
         public string PropertiesPrefix { get; set; }
         public string Message { get; set; }
@@ -42,19 +46,34 @@ namespace WebApplication1.ViewModels.Shared
                 yield return new ValidationResult("Сообщение должно содержать либо текст либо вложение", new[] { nameof(Message) });
         }
 
-        public VkConnector.Models.Common.Keyboard GetVkKeyboard()
+        private KeyboardButtonColor ConvertColor(string colorType)
+        {
+            switch (colorType.ToLower())
+            {
+                case "negative":
+                    return KeyboardButtonColor.Negative;
+                case "positive":
+                    return KeyboardButtonColor.Positive;
+                case "primary":
+                    return KeyboardButtonColor.Primary;
+                default:
+                    return KeyboardButtonColor.Default;
+            }
+        }
+
+        public VkNet.Model.Keyboard.MessageKeyboard GetVkKeyboard()
         {
             return (Keyboard == null || !Keyboard.Any()) ? null :
-                new VkConnector.Models.Common.Keyboard
+                new VkNet.Model.Keyboard.MessageKeyboard
                 {
                     Buttons = Keyboard
-                    .Select(x => x.Select(y => new VkConnector.Models.Common.Keyboard.Button
+                    .Select(x => x.Select(y => new VkNet.Model.Keyboard.MessageKeyboardButton
                     {
-                        Action = new VkConnector.Models.Common.Keyboard.ButtonAction()
+                        Action = new VkNet.Model.Keyboard.MessageKeyboardButtonAction()
                         {
-                            Text = y.Text
+                            Label = y.Text
                         },
-                        Color = y.ButtonColor
+                        Color = ConvertColor(y.ButtonColor)
                     }).ToArray()).ToArray()
                 };
         }

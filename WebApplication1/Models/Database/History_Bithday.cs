@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApplication1.Models.Database
 {
-    public class BirthdayHistory : BaseEntity
+    public class History_Birthday : BaseEntity
     {
-        [ForeignKey(nameof(VkUser))]
-        public int IdVkUser { get; set; }
-        public virtual VkUsers VkUser { get; set; }
+        [ForeignKey(nameof(Subscriber))]
+        public Guid IdSubscriber { get; set; }
+        public virtual Subscribers Subscriber { get; set; }
 
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
         [Column(TypeName = "datetime2")]

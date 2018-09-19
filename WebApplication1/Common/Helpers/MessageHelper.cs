@@ -8,11 +8,11 @@ namespace WebApplication1.Common.Helpers
 {
     public class MessageSentEventArgs : EventArgs
     {
-        public int IdGroup { get; protected set; }
+        public long IdGroup { get; protected set; }
         public int Total { get; protected set; }
         public int Current { get; protected set; }
 
-        public MessageSentEventArgs(int idGroup, int total, int current)
+        public MessageSentEventArgs(long idGroup, int total, int current)
         {
             IdGroup = idGroup;
             Total = total;
@@ -29,19 +29,21 @@ namespace WebApplication1.Common.Helpers
                 { "%USERSECONDNAME%", "Отчество (ник)" },
             };
 
+        public static readonly Dictionary<string, string> AvailableWallKeywords = new Dictionary<string, string>()
+            {
+                { "%USERS%", "Фамилия Имя" }
+            };
+
         private readonly DatabaseContext _context;
 
         public event EventHandler<MessageSentEventArgs> MessageSent;
-        protected virtual void OnMessageSent(int idGroup, int total, int current) => MessageSent?.Invoke(this, new MessageSentEventArgs(idGroup, total, current));
+        protected virtual void OnMessageSent(long idGroup, int total, int current) => MessageSent?.Invoke(this, new MessageSentEventArgs(idGroup, total, current));
 
         public int Stepping { get; set; } = 100;
 
-        private static bool HasKeywords(string text)
-        {
-            return AvailableKeywords.Any(x => text.Contains(x.Key));
-        }
+        private static bool HasKeywords(string text) => string.IsNullOrWhiteSpace(text) ? false : AvailableKeywords.Any(x => text.Contains(x.Key));
 
-        private static async Task<string> UpdateMessage(DatabaseContext _context, int idVkUser, string text)
+        private static async Task<string> UpdateMessage(DatabaseContext _context, long idVkUser, string text)
         {
             if (!HasKeywords(text))
                 return text;
@@ -60,18 +62,37 @@ namespace WebApplication1.Common.Helpers
             _context = context;
         }
 
-        private async Task SendMessage(string groupAccessToken, bool isImageFirst, string text, IEnumerable<string> attachments, VkConnector.Models.Common.Keyboard keyboard, int[] ids)
+        private async Task SendMessage(VkNet.VkApi vkApi, bool isImageFirst, string text, IEnumerable<VkNet.Model.Attachments.MediaAttachment> attachments, VkNet.Model.Keyboard.MessageKeyboard keyboard, long[] ids)
         {
+            string nbspString = new string(new char[] { (char)160 });
             if (isImageFirst && attachments != null && attachments.Any())
             {
-                await VkConnector.Methods.Messages.Send(groupAccessToken, null, attachments, null, ids);
-                await VkConnector.Methods.Messages.Send(groupAccessToken, text, null, keyboard, ids);
+                await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                {
+                    UserIds = ids,
+                    Message = nbspString,
+                    Attachments = (!attachments?.Any() ?? false) ? null : attachments
+                });
+                if (!string.IsNullOrEmpty(text) || keyboard != null)
+                    await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                    {
+                        UserIds = ids,
+                        Message = string.IsNullOrEmpty(text) ? nbspString : text,
+                        Keyboard = keyboard
+                    });
+                return;
             }
-            else
-                await VkConnector.Methods.Messages.Send(groupAccessToken, text, attachments, keyboard, ids);
+
+            await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+            {
+                UserIds = ids,
+                Message = string.IsNullOrEmpty(text) ? nbspString : text,
+                Attachments = (!attachments?.Any() ?? false) ? null : attachments,
+                Keyboard = keyboard
+            });
         }
 
-        public async Task SendMessages(int idGroup, Guid idMessage, params int[] vkUserIds)
+        public async Task SendMessages(VkNet.VkApi vkApi, long idGroup, Guid idMessage, params long[] vkUserIds)
         {
             var message = await _context.Messages
                 .Include(x => x.Files)
@@ -81,9 +102,10 @@ namespace WebApplication1.Common.Helpers
             var attachments = await _context.Files
                 .Where(x => idFiles.Contains(x.Id))
                 .Select(x => x.VkUrl)
+                .Select(x => Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Attachments.Photo>(x))
                 .ToArrayAsync();
 
-            string groupAccessToken = await _context.Groups.Where(x => x.IdVk == idGroup).Select(x => x.AccessToken).FirstOrDefaultAsync();
+            var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
 
             if (HasKeywords(message.Text))
             {
@@ -91,7 +113,7 @@ namespace WebApplication1.Common.Helpers
                 {
                     string text = await UpdateMessage(_context, vkUserIds[idx], message.Text);
 
-                    await SendMessage(groupAccessToken, message.IsImageFirst, text, attachments, VkConnector.Models.Common.Keyboard.Deserialize(message.Keyboard), new int[] { vkUserIds[idx] });
+                    await SendMessage(vkApi, message.IsImageFirst, text, attachments, keyboard, new long[] { vkUserIds[idx] });
 
                     OnMessageSent(idGroup, vkUserIds.Length, idx + 1);
                 }
@@ -102,7 +124,7 @@ namespace WebApplication1.Common.Helpers
                 do
                 {
                     var currentUserIds = (Stepping > vkUserIds.Length - offset ? vkUserIds.Skip(offset) : vkUserIds.Skip(offset).Take(Stepping)).ToArray();
-                    await SendMessage(groupAccessToken, message.IsImageFirst, message.Text, attachments, VkConnector.Models.Common.Keyboard.Deserialize(message.Keyboard), currentUserIds);
+                    await SendMessage(vkApi, message.IsImageFirst, message.Text, attachments, keyboard, currentUserIds);
 
                     offset += currentUserIds.Length;
                     if (offset >= vkUserIds.Length)

@@ -7,8 +7,8 @@ namespace WebApplication1.Models.Database
     public class VkUsers
     {
         [Key]
-        public int IdVk { get; set; }
-        
+        public long IdVk { get; set; }
+
         public string FirstName { get; set; }
         public string SecondName { get; set; }
         public string LastName { get; set; }
@@ -22,23 +22,23 @@ namespace WebApplication1.Models.Database
         [Column(TypeName = "datetime2")]
         public DateTime? Birthday { get; set; }
 
-        public void Update(VkConnector.Models.Objects.User user)
+        public void Update(VkNet.Model.User user)
         {
-            Birthday = user.Birthday;
-            City = user.City?.Name;
-            Country = user.Country?.Name;
+            Birthday = WebApplication1.Common.Helpers.VkHelper.BirtdayConvert(user.BirthDate);
+            City = user.City?.Title;
+            Country = user.Country?.Title;
             FirstName = user.FirstName;
             LastName = user.LastName;
-            SecondName = user.NickName;
-            Link = $"{VkConnector.Methods.Base.VkUrl}/{user.Domain}";
-            PhotoSquare50 = user.PhotoSquare50?.AbsoluteUri;
-            PhotoOrig400 = user.PhotoOrig400?.AbsoluteUri;
-            Sex = user.Sex == VkConnector.Models.Common.Sex.Unknown ? null : (bool?)(user.Sex == VkConnector.Models.Common.Sex.Male);
+            SecondName = user.Nickname;
+            Link = $"https://vk.com/{user.Domain}";
+            PhotoSquare50 = user.Photo50?.AbsoluteUri;
+            PhotoOrig400 = user.Photo400Orig?.AbsoluteUri;
+            Sex = user.Sex == VkNet.Enums.Sex.Unknown || user.Sex == VkNet.Enums.Sex.Deactivated ? null : (bool?)(user.Sex == VkNet.Enums.Sex.Male);
         }
 
-        public static VkUsers FromUser(VkConnector.Models.Objects.User user)
+        public static VkUsers FromUser(VkNet.Model.User user)
         {
-            var result = new VkUsers() { IdVk = user.Id };
+            var result = new VkUsers() { IdVk = (int)user.Id };
             result.Update(user);
             return result;
         }

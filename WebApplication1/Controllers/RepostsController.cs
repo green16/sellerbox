@@ -17,11 +17,13 @@ namespace WebApplication1.Controllers
     {
         private readonly UserHelperService _userHelperService;
         private readonly DatabaseContext _context;
+        private readonly VkPoolService _vkPoolService;
 
-        public RepostsController(DatabaseContext context, UserHelperService userHelperService)
+        public RepostsController(DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
         {
             _context = context;
             _userHelperService = userHelperService;
+            _vkPoolService = vkPoolService;
         }
 
         public async Task<IActionResult> Index()
@@ -48,7 +50,7 @@ namespace WebApplication1.Controllers
                     GoToChain2Name = x.GoToChain2 != null ? x.GoToChain2.Name : string.Empty,
                     MessageIndex = x.CheckingChainContent.Index,
                     MessageTextPart = x.CheckingChainContent.Message.TextPart,
-                    PostLink = new Uri($"{VkConnector.Methods.Base.VkUrl}/wall-{selectedGroup.Key}_{x.WallPost.IdVk}")
+                    PostLink = new Uri($"https://vk.com/wall-{selectedGroup.Key}_{x.WallPost.IdVk}")
                 }).ToArrayAsync();
 
             return View("Index", model);
@@ -240,20 +242,25 @@ namespace WebApplication1.Controllers
 
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
 
-            int[] existsPosts = await _context.WallPosts
+            var existsPostsIds = await _context.WallPosts
                 .Where(x => x.IdGroup == selectedGroup.Key)
                 .OrderByDescending(x => x.DtAdd)
                 .Select(x => x.IdVk)
                 .ToArrayAsync();
 
-            var posts = await VkConnector.Methods.Wall.Get(accessToken, selectedGroup.Key);
-            var newWallPosts = posts.Items
-                .Where(x => !existsPosts.Contains(x.Id))
+            var vkApi = await _vkPoolService.GetGroupVkApi(selectedGroup.Key);
+
+            var posts = await vkApi.Wall.GetAsync(new VkNet.Model.RequestParams.WallGetParams()
+            {
+                OwnerId = selectedGroup.Key
+            });
+            var newWallPosts = posts.WallPosts
+                .Where(x => !existsPostsIds.Contains(x.Id.Value))
                 .Select(x => new WallPosts()
                 {
                     DtAdd = DateTime.UtcNow,
                     IdGroup = selectedGroup.Key,
-                    IdVk = x.Id,
+                    IdVk = x.Id.Value,
                     Text = x.Text
                 });
 

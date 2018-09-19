@@ -10,6 +10,7 @@ namespace WebApplication1.Models.Database
         public DateTime DtAdd { get; set; }
         [Column(TypeName = "datetime2")]
         public DateTime? DtUnsubscribe { get; set; }
+
         public bool? IsChatAllowed { get; set; }
 
         public bool? IsSubscribedToGroup { get; set; }
@@ -18,21 +19,22 @@ namespace WebApplication1.Models.Database
         public bool IsBlocked { get; set; }
 
         [ForeignKey(nameof(VkUser))]
-        public int IdVkUser { get; set; }
+        public long IdVkUser { get; set; }
         public virtual VkUsers VkUser { get; set; }
 
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
         public virtual ICollection<SubscriberReposts> SubscriberReposts { get; set; }
         public virtual ICollection<SubscribersInChains> SubscribersInChains { get; set; }
         public virtual ICollection<SubscribersInSegments> SubscribersInSegments { get; set; }
         public virtual ICollection<CheckedSubscribersInRepostScenarios> CheckedSubscribersInRepostScenarios { get; set; }
-
-        public Subscribers()
-        {
-            DtAdd = DateTime.UtcNow;
-        }
+        public virtual ICollection<History_Birthday> History_Birthday { get; set; }
+        public virtual ICollection<History_GroupActions> History_GroupActions { get; set; }
+        public virtual ICollection<History_Messages> History_Messages { get; set; }
+        public virtual ICollection<History_Scenarios> History_Scenarios { get; set; }
+        public virtual ICollection<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
+        public virtual ICollection<History_WallPosts> History_WallPosts { get; set; }
     }
 }

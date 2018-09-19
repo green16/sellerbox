@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using WebApplication1.Models.Database;
 
 namespace WebApplication1.ViewModels.Chains
 {
@@ -13,7 +12,7 @@ namespace WebApplication1.ViewModels.Chains
         public string Name { get; set; }
         [Display(Name = "Группа")]
         [Required(ErrorMessage = "Выберите группу")]
-        public int? IdGroup { get; set; }
+        public long? IdGroup { get; set; }
         public ICollection<ChainContentIndexViewModel> Content { get; set; }
     }
 }

@@ -19,11 +19,13 @@ namespace WebApplication1.Controllers
     {
         private readonly UserHelperService _userHelperService;
         private readonly DatabaseContext _context;
+        private readonly VkPoolService _vkPoolService;
 
-        public SubscribersController(UserHelperService userManager, DatabaseContext context)
+        public SubscribersController(UserHelperService userManager, DatabaseContext context, VkPoolService vkPoolService)
         {
             _userHelperService = userManager;
             _context = context;
+            _vkPoolService = vkPoolService;
         }
 
         [HttpGet]
@@ -34,7 +36,8 @@ namespace WebApplication1.Controllers
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             ViewBag.GroupName = groupInfo.Value;
-            var subscribers = DbHelper.GetSubscribersInGroup(_context, groupInfo.Key)
+            var subscribers = _context.Subscribers
+                .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
                 .Select(x => new AllSubscribersViewModel()
                 {
                     Id = x.Id,
@@ -64,7 +67,8 @@ namespace WebApplication1.Controllers
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             ViewBag.GroupName = groupInfo.Value;
-            var members = DbHelper.GetSubscribersInGroup(_context, groupInfo.Key)
+            var members = _context.Subscribers
+                .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
                 .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
                 .Select(x => new MemberIndexViewModel()
                 {
@@ -94,7 +98,8 @@ namespace WebApplication1.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             ViewBag.GroupName = groupInfo.Value;
 
-            var subscribers = DbHelper.GetSubscribersInGroup(_context, groupInfo.Key)
+            var subscribers = _context.Subscribers
+                .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
                 .Where(x => x.IsSubscribedToGroup.HasValue && x.IsSubscribedToGroup.Value)
                 .Select(x => new SubscriberIndexViewModel()
                 {
@@ -123,7 +128,6 @@ namespace WebApplication1.Controllers
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             var members = _context.Subscribers
-                .Include(x => x.VkUser)
                 .Where(x => x.IdGroup == groupInfo.Key && x.IsChatAllowed.HasValue && !x.IsChatAllowed.Value)
                 .Select(x => new UnmemberedIndexViewModel()
                 {
@@ -151,10 +155,9 @@ namespace WebApplication1.Controllers
             if (!_userHelperService.HasSelectedGroup(User))
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
-            KeyValuePair<int, string> groupInfo = _userHelperService.GetSelectedGroup(User);
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
             ViewBag.GroupName = groupInfo.Value;
             var unsubscribed = _context.Subscribers
-                .Include(x => x.VkUser)
                 .Where(x => x.IdGroup == groupInfo.Key && x.IsUnsubscribed && x.DtUnsubscribe.HasValue)
                 .Select(x => new UnsubscribedIndexViewModel()
                 {
@@ -218,10 +221,15 @@ namespace WebApplication1.Controllers
 
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
             string groupAccessToken = _context.Groups.FirstOrDefault(x => x.IdVk == selectedGroup.Key)?.AccessToken;
-            var vkUser = (await VkConnector.Methods.Users.Get(groupAccessToken, subscriber.IdVkUser)).FirstOrDefault();
+
+            var vkApi = await _vkPoolService.GetGroupVkApi(selectedGroup.Key);
+
+            var vkUser = (await vkApi.Users.GetAsync(new long[] { subscriber.IdVkUser })).FirstOrDefault();
             subscriber.VkUser.Update(vkUser);
-            subscriber.IsBlocked = vkUser.IsBlacklisted;
+            subscriber.IsBlocked = vkUser.Blacklisted;
+
             await _context.SaveChangesAsync();
+
             return await Card(idSubscriber);
         }
 
@@ -229,26 +237,40 @@ namespace WebApplication1.Controllers
         public async Task RefreshAllFromVk()
         {
             var allSubscribers = await _context.Subscribers.Include(x => x.VkUser).ToArrayAsync();
-            foreach (var subscriber in allSubscribers)
+            int offset = 0, count = 100;
+            do
             {
-                string groupAccessToken = _context.Groups.FirstOrDefault(x => x.IdVk == subscriber.IdGroup)?.AccessToken;
-                var vkUser = (await VkConnector.Methods.Users.Get(groupAccessToken, subscriber.IdVkUser)).FirstOrDefault();
-                subscriber.VkUser.Update(vkUser);
-                subscriber.IsBlocked = vkUser.IsBlacklisted;
+                var currentSubscribers = allSubscribers.Skip(offset).Take(count);
+
+                var groupInfo = _userHelperService.GetSelectedGroup(User);
+                var vkApi = await _vkPoolService.GetGroupVkApi(groupInfo.Key);
+
+                var vkUsers = await vkApi.Users.GetAsync(currentSubscribers.Select(x => x.IdVkUser));
+                foreach (var vkUser in vkUsers)
+                {
+                    var currentSubscriber = currentSubscribers.FirstOrDefault(x => x.IdVkUser == vkUser.Id);
+                    currentSubscriber.VkUser.Update(vkUser);
+                    currentSubscriber.IsBlocked = vkUser.Blacklisted;
+                }
                 await _context.SaveChangesAsync();
-            }
+
+                offset += currentSubscribers.Count();
+                if (offset >= allSubscribers.Length)
+                    break;
+
+            } while (offset < allSubscribers.Length);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CheckIsChatAllowed([FromBody]int idVkUser)
+        public async Task<IActionResult> CheckIsChatAllowed([FromBody]long idVkUser)
         {
             if (!_userHelperService.HasSelectedGroup(User))
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            string groupAccessToken = await _context.Groups.Where(x => x.IdVk == groupInfo.Key).Select(x => x.AccessToken).FirstOrDefaultAsync();
+            var vkApi = await _vkPoolService.GetGroupVkApi(groupInfo.Key);
 
-            bool isAllowed = await VkConnector.Methods.Messages.IsMessagesFromGroupAllowed(groupAccessToken, groupInfo.Key, idVkUser);
+            bool isAllowed = await vkApi.Messages.IsMessagesFromGroupAllowedAsync((ulong)groupInfo.Key, (ulong)idVkUser);
 
             Subscribers subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key && x.IdVkUser == idVkUser);
             subscriber.IsChatAllowed = isAllowed;
@@ -264,9 +286,9 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            string groupAccessToken = await _context.Groups.Where(x => x.IdVk == groupInfo.Key).Select(x => x.AccessToken).FirstOrDefaultAsync();
+            var vkApi = await _vkPoolService.GetGroupVkApi(groupInfo.Key);
 
-            bool isSubscribed = await VkConnector.Methods.Groups.IsMember(groupAccessToken, groupInfo.Key, idVkUser);
+            bool isSubscribed = (await vkApi.Groups.IsMemberAsync(groupInfo.Key.ToString(), idVkUser, Enumerable.Empty<long>(), false)).FirstOrDefault()?.Member ?? false;
 
             Subscribers subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key && x.IdVkUser == idVkUser);
             subscriber.IsSubscribedToGroup = isSubscribed;

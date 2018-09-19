@@ -14,7 +14,7 @@
         <label asp-for="IdGroup" class="input-group-text"></label>
         <select asp-for="IdGroup" class="custom-select">
             <option value="@null" selected>Выберите группу...</option>
-            @foreach (KeyValuePair<int, string> group in ViewBag.Groups)
+            @foreach (KeyValuePair<long, string> group in ViewBag.Groups)
             {
                 if (ViewBag.IdSelectedGroup != null && ViewBag.IdSelectedGroup == group.Key)
                 {

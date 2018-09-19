@@ -1,14 +1,10 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApplication1.Models.Database
 {
-    public class SubscriberReposts
+    public class SubscriberReposts : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         public string Text { get; set; }
 
         public bool IsProcessed { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
@@ -11,6 +12,7 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using WebApplication1.Common;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
@@ -52,6 +54,14 @@ namespace WebApplication1
             LogManager.Configuration = loggingConfiguration;
         }
 
+        private static async Task RedirectToAuthorizationEndpoint(RedirectContext<OAuthOptions> context)
+        {
+            // Ensure the redirect_uri is https
+            System.Diagnostics.Trace.WriteLine(context.RedirectUri);
+            context.Response.Redirect(context.RedirectUri);
+            await Task.FromResult(0);
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -75,8 +85,14 @@ namespace WebApplication1
                 options.ClientId = Logins.VkApplicationId.ToString();
                 options.ClientSecret = Logins.VkApplicationPassword;
                 options.SaveTokens = true;
+
                 // Request for permissions https://vk.com/dev/permissions?f=1.%20Access%20Permissions%20for%20User%20Token
-                options.Scope.Add("email");
+                options.Scope.Add("photos,wall,offline,groups,audio,docs,video");
+
+                options.Events = new OAuthEvents
+                {
+                    OnRedirectToAuthorizationEndpoint = async context => { await RedirectToAuthorizationEndpoint(context); }
+                };
 
                 // In this case email will return in OAuthTokenResponse, 
                 // but all scope values will be merged with user response
@@ -98,6 +114,7 @@ namespace WebApplication1
             SetLogger(dbConnectionString);
 
             services.AddTransient<UserHelperService>();
+            services.AddTransient<VkPoolService>();
             services.AddHostedService<Scheduler>();
         }
 
@@ -117,14 +134,13 @@ namespace WebApplication1
 
             app.UseAuthentication();
             app.UseStaticFiles();
+
             app.UseSignalR(routes =>
             {
                 routes.MapHub<Common.Hubs.SubscriberSyncHub>("/subscribersynchub");
-            });
-            app.UseSignalR(routes =>
-            {
                 routes.MapHub<Common.Hubs.MessagingHub>("/messaginghub");
             });
+
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

@@ -8,14 +8,14 @@ namespace WebApplication1.Models.Database
     {
         [Key]
         public Guid Id { get; set; }
-        public int IdVk { get; set; }
+        public long IdVk { get; set; }
         [Column(TypeName = "datetime2")]
         public DateTime DtAdd { get; set; }
 
         public string Text { get; set; }
 
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
         [NotMapped]
@@ -30,5 +30,7 @@ namespace WebApplication1.Models.Database
                 return string.Concat(Text.Substring(0, 17), "...");
             }
         }
+
+        public virtual History_BirthdayWall BirthdayWallHistory { get; set; }
     }
 }

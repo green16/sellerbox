@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using WebApplication1.Common;
 using WebApplication1.Common.Helpers;
 using WebApplication1.Common.Services;
@@ -183,22 +182,24 @@ namespace WebApplication1.Controllers
                 {
                     addMessageViewModel.Message = message.Text;
                     addMessageViewModel.IsImageFirst = message.IsImageFirst;
-                    var keyboard = VkConnector.Models.Common.Keyboard.Deserialize(message.Keyboard);
+
+                    var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
                     if (keyboard != null)
                     {
                         addMessageViewModel.Keyboard = new List<List<ViewModels.Shared.MessageButton>>();
-                        for (byte rowIdx = 0; rowIdx < keyboard.Buttons.Length; rowIdx++)
+                        byte currentRowIdx = 0;
+                        foreach (var currentRow in keyboard.Buttons)
                         {
-                            var currentRow = keyboard.Buttons[rowIdx];
                             byte colIdx = 0;
                             addMessageViewModel.Keyboard.Add(currentRow.Select(x => new ViewModels.Shared.MessageButton()
                             {
-                                ButtonColor = x.Color,
+                                ButtonColor = x.Color.ToString(),
                                 Column = colIdx++,
-                                CanDelete = colIdx == currentRow.Length,
-                                Row = rowIdx,
-                                Text = x.Action.Text
+                                CanDelete = colIdx == currentRow.Count(),
+                                Row = currentRowIdx,
+                                Text = x.Action.Label
                             }).ToList());
+                            currentRowIdx++;
                         }
                     }
 
@@ -253,9 +254,13 @@ namespace WebApplication1.Controllers
             Messages message = null;
             if (editMessageViewModel.IdMessage.HasValue && await _context.Messages.AnyAsync(x => x.Id == editMessageViewModel.IdMessage.Value))
             {
+
                 message = await _context.Messages.FirstOrDefaultAsync(x => x.Id == editMessageViewModel.IdMessage.Value);
                 message.Text = editMessageViewModel.Message;
-                message.Keyboard = editMessageViewModel.GetVkKeyboard()?.Serialize();
+
+                var keyboard = editMessageViewModel.GetVkKeyboard();
+                message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
+
                 await _context.SaveChangesAsync();
 
                 if (editMessageViewModel.Files != null && editMessageViewModel.Files.Any())

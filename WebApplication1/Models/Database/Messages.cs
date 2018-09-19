@@ -6,7 +6,7 @@ namespace WebApplication1.Models.Database
     public class Messages : BaseEntity
     {
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
         public string Text { get; set; }

@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using VkConnector.Models.Objects;
 using WebApplication1.Common;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
@@ -18,31 +17,37 @@ namespace WebApplication1.Controllers
     {
         private readonly UserHelperService _userHelperService;
         private readonly DatabaseContext _context;
+        private readonly VkPoolService _vkPoolService;
 
-        public GroupsController(UserHelperService userManager, DatabaseContext context)
+        public GroupsController(UserHelperService userManager, DatabaseContext context, VkPoolService vkPoolService)
         {
             _userHelperService = userManager;
             _context = context;
+            _vkPoolService = vkPoolService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             DateTime? dtExpiresAt = await _userHelperService.GetVkUserAccessTokenExpiresAt(User);
-            string accessToken = await _userHelperService.GeVktUserAccessToken(User);
-            if (string.IsNullOrEmpty(accessToken) || !dtExpiresAt.HasValue || dtExpiresAt < DateTime.Now)
-                return RedirectToAction("ExternalLogin", "Account", new { provider = "Vkontakte", returnUrl = @"/Groups/Index" });
 
             string idUser = _userHelperService.GetUserId(User);
-            int idVkUser = await _userHelperService.GetUserIdVk(User);
+            var idVkUser = await _userHelperService.GetUserIdVk(User);
 
-            var groups = await VkConnector.Methods.Groups.Get(accessToken, idVkUser);
+            var vkApi = await _vkPoolService.GetUserVkApi(idVkUser);
+
+            var groups = await vkApi.Groups.GetAsync(new VkNet.Model.RequestParams.GroupsGetParams()
+            {
+                UserId = idVkUser,
+                Extended = true,
+                Filter = VkNet.Enums.Filters.GroupsFilters.Administrator
+            });
             var models = groups.Select(x => new GroupsViewModel()
             {
                 IdVk = x.Id,
-                ImageUrl = x.PhotoSquare50,
+                ImageUrl = x.Photo50,
                 Name = x.Name,
-                Link = $"{VkConnector.Methods.Base.VkUrl}/club{x.Id}",
+                Link = $"https://vk.com/club{x.Id}",
                 IsConnected = _context.GroupAdmins
                     .Include(y => y.Group)
                     .Any(y => y.IdGroup == x.Id && y.IdUser == idUser && !string.IsNullOrEmpty(y.Group.AccessToken))
@@ -62,7 +67,7 @@ namespace WebApplication1.Controllers
                     IdVk = x.Group.IdVk,
                     ImageUrl = new Uri(x.Group.Photo),
                     Name = x.Group.Name,
-                    Link = $"{VkConnector.Methods.Base.VkUrl}/club{x.Group.IdVk}",
+                    Link = $"https://vk.com/club{x.Group.IdVk}",
                     IsConnected = true
                 })
                 .ToArrayAsync();
@@ -97,7 +102,7 @@ namespace WebApplication1.Controllers
 
             Newtonsoft.Json.Linq.JObject obj = Newtonsoft.Json.Linq.JObject.Parse(result);
             var token = obj.Properties().First(x => x.Name.StartsWith("access_token_"));
-            int idGroup = int.Parse(token.Name.Split('_').Last());
+            var idGroup = long.Parse(token.Name.Split('_').Last());
             string tokenValue = token.Value.ToString();
 
             string idUser = _userHelperService.GetUserId(User);
@@ -106,17 +111,30 @@ namespace WebApplication1.Controllers
             {
                 if (!_context.Groups.Any(x => x.IdVk == idGroup))
                 {
-                    Group groupInfo = await VkConnector.Methods.Groups.GetById(tokenValue, idGroup);
-                    string callbackConfirmationCode = await VkConnector.Methods.Groups.GetCallbackConfirmationCode(tokenValue, idGroup);
-
-                    await _context.Groups.AddAsync(new Groups()
+                    using (var vkGroupApi = new VkNet.VkApi())
                     {
-                        IdVk = idGroup,
-                        AccessToken = tokenValue,
-                        CallbackConfirmationCode = callbackConfirmationCode,
-                        Name = groupInfo.Name,
-                        Photo = groupInfo.PhotoSquare50.ToString()
-                    });
+                        await vkGroupApi.AuthorizeAsync(new VkNet.Model.ApiAuthParams()
+                        {
+                            ApplicationId = Logins.VkApplicationId,
+                            Password = Logins.VkApplicationPassword,
+                            //AccessToken = tokenValue,
+                            Settings = VkNet.Enums.Filters.Settings.All
+                        });
+
+                        var groups = await vkGroupApi.Groups.GetByIdAsync(null, idGroup.ToString(), VkNet.Enums.Filters.GroupsFields.Description);
+
+                        var groupInfo = groups.FirstOrDefault();
+                        var callbackConfirmationCode = await vkGroupApi.Groups.GetCallbackConfirmationCodeAsync((ulong)idGroup);
+
+                        await _context.Groups.AddAsync(new Groups()
+                        {
+                            IdVk = idGroup,
+                            AccessToken = tokenValue,
+                            CallbackConfirmationCode = callbackConfirmationCode,
+                            Name = groupInfo.Name,
+                            Photo = groupInfo.Photo50.ToString()
+                        });
+                    }
                 }
 
                 await _context.GroupAdmins.AddAsync(new GroupAdmins()
@@ -128,15 +146,27 @@ namespace WebApplication1.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            var callbackServers = await VkConnector.Methods.Groups.GetCallbackServers(tokenValue, idGroup);
-            int idServer = -1;
+            var idVkUser = await _userHelperService.GetUserIdVk(User);
+            var vkApi = await _vkPoolService.GetUserVkApi(idVkUser);
+
+            var callbackServers = await vkApi.Groups.GetCallbackServersAsync((ulong)idGroup);
+            long idServer = -1;
             var callbackServerInfo = callbackServers.FirstOrDefault(x => x.Url == Logins.CallbackServerUrl);
             if (callbackServerInfo == null)
-                idServer = await VkConnector.Methods.Groups.AddCallbackServer(tokenValue, idGroup, Logins.CallbackServerName, Logins.CallbackServerUrl);
+                idServer = await vkApi.Groups.AddCallbackServerAsync((ulong)idGroup, Logins.CallbackServerUrl, Logins.CallbackServerName);
             else
-                idServer = callbackServerInfo.IdServer;
+                idServer = callbackServerInfo.Id;
 
-            await VkConnector.Methods.Groups.SetCallbackSettings(tokenValue, idGroup, idServer);
+            var callbackProperties = new VkNet.Model.CallbackSettings();
+            foreach (var property in callbackProperties.GetType().GetProperties(System.Reflection.BindingFlags.Public))
+                property.SetValue(callbackProperties, true);
+
+            await vkApi.Groups.SetCallbackSettingsAsync(new VkNet.Model.RequestParams.CallbackServerParams()
+            {
+                GroupId = (ulong)idGroup,
+                ServerId = idServer,
+                CallbackSettings = callbackProperties
+            });
 
             return RedirectToAction(nameof(IndexConnected), "Groups");
         }

@@ -38,19 +38,19 @@ namespace WebApplication1.Common.Services
                 return null;
             return result;
         }
-        public async Task<int> GetUserIdVk(ClaimsPrincipal user)
+        public async Task<long> GetUserIdVk(ClaimsPrincipal user)
         {
             Users currentUser = await _userManager.GetUserAsync(user);
             return currentUser.IdVk;
         }
-        public KeyValuePair<int, string> GetSelectedGroup(ClaimsPrincipal user)
+        public KeyValuePair<long, string> GetSelectedGroup(ClaimsPrincipal user)
         {
             string idUser = _userManager.GetUserId(user);
-            int idSelectedGroup = _context.Users.First(x => x.Id == idUser).IdCurrentGroup;
+            var idSelectedGroup = _context.Users.Where(x => x.Id == idUser).Select(x => x.IdCurrentGroup).First();
 
             return _context.Groups
                 .Where(x => x.IdVk == idSelectedGroup)
-                .Select(x => new KeyValuePair<int, string>(x.IdVk, x.Name))
+                .Select(x => new KeyValuePair<long, string>(x.IdVk, x.Name))
                 .FirstOrDefault();
         }
         public bool HasSelectedGroup(ClaimsPrincipal user)
@@ -66,7 +66,7 @@ namespace WebApplication1.Common.Services
                 .Include(x => x.Group)
                 .Any(x => !string.IsNullOrEmpty(x.Group.AccessToken));
         }
-        public IDictionary<int, string> GetConnectedGroups(ClaimsPrincipal user)
+        public IDictionary<long, string> GetConnectedGroups(ClaimsPrincipal user)
         {
             string idUser = _userManager.GetUserId(user);
             return _context.GroupAdmins.Where(x => x.IdUser == idUser)

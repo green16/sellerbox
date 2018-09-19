@@ -7,7 +7,7 @@ namespace WebApplication1.ViewModels.Subscribers
     public class SubscriberCardViewModel
     {
         #region VkUser
-        public int IdVk { get; set; }
+        public long IdVk { get; set; }
         public string Name { get; set; }
         public string Link { get; set; }
         public string Photo { get; set; }

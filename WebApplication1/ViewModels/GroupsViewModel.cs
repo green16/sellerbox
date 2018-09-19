@@ -5,7 +5,7 @@ namespace WebApplication1.ViewModels
 {
     public class GroupsViewModel
     {
-        public int IdVk { get; set; }
+        public long IdVk { get; set; }
         [Display(Name = "Название")]
         public string Name { get; set; }
         public string Link { get; set; }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using VkConnector.Models.Common;
 using WebApplication1.Models.Database;
 
 namespace WebApplication1.Common.Helpers
@@ -22,18 +21,7 @@ namespace WebApplication1.Common.Helpers
         }
 
         #endregion
-
-        #region Subscribers
-
-        public static IQueryable<Subscribers> GetSubscribersInGroup(DatabaseContext dbContext, int idGroup)
-        {
-            return dbContext.Subscribers
-                .Include(x => x.VkUser)
-                .Where(x => x.IdGroup == idGroup && !x.IsUnsubscribed);
-        }
-
-        #endregion
-
+        
         #region ChainContents
 
         public static IQueryable<ChainContents> GetChainContents(DatabaseContext dbContext, Guid idChain)
@@ -63,12 +51,12 @@ namespace WebApplication1.Common.Helpers
 
         #region Messages
 
-        public static async Task<Messages> AddMessage(DatabaseContext dbContext, int idGroup, string message, Keyboard keyboard, bool isImageFirst, IEnumerable<Guid> idFiles)
+        public static async Task<Messages> AddMessage(DatabaseContext dbContext, long idGroup, string message, VkNet.Model.Keyboard.MessageKeyboard keyboard, bool isImageFirst, IEnumerable<Guid> idFiles)
         {
             Messages result = new Messages()
             {
                 IdGroup = idGroup,
-                Keyboard = keyboard?.Serialize(),
+                Keyboard = Newtonsoft.Json.JsonConvert.SerializeObject(keyboard),
                 Text = message,
                 IsImageFirst = isImageFirst
             };
@@ -78,12 +66,6 @@ namespace WebApplication1.Common.Helpers
             List<FilesInMessage> attachments = new List<FilesInMessage>();
             foreach (Guid idFile in idFiles)
             {
-                Files file = await dbContext.Files.FirstOrDefaultAsync(x => x.Id == idFile);
-                string groupAccessToken = await dbContext.Groups.Where(x => x.IdVk == idGroup).Select(x => x.AccessToken).FirstOrDefaultAsync();
-
-                file.VkUrl = await VkHelper.UploadMessageAttachment(groupAccessToken, idGroup, file);
-                await dbContext.SaveChangesAsync();
-
                 attachments.Add(new FilesInMessage()
                 {
                     IdMessage = result.Id,

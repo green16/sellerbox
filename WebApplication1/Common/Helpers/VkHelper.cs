@@ -1,41 +1,21 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using VkConnector.Methods;
-using VkConnector.Models.Common;
-using WebApplication1.Models.Database;
+﻿using System;
 
 namespace WebApplication1.Common.Helpers
 {
     public static class VkHelper
     {
-        public static async Task<string> UploadMessageAttachment(string groupAccessToken, int idGroup, Files file)
+        public static DateTime? BirtdayConvert(string birthday)
         {
-            string result = string.Empty;
-
-            string extension = Path.GetExtension(file.Name).ToLower();
-            switch (extension)
+            if (string.IsNullOrWhiteSpace(birthday))
+                return null;
+            string[] dateParts = birthday.Split('.');
+            if (DateTime.TryParseExact(birthday, new string[] { "d.M.yyyy", "d.M" }, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime result))
             {
-                case ".jpg":
-                case ".jpeg":
-                case ".png":
-                case ".gif":
-                    {
-                        GetMessagesUploadServerResponse uploadServerInfo = await Photos.GetMessagesUploadServer(groupAccessToken, idGroup);
-                        SavedPhotoInfo savedPhotoInfo = await Photos.SaveMessagesPhoto(groupAccessToken, uploadServerInfo, file.Name, file.Content);
-                        result = $"photo{savedPhotoInfo.IdOwner}_{savedPhotoInfo.Id}_{savedPhotoInfo.AccessKey}";
-                        break;
-                    }
-
-                default:
-                    {
-                        string uploadServerUrl = await Docs.GetUploadServer(groupAccessToken, idGroup);
-                        await Docs.Save(groupAccessToken, uploadServerUrl, file.Name, file.Content);
-                        result = "doc{}_{}_{}";
-                        break;
-                    }
+                if (dateParts.Length == 2 && result.Year == DateTime.UtcNow.Year)
+                    return result.AddYears(-result.Year + 1);
+                return result;
             }
-
-            return result;
+            return null;
         }
     }
 }

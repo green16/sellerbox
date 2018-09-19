@@ -11,10 +11,10 @@
     <input name="@($"{prefix}{nameof(MessageButton.Text)}")" type="text" value="@Model.Text" style="width: 60%" />
 
     <select class="custom-select" name="@($"{prefix}{nameof(MessageButton.ButtonColor)}")" style="width: 40%">
-        <option value="default" selected="@(Model.ButtonColor == "default")">default</option>
-        <option value="primary" selected="@(Model.ButtonColor == "primary")">primary</option>
-        <option value="positive" selected="@(Model.ButtonColor == "positive")">positive</option>
-        <option value="negative" selected="@(Model.ButtonColor == "negative")">negative</option>
+        <option value="default" selected="@(Model.ButtonColor == "Default")">default</option>
+        <option value="primary" selected="@(Model.ButtonColor == "Primary")">primary</option>
+        <option value="positive" selected="@(Model.ButtonColor == "Negative")">positive</option>
+        <option value="negative" selected="@(Model.ButtonColor == "Positive")">negative</option>
     </select>
 
     <button type="button" aria-label="Close" class="close" style="width: 20px" @{if (!Model.CanDelete) { <text> hidden</text>} }>

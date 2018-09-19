@@ -10,7 +10,7 @@ namespace WebApplication1.Models.Database
         public bool IsEnabled { get; set; }
 
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
         [ForeignKey(nameof(Message))]
         public Guid IdMessage { get; set; }

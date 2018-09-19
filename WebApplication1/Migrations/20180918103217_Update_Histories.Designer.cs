@@ -10,14 +10,14 @@ using WebApplication1.Common;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20180823140318_VkUsers_AddSecondName")]
-    partial class VkUsers_AddSecondName
+    [Migration("20180918103217_Update_Histories")]
+    partial class Update_Histories
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.1.1-rtm-30846")
+                .HasAnnotation("ProductVersion", "2.1.3-rtm-32065")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -131,27 +131,6 @@ namespace WebApplication1.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime>("DtSend")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IdGroup");
-
-                    b.Property<int>("IdVkUser");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdGroup");
-
-                    b.HasIndex("IdVkUser");
-
-                    b.ToTable("BirthdayHistory");
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Database.BirthdayScenarios", b =>
                 {
                     b.Property<Guid>("Id")
@@ -159,7 +138,7 @@ namespace WebApplication1.Migrations
 
                     b.Property<int>("DaysBefore");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<Guid>("IdMessage");
 
@@ -174,6 +153,32 @@ namespace WebApplication1.Migrations
                     b.HasIndex("IdMessage");
 
                     b.ToTable("BirthdayScenarios");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayWallScenarios", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<Guid>("IdMessage");
+
+                    b.Property<long>("IdVkUser");
+
+                    b.Property<bool>("IsEnabled");
+
+                    b.Property<byte>("SendAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.HasIndex("IdMessage");
+
+                    b.HasIndex("IdVkUser");
+
+                    b.ToTable("BirthdayWallScenarios");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.ChainContents", b =>
@@ -213,7 +218,7 @@ namespace WebApplication1.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<bool>("IsEnabled");
 
@@ -293,7 +298,7 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("DtConnect")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<string>("IdUser");
 
@@ -308,7 +313,7 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Models.Database.Groups", b =>
                 {
-                    b.Property<int>("IdVk");
+                    b.Property<long>("IdVk");
 
                     b.Property<string>("AccessToken");
 
@@ -321,6 +326,188 @@ namespace WebApplication1.Migrations
                     b.HasKey("IdVk");
 
                     b.ToTable("Groups");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Birthday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("DtSend")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_Birthday");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_BirthdayWall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("DtSend")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<Guid>("IdPost");
+
+                    b.Property<long>("IdVkUser");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.HasIndex("IdPost")
+                        .IsUnique();
+
+                    b.HasIndex("IdVkUser");
+
+                    b.ToTable("History_BirthdayWall");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_GroupActions", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<byte>("ActionType");
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_GroupActions");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Messages", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("IdMessage");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.Property<bool>("IsOutgoingMessage");
+
+                    b.Property<string>("Text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdMessage");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_Messages");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Scenarios", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdScenario");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdScenario");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_Scenarios");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_SubscribersInChainSteps", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("DtAdd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdChainStep");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChainStep");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_SubscribersInChainSteps");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Synchronization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime?>("DtEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DtStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<byte>("SyncType");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.ToTable("SyncHistory");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_WallPosts", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdPost");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.Property<bool>("IsRepost");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdPost");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_WallPosts");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.Logs", b =>
@@ -352,7 +539,7 @@ namespace WebApplication1.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<bool>("IsImageFirst");
 
@@ -418,7 +605,7 @@ namespace WebApplication1.Migrations
 
                     b.Property<Guid?>("IdErrorMessage");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<Guid?>("IdMessage");
 
@@ -453,7 +640,7 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("DtCreate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<string>("Name");
 
@@ -500,9 +687,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("DtUnsubscribe")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
-                    b.Property<int>("IdVkUser");
+                    b.Property<long>("IdVkUser");
 
                     b.Property<bool>("IsBlocked");
 
@@ -565,26 +752,6 @@ namespace WebApplication1.Migrations
                     b.ToTable("SubscribersInSegments");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Database.SyncHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime?>("DtEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DtStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IdGroup");
-
-                    b.Property<byte>("SyncType");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SyncHistory");
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Database.Users", b =>
                 {
                     b.Property<string>("Id")
@@ -600,9 +767,9 @@ namespace WebApplication1.Migrations
 
                     b.Property<bool>("EmailConfirmed");
 
-                    b.Property<int>("IdCurrentGroup");
+                    b.Property<long>("IdCurrentGroup");
 
-                    b.Property<int>("IdVk");
+                    b.Property<long>("IdVk");
 
                     b.Property<bool>("LockoutEnabled");
 
@@ -648,7 +815,7 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("Dt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
                     b.Property<string>("Object");
 
@@ -656,12 +823,14 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdGroup");
+
                     b.ToTable("VkCallbackMessages");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.VkUsers", b =>
                 {
-                    b.Property<int>("IdVk");
+                    b.Property<long>("IdVk");
 
                     b.Property<DateTime?>("Birthday")
                         .HasColumnType("datetime2");
@@ -697,9 +866,9 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime>("DtAdd")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdGroup");
+                    b.Property<long>("IdGroup");
 
-                    b.Property<int>("IdVk");
+                    b.Property<long>("IdVk");
 
                     b.Property<string>("Text");
 
@@ -755,19 +924,6 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayHistory", b =>
-                {
-                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
-                        .WithMany()
-                        .HasForeignKey("IdGroup")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("WebApplication1.Models.Database.VkUsers", "VkUser")
-                        .WithMany()
-                        .HasForeignKey("IdVkUser")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Database.BirthdayScenarios", b =>
                 {
                     b.HasOne("WebApplication1.Models.Database.Groups", "Group")
@@ -778,6 +934,24 @@ namespace WebApplication1.Migrations
                     b.HasOne("WebApplication1.Models.Database.Messages", "Message")
                         .WithMany()
                         .HasForeignKey("IdMessage")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.BirthdayWallScenarios", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany("BirthdayWallScenarios")
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.Database.Messages", "Message")
+                        .WithMany()
+                        .HasForeignKey("IdMessage")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.VkUsers", "VkUser")
+                        .WithMany()
+                        .HasForeignKey("IdVkUser")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -844,6 +1018,109 @@ namespace WebApplication1.Migrations
                     b.HasOne("WebApplication1.Models.Database.Users", "User")
                         .WithMany()
                         .HasForeignKey("IdUser");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Birthday", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_Birthday")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_BirthdayWall", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.WallPosts", "WallPost")
+                        .WithOne("BirthdayWallHistory")
+                        .HasForeignKey("WebApplication1.Models.Database.History_BirthdayWall", "IdPost")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WebApplication1.Models.Database.VkUsers", "VkUser")
+                        .WithMany()
+                        .HasForeignKey("IdVkUser")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_GroupActions", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_GroupActions")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Messages", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Messages", "Message")
+                        .WithMany()
+                        .HasForeignKey("IdMessage");
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_Messages")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Scenarios", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Scenarios", "Scenario")
+                        .WithMany()
+                        .HasForeignKey("IdScenario")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_Scenarios")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_SubscribersInChainSteps", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.ChainContents", "ChainStep")
+                        .WithMany()
+                        .HasForeignKey("IdChainStep")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_SubscribersInChainSteps")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_Synchronization", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.History_WallPosts", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.WallPosts", "WallPost")
+                        .WithMany()
+                        .HasForeignKey("IdPost")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebApplication1.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_WallPosts")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.Messages", b =>
@@ -956,6 +1233,14 @@ namespace WebApplication1.Migrations
                         .WithMany("SubscribersInSegments")
                         .HasForeignKey("IdSubscriber")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Database.VkCallbackMessages", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.WallPosts", b =>

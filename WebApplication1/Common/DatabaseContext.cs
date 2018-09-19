@@ -16,7 +16,6 @@ namespace WebApplication1.Common
         public DbSet<VkUsers> VkUsers { get; set; }
         public DbSet<Subscribers> Subscribers { get; set; }
 
-        public DbSet<MessagesGroups> MessagesGroups { get; set; }
         public DbSet<Messages> Messages { get; set; }
         public DbSet<FilesInMessage> FilesInMessage { get; set; }
         public DbSet<Files> Files { get; set; }
@@ -36,11 +35,18 @@ namespace WebApplication1.Common
         public DbSet<SubscribersInChains> SubscribersInChains { get; set; }
 
         public DbSet<BirthdayScenarios> BirthdayScenarios { get; set; }
-        public DbSet<BirthdayHistory> BirthdayHistory { get; set; }
 
         public DbSet<BirthdayWallScenarios> BirthdayWallScenarios { get; set; }
 
-        public DbSet<SyncHistory> SyncHistory { get; set; }
+        public DbSet<History_BirthdayWall> History_BirthdayWall { get; set; }
+        public DbSet<History_Birthday> History_Birthday { get; set; }
+        public DbSet<History_GroupActions> History_GroupActions { get; set; }
+        public DbSet<History_Messages> History_Messages { get; set; }
+        public DbSet<History_Scenarios> History_Scenarios { get; set; }
+        public DbSet<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
+        public DbSet<History_Synchronization> SyncHistory { get; set; }
+        public DbSet<History_WallPosts> History_WallPosts { get; set; }
+
         public DatabaseContext()
         {
             Database.SetCommandTimeout(int.MaxValue);
@@ -95,6 +101,43 @@ namespace WebApplication1.Common
                 .HasOne(x => x.Group)
                 .WithMany(x => x.BirthdayWallScenarios)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_Birthday>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_Birthday)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_BirthdayWall>()
+                .HasOne(x => x.WallPost)
+                .WithOne(x => x.BirthdayWallHistory)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_GroupActions>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_GroupActions)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_Messages>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_Messages)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_Scenarios>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_Scenarios)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_SubscribersInChainSteps>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_SubscribersInChainSteps)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_WallPosts>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_WallPosts)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //History_Messages
 
             modelBuilder.Entity<CheckedSubscribersInRepostScenarios>()
                 .HasOne(x => x.Subscriber)

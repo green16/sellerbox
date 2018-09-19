@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VkNet.Enums.Filters;
+using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
 
 namespace WebApplication1.Common.Hubs
@@ -11,16 +13,19 @@ namespace WebApplication1.Common.Hubs
     public class SubscriberSyncHub : Hub
     {
         private readonly DatabaseContext _context;
-        private static readonly Dictionary<string, Pair<int, int>> syncTasks = new Dictionary<string, Pair<int, int>>(); //idGroup,total,position
-        private static readonly Dictionary<string, string> connectedToGroups = new Dictionary<string, string>();
-        private string DictionaryKey(int idGroup, SyncType syncType) => $"{idGroup}_{(byte)syncType}";
+        private readonly VkPoolService _vkPoolService;
 
-        public SubscriberSyncHub(DatabaseContext context)
+        private static readonly Dictionary<string, Pair<ulong, ulong>> syncTasks = new Dictionary<string, Pair<ulong, ulong>>(); //idGroup,total,position
+        private static readonly Dictionary<string, string> connectedToGroups = new Dictionary<string, string>();
+        private string DictionaryKey(long idGroup, SyncType syncType) => $"{idGroup}_{(byte)syncType}";
+
+        public SubscriberSyncHub(DatabaseContext context, VkPoolService vkPoolService)
         {
             _context = context;
+            _vkPoolService = vkPoolService;
         }
 
-        public async Task<Pair<int, int>> Subscribe(int idGroup, SyncType syncType)
+        public async Task<Pair<ulong, ulong>> Subscribe(long idGroup, SyncType syncType)
         {
             string dictionaryKey = DictionaryKey(idGroup, syncType);
 
@@ -40,7 +45,7 @@ namespace WebApplication1.Common.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task UnSubscribe(int idGroup, SyncType syncType)
+        public async Task UnSubscribe(long idGroup, SyncType syncType)
         {
             string dictionaryKey = DictionaryKey(idGroup, syncType);
 
@@ -48,14 +53,14 @@ namespace WebApplication1.Common.Hubs
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, dictionaryKey);
         }
 
-        public Pair<int, int> GetState(int idGroup, SyncType syncType)
+        public Pair<ulong, ulong> GetState(long idGroup, SyncType syncType)
         {
             string dictionaryKey = DictionaryKey(idGroup, syncType);
 
             return syncTasks.ContainsKey(dictionaryKey) ? syncTasks[dictionaryKey] : null;
         }
 
-        public async Task StartProcess(int idGroup, SyncType syncType)
+        public async Task StartProcess(long idGroup, SyncType syncType)
         {
             switch (syncType)
             {
@@ -72,9 +77,9 @@ namespace WebApplication1.Common.Hubs
             }
         }
 
-        private async Task Start(int idGroup, SyncType syncType)
+        private async Task Start(long idGroup, SyncType syncType)
         {
-            await _context.SyncHistory.AddAsync(new SyncHistory()
+            await _context.SyncHistory.AddAsync(new History_Synchronization()
             {
                 DtStart = DateTime.UtcNow,
                 IdGroup = idGroup,
@@ -85,16 +90,16 @@ namespace WebApplication1.Common.Hubs
             string dictionaryKey = DictionaryKey(idGroup, syncType);
 
             if (!syncTasks.ContainsKey(dictionaryKey))
-                syncTasks.Add(dictionaryKey, new Pair<int, int>(0, 0));
+                syncTasks.Add(dictionaryKey, new Pair<ulong, ulong>(0, 0));
             await Clients.Group(dictionaryKey).SendAsync("ProgressStarted");
         }
 
-        private async Task Progress(int idGroup, SyncType syncType, int total, int progress)
+        private async Task Progress(long idGroup, SyncType syncType, ulong total, ulong progress)
         {
             string dictionaryKey = DictionaryKey(idGroup, syncType);
 
             if (!syncTasks.ContainsKey(dictionaryKey))
-                syncTasks.Add(dictionaryKey, new Pair<int, int>(total, progress));
+                syncTasks.Add(dictionaryKey, new Pair<ulong, ulong>(total, progress));
             else
             {
                 var item = syncTasks[dictionaryKey];
@@ -104,9 +109,9 @@ namespace WebApplication1.Common.Hubs
             await Clients.Group(dictionaryKey).SendAsync("ProgressChanged", total, progress);
         }
 
-        private async Task Finish(int idGroup, SyncType syncType)
+        private async Task Finish(long idGroup, SyncType syncType)
         {
-            var lastTask = await _context.SyncHistory.LastAsync(x => x.IdGroup == idGroup && x.SyncType == syncType);
+            var lastTask = await _context.SyncHistory.Where(x => x.IdGroup == idGroup && x.SyncType == syncType).LastAsync();
             lastTask.DtEnd = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
@@ -117,20 +122,26 @@ namespace WebApplication1.Common.Hubs
             await Clients.Group(dictionaryKey).SendAsync("ProgressFinished");
         }
 
-        private async Task SyncSubscribers(int idGroup)
+        private async Task SyncSubscribers(long idGroup)
         {
             await Start(idGroup, SyncType.Subscribers);
 
-            string groupAccessToken = _context.Groups.FirstOrDefault(x => x.IdVk == idGroup)?.AccessToken;
+            var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
-            int offset = 0, count = 1000;
+            long offset = 0, count = 1000;
             do
             {
-                var vkMembers = await VkConnector.Methods.Groups.GetMembers(groupAccessToken, idGroup, "bdate,city,country,domain,photo_50,photo_400_orig,sex,blacklisted", offset, count);
+                var vkMembers = await vkApi.Groups.GetMembersAsync(new VkNet.Model.RequestParams.GroupsGetMembersParams()
+                {
+                    GroupId = idGroup.ToString(),
+                    Count = count,
+                    Offset = offset,
+                    Fields = UsersFields.BirthDate | UsersFields.City | UsersFields.Country | UsersFields.Domain | UsersFields.Photo50 | UsersFields.Photo400Orig | UsersFields.Sex | UsersFields.Sex,
+                });
 
-                await Progress(idGroup, SyncType.Subscribers, vkMembers.Count, offset);
+                await Progress(idGroup, SyncType.Subscribers, vkMembers.TotalCount, (ulong)offset);
 
-                foreach (var vkMember in vkMembers.Items)
+                foreach (var vkMember in vkMembers)
                 {
                     using (var transaction = await _context.Database.BeginTransactionAsync())
                     {
@@ -156,7 +167,8 @@ namespace WebApplication1.Common.Hubs
                                 {
                                     IdGroup = idGroup,
                                     IdVkUser = vkMember.Id,
-                                    IsBlocked = vkMember.IsBlacklisted,
+                                    IsBlocked = vkMember.Blacklisted,
+                                    DtAdd = DateTime.UtcNow
                                 };
                                 await _context.Subscribers.AddAsync(subscriber);
                             }
@@ -177,30 +189,36 @@ namespace WebApplication1.Common.Hubs
                 if (offset >= vkMembers.Count)
                     break;
 
-                await Progress(idGroup, SyncType.Subscribers, vkMembers.Count, offset);
+                await Progress(idGroup, SyncType.Subscribers, vkMembers.TotalCount, (ulong)offset);
             } while (true);
             await Finish(idGroup, SyncType.Subscribers);
         }
 
-        private async Task SyncChats(int idGroup)
+        private async Task SyncChats(long idGroup)
         {
             await Start(idGroup, SyncType.Chats);
 
-            string groupAccessToken = _context.Groups.FirstOrDefault(x => x.IdVk == idGroup)?.AccessToken;
+            var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
-            int offset = 0, count = 100;
+            ulong offset = 0, count = 100;
             do
             {
-                var conversationsInfo = await VkConnector.Methods.Messages.GetConversations(groupAccessToken, idGroup, "bdate,city,country,domain,photo_50,sex,blacklisted", offset, count);
+                var conversationsInfo = await vkApi.Messages.GetConversationsAsync(new VkNet.Model.RequestParams.GetConversationsParams()
+                {
+                    Count = count,
+                    Offset = offset,
+                    Extended = true,
+                    Fields = new string[] { "bdate", "city", "country", "domain", "photo_50", "sex", "blacklisted" }
+                });// VkConnector.Methods.Messages.GetConversations(groupAccessToken, idGroup, "bdate,city,country,domain,photo_50,sex,blacklisted", offset, count);
                 if (conversationsInfo == null)
                 {
                     System.Threading.Thread.Sleep(1000);
                     continue;
                 }
 
-                await Progress(idGroup, SyncType.Chats, conversationsInfo.Count, offset);
+                await Progress(idGroup, SyncType.Chats, (ulong)conversationsInfo.Count, offset);
 
-                foreach (var vkMember in conversationsInfo.Users)
+                foreach (var vkMember in conversationsInfo.Profiles)
                 {
                     using (var transaction = await _context.Database.BeginTransactionAsync())
                     {
@@ -225,14 +243,15 @@ namespace WebApplication1.Common.Hubs
                                 {
                                     IdGroup = idGroup,
                                     IdVkUser = vkMember.Id,
-                                    IsBlocked = vkMember.IsBlacklisted,
+                                    IsBlocked = vkMember.Blacklisted,
+                                    DtAdd = DateTime.UtcNow
 
                                 };
                                 await _context.AddAsync(subscriber);
                             }
                             subscriber.IsChatAllowed = conversationsInfo.Items
                                 .Where(x => x.Conversation != null && x.Conversation.Peer != null && x.Conversation.Peer.Id == vkMember.Id)
-                                .Select(x => x.Conversation?.CanWrite?.IsAllowed)
+                                .Select(x => x.Conversation?.CanWrite?.Allowed)
                                 .FirstOrDefault();
 
                             await _context.SaveChangesAsync();
@@ -247,10 +266,10 @@ namespace WebApplication1.Common.Hubs
                 }
 
                 offset += count;
-                if (offset >= conversationsInfo.Count)
+                if (offset >= (ulong)conversationsInfo.Count)
                     break;
 
-                await Progress(idGroup, SyncType.Chats, conversationsInfo.Count, offset);
+                await Progress(idGroup, SyncType.Chats, (ulong)conversationsInfo.Count, offset);
             } while (true);
             await Finish(idGroup, SyncType.Chats);
         }

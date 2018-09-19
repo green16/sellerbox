@@ -13,19 +13,19 @@ namespace VkConnector.Methods
     {
         public static async Task Send(string groupAccessToken, string text, IEnumerable<string> attachments, Keyboard keyboard, ICollection<int> userIds)
         {
-            var baseParameters = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(text))
-                baseParameters.Add("message", text);
-            if (attachments != null && attachments.Any())
-                baseParameters.Add("attachment", string.Join(',', attachments));
-            if (keyboard != null)
-                baseParameters.Add("keyboard", JsonConvert.SerializeObject(keyboard));
-
-            string jsonResult = await SendCommand("messages.send", groupAccessToken, null, new Dictionary<string, object>(baseParameters)
+            var parameters = new Dictionary<string, object>()
             {
                 { "user_ids", string.Join(',', userIds) }
-            });
-            
+            };
+            if (!string.IsNullOrEmpty(text))
+                parameters.Add("message", text);
+            if (attachments != null && attachments.Any())
+                parameters.Add("attachment", string.Join(',', attachments));
+            if (keyboard != null)
+                parameters.Add("keyboard", JsonConvert.SerializeObject(keyboard));
+
+            string jsonResult = await SendCommand("messages.send", groupAccessToken, null, parameters);
+
             if (JsonConvert.DeserializeObject<BaseError>(jsonResult).Code > 0) { }
         }
 

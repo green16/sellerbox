@@ -23,11 +23,13 @@ namespace WebApplication1.Controllers
 
         private readonly DatabaseContext _context;
         private readonly UserHelperService _userHelperService;
+        private readonly VkPoolService _vkPoolService;
 
-        public MessagingController(DatabaseContext context, UserHelperService userHelperService)
+        public MessagingController(DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
         {
             _context = context;
             _userHelperService = userHelperService;
+            _vkPoolService = vkPoolService;
         }
 
         [HttpGet]
@@ -57,7 +59,7 @@ namespace WebApplication1.Controllers
             if (formFile == null)
                 throw new FileNotFoundException();
 
-            string filename = ContentDispositionHeaderValue.Parse(formFile.ContentDisposition).FileName.Trim('"');
+            string fileName = ContentDispositionHeaderValue.Parse(formFile.ContentDisposition).FileName.Trim('"');
 
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
             string groupAccessToken = await _context.Groups.Where(x => x.IdVk == selectedGroup.Key).Select(x => x.AccessToken).FirstOrDefaultAsync();
@@ -65,7 +67,7 @@ namespace WebApplication1.Controllers
             Files file = new Files()
             {
                 DtAdd = DateTime.UtcNow,
-                Name = filename,
+                Name = fileName,
                 Size = formFile.Length,
                 Content = new byte[formFile.Length],
             };
@@ -77,8 +79,19 @@ namespace WebApplication1.Controllers
                 file.Content = ms.ToArray();
             }
 
-            string vkFileUrl = await VkHelper.UploadMessageAttachment(groupAccessToken, selectedGroup.Key, file);
-            file.VkUrl = vkFileUrl;
+            var vkApi = await _vkPoolService.GetGroupVkApi(selectedGroup.Key);
+
+            var uploadServerInfo = await vkApi.Photo.GetMessagesUploadServerAsync(selectedGroup.Key);
+
+            string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
+            System.IO.File.WriteAllBytes(tempFilePath, file.Content);
+            string responseJson;
+            using (var wc = new System.Net.WebClient())
+                responseJson = System.Text.Encoding.ASCII.GetString(wc.UploadFile(uploadServerInfo.UploadUrl, tempFilePath));
+
+            var photo = (await vkApi.Photo.SaveMessagesPhotoAsync(responseJson)).FirstOrDefault();
+
+            file.VkUrl = Newtonsoft.Json.JsonConvert.SerializeObject(photo);
 
             await _context.Files.AddAsync(file);
             await _context.SaveChangesAsync();
@@ -130,9 +143,9 @@ namespace WebApplication1.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
             var message = await DbHelper.AddMessage(_context, groupInfo.Key, data.Message, data.GetVkKeyboard(), data.IsImageFirst, data.Files.Select(x => x.Id));
-            int[] userIds = null;
+            long[] userIds = null;
             if (data.IsSelfSend)
-                userIds = new int[] { await _userHelperService.GetUserIdVk(User) };
+                userIds = new long[] { await _userHelperService.GetUserIdVk(User) };
             else
                 userIds = await _context.Subscribers
                     .Where(x => x.IdGroup == data.IdGroup)

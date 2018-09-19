@@ -65,7 +65,7 @@
                 <div class="dropdown-menu" aria-labelledby="userDropdown">
                     @if (UserHelperService.HasSelectedGroup(User))
                     {
-                        KeyValuePair<int, string> selectedGroup = UserHelperService.GetSelectedGroup(User);
+                        KeyValuePair<long, string> selectedGroup = UserHelperService.GetSelectedGroup(User);
                         <a asp-area="" asp-controller="Groups" asp-action="IndexConnected" class="dropdown-item nav-item nav-link">@selectedGroup.Value</a>
                     }
                     else

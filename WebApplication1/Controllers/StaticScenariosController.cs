@@ -7,6 +7,7 @@ using WebApplication1.Common;
 using WebApplication1.Common.Helpers;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
+using WebApplication1.ViewModels.Shared;
 using WebApplication1.ViewModels.StaticScenarios;
 
 namespace WebApplication1.Controllers
@@ -16,6 +17,7 @@ namespace WebApplication1.Controllers
     {
         private readonly UserHelperService _userHelperService;
         private readonly DatabaseContext _context;
+
         public StaticScenariosController(DatabaseContext context, UserHelperService userHelperService)
         {
             _context = context;
@@ -85,7 +87,7 @@ namespace WebApplication1.Controllers
                     SendAt = scenario.SendAt,
                     Message = message.Text,
                     IsImageFirst = message.IsImageFirst,
-                    Files = message.Files.Select(x => new ViewModels.Shared.FileModel()
+                    Files = message.Files.Select(x => new FileModel()
                     {
                         Id = x.IdFile,
                         Name = _context.Files.FirstOrDefault(y => y.Id == x.IdFile)?.Name,
@@ -123,7 +125,10 @@ namespace WebApplication1.Controllers
                     .FirstOrDefaultAsync(x => x.Id == model.IdMessage.Value);
 
                 message.Text = model.Message;
-                message.Keyboard = model.GetVkKeyboard()?.Serialize();
+
+                var keyboard = model.GetVkKeyboard();
+                message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
+
                 var newFilesInMessage = model.Files.Select(x => x.Id)
                     .Except(message.Files.Select(x => x.IdFile))
                     .Select(x => new FilesInMessage()
@@ -155,6 +160,101 @@ namespace WebApplication1.Controllers
             scenario.SendAt = model.SendAt;
 
             await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BirthdayWall()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            BirthdayWallScenarios scenario = await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+
+            BirthdayWallSchedulerViewModel model = null;
+            if (scenario != null)
+            {
+                Messages message = await _context.Messages
+                    .Include(x => x.Files)
+                    .FirstOrDefaultAsync(x => x.Id == scenario.IdMessage);
+
+                uint idx = 0;
+                model = new BirthdayWallSchedulerViewModel()
+                {
+                    IdMessage = scenario.IdMessage,
+                    SendAt = scenario.SendAt,
+
+                    Message = message.Text,
+                    Files = message.Files.Select(y => new FileModel()
+                    {
+                        Id = y.IdFile,
+                        Name = _context.Files.FirstOrDefault(z => y.IdFile == z.Id)?.Name,
+                        Index = idx++
+                    }).ToList()
+                };
+            }
+            else
+                model = new BirthdayWallSchedulerViewModel();
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult BirthdayWall(BirthdayWallSchedulerViewModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveBirthdayWall(BirthdayWallSchedulerViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View("BirthdayWall", model);
+
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var idUser = await _userHelperService.GetUserIdVk(User);
+
+            Messages message = null;
+            if (model.IdMessage.HasValue)
+            {
+                message = await _context.Messages
+                    .Include(x => x.Files)
+                    .FirstOrDefaultAsync(x => x.Id == model.IdMessage.Value);
+
+                message.Text = model.Message;
+                var newFilesInMessage = model.Files.Select(x => x.Id)
+                    .Except(message.Files.Select(x => x.IdFile))
+                    .Select(x => new FilesInMessage()
+                    {
+                        IdFile = x,
+                        IdMessage = message.Id
+                    });
+
+                await _context.FilesInMessage.AddRangeAsync(newFilesInMessage);
+            }
+            else
+                message = await DbHelper.AddMessage(_context, groupInfo.Key, model.Message, null, false, model.Files.Select(x => x.Id));
+
+            BirthdayWallScenarios scenario = _context.BirthdayWallScenarios.Include(x => x.Message).FirstOrDefault(x => x.IdGroup == groupInfo.Key);
+
+            if (scenario == null)
+            {
+                scenario = new BirthdayWallScenarios()
+                {
+                    IdGroup = groupInfo.Key,
+                    IsEnabled = true
+                };
+                await _context.BirthdayWallScenarios.AddAsync(scenario);
+            }
+            if (!model.IdMessage.HasValue)
+                scenario.IdMessage = message.Id;
+
+            scenario.SendAt = model.SendAt;
+            scenario.IdVkUser = idUser;
+
+            await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
     }

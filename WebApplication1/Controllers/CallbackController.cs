@@ -1,31 +1,63 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using VkConnector.Events;
-using VkConnector.Models.Common;
 using WebApplication1.Common;
 using WebApplication1.Common.Helpers;
+using WebApplication1.Common.Services;
+using WebApplication1.Models.Database;
 
 namespace WebApplication1.Controllers
 {
     public class CallbackController : Controller
     {
         private readonly DatabaseContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly VkPoolService _vkPoolService;
 
-        public CallbackController(DatabaseContext context, IConfiguration Configuration)
+        public CallbackController(DatabaseContext context, VkPoolService vkPoolService)
         {
             _context = context;
-            _configuration = Configuration;
+            _vkPoolService = vkPoolService;
+        }
+
+        private async Task<Subscribers> CreateSubscriber(long idGroup, long idVkUser)
+        {
+            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
+            if (subscriber != null)
+                return subscriber;
+
+            var vkUser = await _context.VkUsers.FirstOrDefaultAsync(x => x.IdVk == idVkUser);
+            if (vkUser == null)
+            {
+                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
+
+                var user = (await vkApi.Users.GetAsync(new long[] { idVkUser }))?.FirstOrDefault();
+                if (user == null)
+                    return null;
+
+                vkUser = VkUsers.FromUser(user);
+                await _context.VkUsers.AddAsync(vkUser);
+                await _context.SaveChangesAsync();
+            }
+
+            subscriber = new Subscribers()
+            {
+                IdVkUser = vkUser.IdVk,
+                IdGroup = idGroup,
+                DtAdd = DateTime.UtcNow
+            };
+            await _context.Subscribers.AddAsync(subscriber);
+            await _context.SaveChangesAsync();
+
+            return subscriber;
         }
 
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> Vk([FromBody]CallbackMessage message)
+        public async Task<IActionResult> Vk([FromBody]Models.Vk.CallbackMessage message)
         {
             if (await _context.GroupAdmins.AllAsync(x => x.IdGroup != message.IdGroup))
                 return Content("Ok");
@@ -33,7 +65,7 @@ namespace WebApplication1.Controllers
             if (message == null)
                 throw new Exception("deserialize error");
 
-            string json = message.Object?.ToString(Newtonsoft.Json.Formatting.None);
+            string json = message.Object?.ToString(Formatting.None);
 
             switch (message.Type)
             {
@@ -55,79 +87,143 @@ namespace WebApplication1.Controllers
                         if (_context.VkCallbackMessages.Any(x => x.Type == message.Type && x.IdGroup == message.IdGroup && x.Object == json))
                             return Content("ok");
 
-                        MessageNew innerMessage = message.Object.ToObject<MessageNew>();
+                        var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                        if (innerMessage.IdUser <= 0)
+                        if (!innerMessage.FromId.HasValue || innerMessage.FromId.Value <= 0)
                             break;
 
-                        string accessToken = await _context.Groups.Where(x => x.IdVk == message.IdGroup).Select(x => x.AccessToken).FirstOrDefaultAsync();
-
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdGroup == message.IdGroup && x.IdVkUser == innerMessage.IdUser);
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.FromId.Value);
                         if (subscriber == null)
+                            break;
+
+                        await _context.History_Messages.AddAsync(new History_Messages()
                         {
-                            subscriber = await CallbackHelper.CreateNewSubscriber(_context, message.IdGroup, innerMessage.IdUser);
-                            await _context.Subscribers.AddAsync(subscriber);
-                            await _context.SaveChangesAsync();
-                        }
+                            Dt = DateTime.UtcNow,
+                            IsOutgoingMessage = false,
+                            IdSubscriber = subscriber.Id
+                        });
+                        await _context.SaveChangesAsync();
+
+                        var vkApi = await _vkPoolService.GetGroupVkApi(message.IdGroup);
+
                         if (innerMessage.Text.ToLower() == "стоп")
                         {
-                            if (subscriber.IsChatAllowed.HasValue && !subscriber.IsChatAllowed.Value)
-                                break;
-                            subscriber.IsChatAllowed = false;
+                            await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                            {
+                                ActionType = Models.Database.Common.GroupActionTypes.CancelMessaging,
+                                IdGroup = message.IdGroup,
+                                IdSubscriber = subscriber.Id,
+                                Dt = DateTime.UtcNow
+                            });
+                            if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed.Value)
+                            {
+                                subscriber.IsChatAllowed = false;
+
+                                await _context.History_Messages.AddAsync(new History_Messages()
+                                {
+                                    Dt = DateTime.UtcNow,
+                                    IsOutgoingMessage = true,
+                                    IdSubscriber = subscriber.Id,
+                                    Text = "Вы успешно отписаны от сообщений группы"
+                                });
+
+                                await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                                {
+                                    Message = "Вы успешно отписаны от сообщений группы",
+                                    UserId = innerMessage.FromId
+                                });
+                            }
+
                             await _context.SaveChangesAsync();
-                            await VkConnector.Methods.Messages.Send(accessToken, "Вы успешно отписаны от сообщений группы", null, null, new int[] { innerMessage.IdUser });
                             break;
                         }
                         else if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed == false)
                         {
+                            await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                            {
+                                ActionType = Models.Database.Common.GroupActionTypes.AcceptMessaging,
+                                IdGroup = message.IdGroup,
+                                IdSubscriber = subscriber.Id,
+                                Dt = DateTime.UtcNow
+                            });
+
                             subscriber.IsChatAllowed = true;
                             await _context.SaveChangesAsync();
                         }
 
-                        var idAnswerMessage = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, innerMessage);
-                        bool markAsRead = idAnswerMessage.HasValue;
+                        var idAnswerMessage = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, subscriber.Id, innerMessage);
+                        bool markAsRead = !idAnswerMessage.HasValue;
 
                         if (idAnswerMessage.HasValue)
                         {
                             MessageHelper messageHelper = new MessageHelper(_context);
-                            await messageHelper.SendMessages(message.IdGroup, idAnswerMessage.Value, innerMessage.IdUser);
+                            var tasks = new Task[]
+                            {
+                                messageHelper.SendMessages(vkApi, message.IdGroup, idAnswerMessage.Value, innerMessage.FromId.Value),
+                                _context.History_Messages.AddAsync(new History_Messages()
+                                {
+                                    Dt = DateTime.UtcNow,
+                                    IsOutgoingMessage = true,
+                                    IdSubscriber = subscriber.Id,
+                                    IdMessage = idAnswerMessage
+                                }).ContinueWith(result => _context.SaveChanges())
+                            };
+                            await Task.WhenAll(tasks);
                         }
                         else if (markAsRead)
-                            await VkConnector.Methods.Messages.MarkAsRead(accessToken, message.IdGroup, innerMessage.IdUser);
+                            await vkApi.Messages.MarkAsReadAsync(innerMessage.FromId.ToString(), groupId: message.IdGroup);
                         break;
                     }
                 case "message_reply":
                     {
-                        MessageReply innerMessage = message.Object.ToObject<MessageReply>();
                         break;
                     }
                 case "message_edit":
                     {
-                        MessageEdit innerMessage = message.Object.ToObject<MessageEdit>();
                         break;
                     }
                 case "message_allow":
                     {
-                        MessageAllow innerMessage = message.Object.ToObject<MessageAllow>();
+                        var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdGroup == message.IdGroup && x.IdVkUser == innerMessage.IdUser);
-                        if (subscriber != null && (!subscriber.IsChatAllowed.HasValue || !subscriber.IsChatAllowed.Value))
-                        {
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.FromId.Value);
+                        if (subscriber == null)
+                            break;
+
+                        if (!subscriber.IsChatAllowed.HasValue || !subscriber.IsChatAllowed.Value)
                             subscriber.IsChatAllowed = true;
-                            await _context.SaveChangesAsync();
-                        }
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                        {
+                            ActionType = Models.Database.Common.GroupActionTypes.AcceptMessaging,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "message_deny":
                     {
-                        MessageDeny innerMessage = message.Object.ToObject<MessageDeny>();
+                        var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdGroup == message.IdGroup && x.IdVkUser == innerMessage.IdUser);
-                        if (subscriber != null && (!subscriber.IsChatAllowed.HasValue || (subscriber.IsChatAllowed.HasValue && subscriber.IsChatAllowed.Value)))
-                        {
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.FromId.Value);
+                        if (subscriber == null)
+                            break;
+
+                        if (!subscriber.IsChatAllowed.HasValue || (subscriber.IsChatAllowed.HasValue && subscriber.IsChatAllowed.Value))
                             subscriber.IsChatAllowed = false;
-                            await _context.SaveChangesAsync();
-                        }
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                        {
+                            ActionType = Models.Database.Common.GroupActionTypes.BlockMessaging,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "photo_new":
@@ -176,16 +272,85 @@ namespace WebApplication1.Controllers
                     }
                 case "wall_post_new":
                     {
-                        WallPostNew newPost = message.Object.ToObject<WallPostNew>();
-                        await CallbackHelper.AddWallPost(_context, message.IdGroup, newPost);
+                        var newPost = VkNet.Model.Wall.FromJson(new VkNet.Utils.VkResponse(message.Object));
+                        if (!newPost.Id.HasValue || await _context.WallPosts.AnyAsync(x => x.IdGroup == message.IdGroup && x.IdVk == newPost.Id))
+                            break;
+
+                        var newWallPost = new WallPosts()
+                        {
+                            DtAdd = newPost.Date ?? DateTime.UtcNow,
+                            IdGroup = message.IdGroup,
+                            IdVk = newPost.Id.Value,
+                            Text = newPost.Text
+                        };
+
+                        await _context.WallPosts.AddAsync(newWallPost);
+                        await _context.SaveChangesAsync();
+
+                        var subscriber = await CreateSubscriber(message.IdGroup, newPost.FromId.Value);
+                        if (subscriber == null)
+                            break;
+
+                        await _context.History_WallPosts.AddAsync(new History_WallPosts()
+                        {
+                            Dt = DateTime.UtcNow,
+                            IdPost = newWallPost.Id,
+                            IdSubscriber = subscriber.Id,
+                            IsRepost = false
+                        });
+                        await _context.SaveChangesAsync();
+
                         break;
                     }
                 case "wall_repost":
                     {
-                        WallRepost repost = message.Object.ToObject<WallRepost>();
-                        if (repost.IdAuthor <= 0)
+                        var repost = VkNet.Model.Wall.FromJson(new VkNet.Utils.VkResponse(message.Object));
+                        if (!repost.FromId.HasValue || repost.FromId.Value <= 0)
                             break;
-                        await CallbackHelper.AddRepost(_context, message.IdGroup, repost);
+
+                        var subscriber = await CreateSubscriber(message.IdGroup, repost.FromId.Value);
+                        if (subscriber == null)
+                            break;
+
+                        var repostedPost = repost.CopyHistory.FirstOrDefault();
+
+                        var post = await _context.WallPosts.FirstOrDefaultAsync(x => x.IdGroup == message.IdGroup && x.IdVk == repostedPost.Id);
+                        if (post == null)
+                        {
+                            post = new WallPosts()
+                            {
+                                DtAdd = repostedPost.Date ?? DateTime.UtcNow,
+                                IdGroup = message.IdGroup,
+                                IdVk = repostedPost.Id.Value,
+                            };
+                            await _context.WallPosts.AddAsync(post);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        bool hasSubscriberRepost = await _context.SubscriberReposts
+                            .Include(x => x.WallPost)
+                            .Include(x => x.Subscriber)
+                            .AnyAsync(x => x.WallPost.IdVk == repostedPost.Id && x.Subscriber.IdVkUser == repost.FromId && x.DtRepost == repost.Date);
+
+                        if (!hasSubscriberRepost)
+                            await _context.SubscriberReposts.AddAsync(new SubscriberReposts()
+                            {
+                                DtRepost = repost.Date ?? DateTime.UtcNow,
+                                IdPost = post.Id,
+                                IdSubscriber = subscriber.Id,
+                                Text = repost.Text,
+                            });
+
+                        await _context.History_WallPosts.AddAsync(new History_WallPosts()
+                        {
+                            Dt = DateTime.UtcNow,
+                            IdPost = post.Id,
+                            IdSubscriber = subscriber.Id,
+                            IsRepost = true
+                        });
+
+                        await _context.SaveChangesAsync();
+
                         break;
                     }
                 case "wall_reply_new":
@@ -228,56 +393,101 @@ namespace WebApplication1.Controllers
                     {
                         break;
                     }
-                case "market_comment_restore":
+                case "market_comment_delete":
                     {
                         break;
                     }
-                case "market_comment_delete":
+                case "market_comment_restore":
                     {
                         break;
                     }
                 case "group_leave":
                     {
-                        GroupLeave innerMessage = message.Object.ToObject<GroupLeave>();
+                        var innerMessage = message.Object.ToObject<Models.Vk.GroupLeave>();
 
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdGroup == message.IdGroup && x.IdVkUser == innerMessage.IdUser);
-                        if (subscriber != null)
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.IdUser);
+                        if (subscriber == null)
+                            break;
+
+                        subscriber.IsUnsubscribed = true;
+                        subscriber.IsSubscribedToGroup = false;
+                        subscriber.DtUnsubscribe = DateTime.UtcNow;
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
                         {
-                            subscriber.IsUnsubscribed = true;
-                            subscriber.IsSubscribedToGroup = false;
-                            subscriber.DtUnsubscribe = DateTime.UtcNow;
-                            await _context.SaveChangesAsync();
-                        }
+                            ActionType = Models.Database.Common.GroupActionTypes.LeaveGroup,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "group_join":
                     {
-                        GroupJoin innerMessage = message.Object.ToObject<GroupJoin>();
-                        await CallbackHelper.NewUserSubscribed(_context, message.IdGroup, innerMessage.IdUser);
+                        var innerMessage = message.Object.ToObject<Models.Vk.GroupJoin>();
+                        if (!innerMessage.IdUser.HasValue || innerMessage.IdUser.Value <= 0)
+                            break;
+
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.IdUser.Value);
+                        if (subscriber == null)
+                            break;
+
+                        subscriber.IsUnsubscribed = false;
+                        subscriber.DtUnsubscribe = null;
+                        subscriber.IsSubscribedToGroup = true;
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                        {
+                            ActionType = Models.Database.Common.GroupActionTypes.JoinGroup,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "user_block":
                     {
-                        UserBlock userBlock = message.Object.ToObject<UserBlock>();
+                        var innerMessage = message.Object.ToObject<Models.Vk.UserBlock>();
 
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdVkUser == userBlock.IdUser && x.IdGroup == message.IdGroup);
-                        if (subscriber != null)
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.IdUser);
+                        if (subscriber == null)
+                            break;
+
+                        subscriber.IsBlocked = true;
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
                         {
-                            subscriber.IsBlocked = true;
-                            await _context.SaveChangesAsync();
-                        }
+                            ActionType = Models.Database.Common.GroupActionTypes.Blocked,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "user_unblock":
                     {
-                        UserUnblock userUnBlock = message.Object.ToObject<UserUnblock>();
+                        var innerMessage = message.Object.ToObject<Models.Vk.UserUnblock>();
 
-                        var subscriber = _context.Subscribers.FirstOrDefault(x => x.IdVkUser == userUnBlock.IdUser && x.IdGroup == message.IdGroup);
-                        if (subscriber != null)
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.IdUser);
+                        if (subscriber == null)
+                            break;
+
+                        subscriber.IsBlocked = false;
+
+                        await _context.History_GroupActions.AddAsync(new History_GroupActions()
                         {
-                            subscriber.IsBlocked = false;
-                            await _context.SaveChangesAsync();
-                        }
+                            ActionType = Models.Database.Common.GroupActionTypes.Unblocked,
+                            IdGroup = message.IdGroup,
+                            IdSubscriber = subscriber.Id,
+                            Dt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
                         break;
                     }
                 case "poll_vote_new":
@@ -300,11 +510,15 @@ namespace WebApplication1.Controllers
                     {
                         break;
                     }
+                case "vkpay_transaction":
+                    {
+                        break;
+                    }
                 default:
                     throw new NotImplementedException($"type = {message.Type} not implemented");
             }
 
-            await _context.VkCallbackMessages.AddAsync(new Models.Database.VkCallbackMessages()
+            await _context.VkCallbackMessages.AddAsync(new VkCallbackMessages()
             {
                 Dt = DateTime.UtcNow,
                 Type = message.Type,

@@ -7,7 +7,6 @@ namespace WebApplication1.ViewModels.Chains
     public class EditMessageViewModel : MessageViewModel
     {
         public Guid? IdChainContent { get; set; }
-        public Guid? IdMessage { get; set; }
 
         public Guid IdChain { get; set; }
 

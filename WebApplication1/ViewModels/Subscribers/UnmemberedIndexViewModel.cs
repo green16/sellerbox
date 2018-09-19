@@ -6,7 +6,7 @@ namespace WebApplication1.ViewModels.Subscribers
     public class UnmemberedIndexViewModel
     {
         public Guid Id { get; set; }
-        public int IdVk { get; set; }
+        public long IdVk { get; set; }
         public Uri Link { get; set; }
         [Display(Name = "Фото")]
         public Uri Photo { get; set; }

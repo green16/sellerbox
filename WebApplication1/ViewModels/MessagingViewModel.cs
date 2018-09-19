@@ -4,7 +4,7 @@ namespace WebApplication1.ViewModels
 {
     public class MessagingViewModel : MessageViewModel
     {
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public string IsSelfSendString { get; set; }
         public bool IsSelfSend
         {

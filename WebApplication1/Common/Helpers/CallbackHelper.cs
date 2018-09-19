@@ -2,8 +2,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using VkConnector.Events;
-using VkConnector.Models.Objects;
 using WebApplication1.Models.Database;
 using WebApplication1.Models.Database.Common;
 
@@ -11,61 +9,30 @@ namespace WebApplication1.Common.Helpers
 {
     public static class CallbackHelper
     {
-        public static async Task<Subscribers> CreateNewSubscriber(DatabaseContext dbContext, int idGroup, int idVkUser)
-        {
-            var vkUser = dbContext.VkUsers.FirstOrDefault(x => x.IdVk == idVkUser);
-            bool isBlocked = false;
-            if (vkUser == null)
-            {
-                string groupAccessToken = dbContext.Groups.FirstOrDefault(x => x.IdVk == idGroup)?.AccessToken;
-
-                User user = (await VkConnector.Methods.Users.Get(groupAccessToken, idVkUser))?.FirstOrDefault();
-                isBlocked = user.IsBlacklisted;
-
-                vkUser = VkUsers.FromUser(user);
-                await dbContext.VkUsers.AddAsync(vkUser);
-                await dbContext.SaveChangesAsync();
-            }
-
-            return new Subscribers()
-            {
-                IdVkUser = vkUser.IdVk,
-                IdGroup = idGroup,
-                IsBlocked = isBlocked
-            };
-        }
-        public static async Task NewUserSubscribed(DatabaseContext dbContext, int idGroup, int idVkUser)
-        {
-            var subscriber = dbContext.Subscribers.FirstOrDefault(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
-            if (subscriber == null)
-            {
-                subscriber = await CreateNewSubscriber(dbContext, idGroup, idVkUser);
-                await dbContext.Subscribers.AddAsync(subscriber);
-            }
-            else
-            {
-                subscriber.IsUnsubscribed = false;
-                subscriber.DtUnsubscribe = null;
-            }
-            subscriber.IsSubscribedToGroup = true;
-
-            await dbContext.SaveChangesAsync();
-        }
-
-        public static async Task<Guid?> ReplyToMessage(DatabaseContext dbContext, int idGroup, MessageNew message)
+        public static async Task<Guid?> ReplyToMessage(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message)
         {
             if (!string.IsNullOrWhiteSpace(message.Text))
             {
-                var scenario = dbContext.Scenarios
+                var scenario = await dbContext.Scenarios
                     .Where(x => x.IsEnabled)
                     .Where(x => x.IdGroup == idGroup)
                     .Include(x => x.Group)
                     .Include(x => x.Group.GroupAdmins)
                     .Where(x => x.Group.GroupAdmins.Any())
-                    .FirstOrDefault(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Text.ToLower()) || (!x.IsStrictMatch && message.Text.ToLower().Contains(x.InputMessage.ToLower())));
+                    .FirstOrDefaultAsync(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Text.ToLower()) || (!x.IsStrictMatch && message.Text.ToLower().Contains(x.InputMessage.ToLower())));
 
                 if (scenario != null)
-                    return await ScenarioReply(dbContext, idGroup, message, scenario);
+                {
+                    await dbContext.History_Scenarios.AddAsync(new History_Scenarios()
+                    {
+                        IdScenario = scenario.Id,
+                        IdSubscriber = idSubscriber,
+                        Dt = DateTime.UtcNow
+                    });
+                    await dbContext.SaveChangesAsync();
+
+                    return await ScenarioReply(dbContext, idGroup, idSubscriber, message, scenario);
+                }
             }
             //Тут бот или картинки
 
@@ -74,35 +41,39 @@ namespace WebApplication1.Common.Helpers
 
         private static async Task AddSubscriberToChain(DatabaseContext dbContext, Guid idSubscriber, Guid idChain)
         {
-            var firstChainStepId = dbContext.ChainContents.Where(x => x.IdChain == idChain).OrderBy(x => x.Index).Select(x => x.Id).FirstOrDefault();
+            var firstChainStepId = await dbContext.ChainContents.Where(x => x.IdChain == idChain).OrderBy(x => x.Index).Select(x => x.Id).FirstOrDefaultAsync();
             if (firstChainStepId == default(Guid))
                 return;
 
-            var subscriberInChain = new SubscribersInChains()
+            await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
             {
                 IdSubscriber = idSubscriber,
                 IdChainStep = firstChainStepId,
                 DtAdd = DateTime.UtcNow
-            };
+            });
 
-            await dbContext.SubscribersInChains.AddAsync(subscriberInChain);
+            await dbContext.History_SubscribersInChainSteps.AddAsync(new History_SubscribersInChainSteps()
+            {
+                IdChainStep = firstChainStepId,
+                IdSubscriber = idSubscriber,
+                DtAdd = DateTime.UtcNow
+            });
+
             await dbContext.SaveChangesAsync();
         }
 
-        private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, int idGroup, MessageNew message, Scenarios scenario)
+        private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message, Scenarios scenario)
         {
             if (scenario.Action == ScenarioActions.Message)
                 return scenario.IdMessage;
 
-            var subscriber = dbContext.Subscribers.FirstOrDefault(x => x.IdGroup == idGroup && x.IdVkUser == message.IdUser);
-
             bool isSubscriberInChain = !scenario.IdChain.HasValue ? false : dbContext.SubscribersInChains
-                .Where(x => x.IdSubscriber == subscriber.Id)
+                .Where(x => x.IdSubscriber == idSubscriber)
                 .Include(x => x.ChainStep)
                 .Any(x => x.ChainStep.IdChain == scenario.IdChain.Value);
 
             bool isSubscriberInChain2 = !scenario.IdChain2.HasValue ? false : dbContext.SubscribersInChains
-                .Where(x => x.IdSubscriber == subscriber.Id)
+                .Where(x => x.IdSubscriber == idSubscriber)
                 .Include(x => x.ChainStep)
                 .Any(x => x.ChainStep.IdChain == scenario.IdChain2.Value);
 
@@ -113,7 +84,7 @@ namespace WebApplication1.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, subscriber.Id, scenario.IdChain.Value);
+                        await AddSubscriberToChain(dbContext, idSubscriber, scenario.IdChain.Value);
                         break;
                     }
                 case ScenarioActions.ChangeChain:
@@ -122,7 +93,7 @@ namespace WebApplication1.Common.Helpers
                         {
                             var subscriberInChain = dbContext.SubscribersInChains
                                 .Include(x => x.ChainStep)
-                                .Where(x => x.IdSubscriber == subscriber.Id && x.ChainStep.IdChain == scenario.IdChain2.Value);
+                                .Where(x => x.IdSubscriber == idSubscriber && x.ChainStep.IdChain == scenario.IdChain2.Value);
                             dbContext.SubscribersInChains.RemoveRange(subscriberInChain);
                             await dbContext.SaveChangesAsync();
                         }
@@ -130,7 +101,7 @@ namespace WebApplication1.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, subscriber.Id, scenario.IdChain.Value);
+                        await AddSubscriberToChain(dbContext, idSubscriber, scenario.IdChain.Value);
 
                         break;
                     }
@@ -141,7 +112,7 @@ namespace WebApplication1.Common.Helpers
 
                         var subscriberInChain = dbContext.SubscribersInChains
                                 .Include(x => x.ChainStep)
-                                .Where(x => x.IdSubscriber == subscriber.Id && x.ChainStep.IdChain == scenario.IdChain2.Value);
+                                .Where(x => x.IdSubscriber == idSubscriber && x.ChainStep.IdChain == scenario.IdChain2.Value);
                         dbContext.SubscribersInChains.RemoveRange(subscriberInChain);
                         await dbContext.SaveChangesAsync();
 
@@ -152,67 +123,6 @@ namespace WebApplication1.Common.Helpers
             }
 
             return null;
-        }
-
-        public static async Task AddWallPost(DatabaseContext dbContext, int idGroup, WallPostNew newPost)
-        {
-            if (dbContext.WallPosts.Any(x => x.IdGroup == idGroup && x.IdVk == newPost.Id))
-                return;
-
-            var newWallPost = new WallPosts()
-            {
-                DtAdd = newPost.Dt,
-                IdGroup = idGroup,
-                IdVk = newPost.Id,
-                Text = newPost.Text
-            };
-
-            await dbContext.WallPosts.AddAsync(newWallPost);
-            await dbContext.SaveChangesAsync();
-        }
-
-        public static async Task AddRepost(DatabaseContext dbContext, int idGroup, WallRepost repost)
-        {
-            var subscriber = dbContext.Subscribers.FirstOrDefault(x => x.IdGroup == idGroup && x.IdVkUser == repost.IdAuthor);
-            if (subscriber == null)
-            {
-                subscriber = await CreateNewSubscriber(dbContext, idGroup, repost.IdAuthor);
-                await dbContext.Subscribers.AddAsync(subscriber);
-                await dbContext.SaveChangesAsync();
-            }
-            var repostedPost = repost.Copy_history.FirstOrDefault();
-
-            bool hasSubscriberRepost = dbContext.SubscriberReposts
-                .Include(x => x.WallPost)
-                .Include(x => x.Subscriber)
-                .Any(x => x.WallPost.IdVk == repostedPost.Id && x.Subscriber.IdVkUser == repost.IdAuthor && x.DtRepost == repost.Dt);
-
-            if (hasSubscriberRepost)
-                return;
-
-            var post = dbContext.WallPosts.FirstOrDefault(x => x.IdGroup == idGroup && x.IdVk == repostedPost.Id);
-            if (post == null)
-            {
-                post = new WallPosts()
-                {
-                    DtAdd = repostedPost.Dt,
-                    IdGroup = idGroup,
-                    IdVk = repostedPost.Id,
-                };
-                await dbContext.WallPosts.AddAsync(post);
-                await dbContext.SaveChangesAsync();
-            }
-
-            var subscriberRepost = new SubscriberReposts()
-            {
-                DtRepost = repost.Dt,
-                IdPost = post.Id,
-                IdSubscriber = subscriber.Id,
-                Text = repost.Text,
-            };
-
-            await dbContext.SubscriberReposts.AddAsync(subscriberRepost);
-            await dbContext.SaveChangesAsync();
         }
     }
 }

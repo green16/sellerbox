@@ -6,7 +6,7 @@ namespace WebApplication1.Models.Database
     public class Groups
     {
         [Key]
-        public int IdVk { get; set; }
+        public long IdVk { get; set; }
         public string Name { get; set; }
         public string Photo { get; set; }
         public string AccessToken { get; set; }

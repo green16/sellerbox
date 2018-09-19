@@ -3,8 +3,8 @@
     public static class Logins
     {
 #if DEBUG
-        public const int VkApplicationId = 6618712;
-        public const string VkApplicationPassword = "4ZvTB2TVxnwLCsrU0X4l";
+        public const int VkApplicationId = 6691268;
+        public const string VkApplicationPassword = "d2uFXkIYY9oQRmkQq71M";
         public const string SiteUrl = "http://vk.it-web-develop.ru";
         public const string CallbackServerUrl = SiteUrl + "/Callback/Vk";
         public const string CallbackServerName = "SellerboxTest";

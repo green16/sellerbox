@@ -128,16 +128,16 @@ namespace WebApplication1.Controllers
             }
             if (result.IsLockedOut)
                 return RedirectToAction(nameof(Lockout));
-            return RedirectToAction(nameof(Login));
+            //return RedirectToAction(nameof(Login));
             // If the user does not have an account, then ask the user to create an account.
-            /*
+            
             ViewData["ReturnUrl"] = returnUrl;
             ViewData["LoginProvider"] = info.ProviderDisplayName;
             string email = info.Principal.FindFirstValue(ClaimTypes.Email);
             return View("ExternalLogin", new ExternalLoginViewModel { Email = email });
-            */
+            
         }
-        /*
+        
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -204,6 +204,6 @@ namespace WebApplication1.Controllers
             // If we got this far, something failed, redisplay form
             return View(model);
         }
-        */
+        
     }
 }

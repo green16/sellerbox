@@ -7,10 +7,10 @@
 @inject WebApplication1.Common.Services.UserHelperService UserHelperService
 
 @{
-    int idSelectedGroup = -1;
+    long idSelectedGroup = -1;
     if (UserHelperService.HasSelectedGroup(User))
     {
-        KeyValuePair<int, string> selectedGroup = UserHelperService.GetSelectedGroup(User);
+        KeyValuePair<long, string> selectedGroup = UserHelperService.GetSelectedGroup(User);
         idSelectedGroup = selectedGroup.Key;
     }
 }

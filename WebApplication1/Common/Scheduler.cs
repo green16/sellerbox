@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using WebApplication1.Common.Helpers;
+using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
 
 namespace WebApplication1.Common
@@ -87,6 +88,7 @@ namespace WebApplication1.Common
             await RepostScenarios(serviceProvider);
             await TextScenarios(serviceProvider);
             await BirthdayScenarios(serviceProvider);
+            //await WallBirthdayScenarios(serviceProvider);
 #if DEBUG
             Console.WriteLine($"Finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
 #endif
@@ -95,6 +97,7 @@ namespace WebApplication1.Common
         private async Task TextScenarios(IServiceProvider serviceProvider)
         {
             DatabaseContext dbContext = serviceProvider.GetService<DatabaseContext>();
+            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
             DateTime dt = DateTime.UtcNow;
             bool isDayTime = DateTime.Now.Hour > 8 && DateTime.Now.Hour < 20;
@@ -111,7 +114,7 @@ namespace WebApplication1.Common
                 .Include(x => x.Subscriber)
                 .ToArrayAsync();
 
-            var messagesToSend = new Dictionary<Guid, List<int>>();
+            var messagesToSend = new Dictionary<Guid, List<Subscribers>>();
             foreach (SubscribersInChains subscriberInChain in subscribersInChains)
             {
                 var nextChainContent = await dbContext.ChainContents
@@ -140,9 +143,9 @@ namespace WebApplication1.Common
                 }
                 if (subscriberInChain.Subscriber.IsChatAllowed.HasValue && subscriberInChain.Subscriber.IsChatAllowed.Value)
                     if (messagesToSend.ContainsKey(subscriberInChain.ChainStep.IdMessage.Value))
-                        messagesToSend[subscriberInChain.ChainStep.IdMessage.Value].Add(subscriberInChain.Subscriber.IdVkUser);
+                        messagesToSend[subscriberInChain.ChainStep.IdMessage.Value].Add(subscriberInChain.Subscriber);
                     else
-                        messagesToSend.Add(subscriberInChain.ChainStep.IdMessage.Value, new List<int>() { subscriberInChain.Subscriber.IdVkUser });
+                        messagesToSend.Add(subscriberInChain.ChainStep.IdMessage.Value, new List<Subscribers>() { subscriberInChain.Subscriber });
 
                 if (subscriberInChain.ChainStep.IdGoToChain.HasValue)
                     nextChainContent = await dbContext.ChainContents
@@ -155,6 +158,13 @@ namespace WebApplication1.Common
                     subscriberInChain.IsSended = false;
                     subscriberInChain.IdChainStep = nextChainContent.Id;
                     subscriberInChain.DtAdd = dt;
+
+                    await dbContext.History_SubscribersInChainSteps.AddAsync(new History_SubscribersInChainSteps()
+                    {
+                        IdChainStep = nextChainContent.Id,
+                        IdSubscriber = subscriberInChain.IdSubscriber,
+                        DtAdd = dt
+                    });
                 }
 
                 await dbContext.SaveChangesAsync();
@@ -162,18 +172,30 @@ namespace WebApplication1.Common
 
             foreach (var item in messagesToSend)
             {
-                var idGroup = (await dbContext.Messages
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == item.Key)).IdGroup;
+                var idGroup = await dbContext.Messages.Where(x => x.Id == item.Key).Select(x => x.IdGroup).FirstOrDefaultAsync();
+
+                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
                 MessageHelper messageHelper = new MessageHelper(dbContext);
-                await messageHelper.SendMessages(idGroup, item.Key, item.Value.ToArray());
+                var tasks = new Task[]
+                {
+                    messageHelper.SendMessages(vkApi, idGroup, item.Key, item.Value.Select(x => x.IdVkUser).ToArray()),
+                    dbContext.History_Messages.AddRangeAsync(item.Value.Select(x=>new History_Messages()
+                    {
+                        IdMessage = item.Key,
+                        IdSubscriber = x.Id,
+                        IsOutgoingMessage = true,
+                        Dt = dt
+                    })).ContinueWith(result => dbContext.SaveChanges())
+                };
+
+                await Task.WhenAll(tasks);
             }
         }
 
         private async Task RepostScenarios(IServiceProvider serviceProvider)
         {
-            DatabaseContext dbContext = serviceProvider.GetService<DatabaseContext>();
+            var dbContext = serviceProvider.GetService<DatabaseContext>();
 
             DateTime dt = DateTime.UtcNow;
 
@@ -278,10 +300,12 @@ namespace WebApplication1.Common
 
         private async Task BirthdayScenarios(IServiceProvider serviceProvider)
         {
-            DatabaseContext dbContext = serviceProvider.GetService<DatabaseContext>();
+            var _context = serviceProvider.GetService<DatabaseContext>();
+            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
+
             DateTime dt = DateTime.Now;
 
-            var birthdayScenarios = await dbContext.BirthdayScenarios
+            var birthdayScenarios = await _context.BirthdayScenarios
                 .Where(x => x.IsEnabled)
                 .Include(x => x.Group)
                 .Include(x => x.Group.GroupAdmins)
@@ -292,30 +316,98 @@ namespace WebApplication1.Common
 
             foreach (var birthdayScenario in birthdayScenarios)
             {
-                var vkUsersIds = await dbContext.Subscribers
+                var subscribers = await _context.Subscribers
                     .Where(x => x.IdGroup == birthdayScenario.IdGroup)
-                    .Where(x => !dbContext.BirthdayHistory.Any(y => y.IdVkUser == x.IdVkUser && y.DtSend.Year == dt.Year))
+                    .Where(x => !_context.History_Birthday.Any(y => y.Id == x.Id && y.DtSend.Year == dt.Year))
                     .Include(x => x.VkUser)
                     .Where(x => x.VkUser.Birthday.HasValue && x.VkUser.Birthday.Value.Month == dt.Date.Month && x.VkUser.Birthday.Value.Day == dt.Date.AddDays(birthdayScenario.DaysBefore).Day)
+                    .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
+                    .ToArrayAsync();
+                if (!subscribers.Any())
+                    continue;
+
+                var idGroup = (await _context.Messages
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == birthdayScenario.IdMessage)).IdGroup;
+
+                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
+
+                MessageHelper messageHelper = new MessageHelper(_context);
+                var tasks = new Task[]
+                {
+                    messageHelper.SendMessages(vkApi, idGroup, birthdayScenario.IdMessage, subscribers.Select(x => x.IdVkUser).ToArray()),
+                    new Task(async () =>
+                    {
+                        var addingTasks = new Task[]
+                        {
+                            _context.History_Birthday.AddRangeAsync(subscribers.Select(x => new History_Birthday()
+                            {
+                                DtSend = dt,
+                                IdSubscriber = x.Id,
+                                IdGroup = birthdayScenario.IdGroup
+                            })),
+                            _context.History_Messages.AddRangeAsync(subscribers.Select(x => new History_Messages()
+                            {
+                                Dt = dt,
+                                IdMessage = birthdayScenario.IdMessage,
+                                IdSubscriber = x.Id
+                            }))
+                        };
+
+                        await Task.WhenAll(addingTasks).ContinueWith(x => _context.SaveChanges());
+                    })
+                };
+
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task WallBirthdayScenarios(IServiceProvider serviceProvider)
+        {
+            var dbContext = serviceProvider.GetService<DatabaseContext>();
+            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
+
+            DateTime dt = DateTime.Now;
+
+            var wallBirthdayScenarios = await dbContext.BirthdayWallScenarios
+                .Where(x => x.IsEnabled)
+                .Include(x => x.Group)
+                .Include(x => x.Group.GroupAdmins)
+                .Where(x => x.Group.GroupAdmins.Any() && x.SendAt <= dt.Hour)
+                .ToArrayAsync();
+
+            if (!wallBirthdayScenarios.Any())
+                return;
+
+            foreach (var wallBirthdayScenario in wallBirthdayScenarios)
+            {
+                var vkUsersIds = await dbContext.Subscribers
+                    .Where(x => x.IdGroup == wallBirthdayScenario.IdGroup)
+                    .Where(x => !dbContext.History_BirthdayWall.Any(y => y.IdVkUser == x.IdVkUser && y.DtSend.Year == dt.Year))
+                    .Include(x => x.VkUser)
+                    .Where(x => x.VkUser.Birthday.HasValue && x.VkUser.Birthday.Value.Month == dt.Date.Month)
                     .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
                     .Select(x => x.IdVkUser).ToArrayAsync();
                 if (!vkUsersIds.Any())
                     continue;
 
-                var idGroup = (await dbContext.Messages
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == birthdayScenario.IdMessage)).IdGroup;
+                var idGroup = await dbContext.Messages.Where(x => x.Id == wallBirthdayScenario.IdMessage).Select(x => x.IdGroup).FirstOrDefaultAsync();
 
-                MessageHelper messageHelper = new MessageHelper(dbContext);
-                await messageHelper.SendMessages(idGroup, birthdayScenario.IdMessage, vkUsersIds);
+                var idGroupAdmin = await dbContext.GroupAdmins.Where(x => x.IdGroup == idGroup).Select(x => x.User.IdVk).FirstOrDefaultAsync();
+                var vkApi = await _vkPoolService.GetUserVkApi(idGroupAdmin);
 
-                await dbContext.BirthdayHistory.AddRangeAsync(vkUsersIds.Select(x => new BirthdayHistory()
+                WallMessageHelper wallMessageHelper = new WallMessageHelper(dbContext);
+                var tasks = new Task[]
                 {
-                    DtSend = dt,
-                    IdVkUser = x,
-                    IdGroup = birthdayScenario.IdGroup
-                }));
-                await dbContext.SaveChangesAsync();
+                    wallMessageHelper.SendWallMessage(vkApi, idGroup, wallBirthdayScenario.IdMessage, vkUsersIds),
+                    dbContext.History_BirthdayWall.AddRangeAsync(vkUsersIds.Select(x => new History_BirthdayWall()
+                    {
+                        DtSend = dt,
+                        IdVkUser = x,
+                        IdGroup = wallBirthdayScenario.IdGroup
+                    })).ContinueWith(result => dbContext.SaveChanges())
+                };
+                await Task.WhenAll(tasks);
             }
         }
     }

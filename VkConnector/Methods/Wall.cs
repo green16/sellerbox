@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VkConnector.Common;
 using VkConnector.Models.Common;
@@ -34,6 +36,25 @@ namespace VkConnector.Methods
             if (JsonConvert.DeserializeObject<BaseError>(jsonResult).Code > 0)
                 return null;// Enumerable.Empty<User>();
             return result.Item;
+        }
+
+        public static async Task<int> Post(string accessToken, int idGroup, string message, IEnumerable<string> attachments)
+        {
+            var baseParameters = new Dictionary<string, object>()
+            {
+                { "owner_id", -idGroup }
+            };
+            if (!string.IsNullOrEmpty(message))
+                baseParameters.Add("message", message);
+            if (attachments != null && attachments.Any())
+                baseParameters.Add("attachments", string.Join(',', attachments));
+
+            string jsonResult = await SendCommand("wall.post", accessToken, null, baseParameters);
+            if (JsonConvert.DeserializeObject<BaseError>(jsonResult).Code > 0)
+                return -1;// Enumerable.Empty<User>();
+
+            BaseResponse<JObject> result = JsonConvert.DeserializeObject<BaseResponse<JObject>>(jsonResult);
+            return result.Item.Value<int>("post_id");
         }
     }
 }

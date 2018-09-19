@@ -8,12 +8,16 @@ namespace WebApplication1.Models.Database
         public byte SendAt { get; set; }
         public bool IsEnabled { get; set; }
 
+        [ForeignKey(nameof(VkUser))]
+        public long IdVkUser { get; set; }
+        public virtual VkUsers VkUser { get; set; }
+
         [ForeignKey(nameof(Group))]
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
-        [ForeignKey(nameof(MessagesGroup))]
-        public Guid IdMessagesGroup { get; set; }
-        public virtual MessagesGroups MessagesGroup { get; set; }
+        [ForeignKey(nameof(Message))]
+        public Guid IdMessage { get; set; }
+        public virtual Messages Message { get; set; }
     }
 }

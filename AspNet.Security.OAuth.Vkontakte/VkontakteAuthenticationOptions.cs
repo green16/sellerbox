@@ -22,7 +22,7 @@ namespace AspNet.Security.OAuth.Vkontakte
             ClaimsIssuer = VkontakteAuthenticationDefaults.Issuer;
 
             CallbackPath = new PathString(VkontakteAuthenticationDefaults.CallbackPath);
-
+            
             AuthorizationEndpoint = VkontakteAuthenticationDefaults.AuthorizationEndpoint;
             TokenEndpoint = VkontakteAuthenticationDefaults.TokenEndpoint;
             UserInformationEndpoint = VkontakteAuthenticationDefaults.UserInformationEndpoint;

@@ -104,22 +104,23 @@ namespace WebApplication1.Controllers
                     model.ErrorMessage.IsImageFirst = message.IsImageFirst;
                     model.ErrorMessage.Message = message.Text;
 
-                    var keyboard = VkConnector.Models.Common.Keyboard.Deserialize(message.Keyboard);
+                    var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
                     if (keyboard != null)
                     {
                         model.ErrorMessage.Keyboard = new List<List<ViewModels.Shared.MessageButton>>();
-                        for (byte rowIdx = 0; rowIdx < keyboard.Buttons.Length; rowIdx++)
+                        byte currentRowIdx = 0;
+                        foreach (var currentRow in keyboard.Buttons)
                         {
-                            var currentRow = keyboard.Buttons[rowIdx];
                             byte colIdx = 0;
                             model.ErrorMessage.Keyboard.Add(currentRow.Select(x => new ViewModels.Shared.MessageButton()
                             {
-                                ButtonColor = x.Color,
+                                ButtonColor = x.Color.ToString(),
                                 Column = colIdx++,
-                                CanDelete = colIdx == currentRow.Length,
-                                Row = rowIdx,
-                                Text = x.Action.Text
+                                CanDelete = colIdx == currentRow.Count(),
+                                Row = currentRowIdx,
+                                Text = x.Action.Label
                             }).ToList());
+                            currentRowIdx++;
                         }
                     }
 
@@ -144,22 +145,23 @@ namespace WebApplication1.Controllers
                     model.Message.IsImageFirst = message.IsImageFirst;
                     model.Message.Message = message.Text;
 
-                    var keyboard = VkConnector.Models.Common.Keyboard.Deserialize(message.Keyboard);
+                    var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
                     if (keyboard != null)
                     {
                         model.Message.Keyboard = new List<List<ViewModels.Shared.MessageButton>>();
-                        for (byte rowIdx = 0; rowIdx < keyboard.Buttons.Length; rowIdx++)
+                        byte currentRowIdx = 0;
+                        foreach (var currentRow in keyboard.Buttons)
                         {
-                            var currentRow = keyboard.Buttons[rowIdx];
                             byte colIdx = 0;
                             model.Message.Keyboard.Add(currentRow.Select(x => new ViewModels.Shared.MessageButton()
                             {
-                                ButtonColor = x.Color,
+                                ButtonColor = x.Color.ToString(),
                                 Column = colIdx++,
-                                CanDelete = colIdx == currentRow.Length,
-                                Row = rowIdx,
-                                Text = x.Action.Text
+                                CanDelete = colIdx == currentRow.Count(),
+                                Row = currentRowIdx,
+                                Text = x.Action.Label
                             }).ToList());
+                            currentRowIdx++;
                         }
                     }
 
@@ -186,7 +188,7 @@ namespace WebApplication1.Controllers
             if (!_userHelperService.HasSelectedGroup(User))
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
-            KeyValuePair<int, string> selectedGroup = _userHelperService.GetSelectedGroup(User);
+            KeyValuePair<long, string> selectedGroup = _userHelperService.GetSelectedGroup(User);
             var scenarios = await _context.Scenarios
                 .Include(x => x.Chain)
                 .Where(x => x.IdGroup == selectedGroup.Key)
@@ -310,7 +312,10 @@ namespace WebApplication1.Controllers
                 if (model.IdMessage.HasValue)
                 {
                     scenario.Message.Text = model.Message.Message;
-                    scenario.Message.Keyboard = model.Message.GetVkKeyboard()?.Serialize();
+
+                    var keyboard = model.Message.GetVkKeyboard();
+                    scenario.Message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
+                    
                     var message = await _context.Messages
                         .Include(x => x.Files)
                         .FirstOrDefaultAsync(x => x.Id == model.IdMessage.Value);
@@ -346,7 +351,10 @@ namespace WebApplication1.Controllers
                 else if (model.IdErrorMessage.HasValue)
                 {
                     scenario.ErrorMessage.Text = model.ErrorMessage.Message;
-                    scenario.ErrorMessage.Keyboard = model.ErrorMessage.GetVkKeyboard()?.Serialize();
+
+                    var keyboard = model.ErrorMessage.GetVkKeyboard();
+                    scenario.ErrorMessage.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
+
                     var message = await _context.Messages
                         .Include(x => x.Files)
                         .FirstOrDefaultAsync(x => x.Id == model.IdErrorMessage.Value);
