@@ -89,10 +89,10 @@ namespace WebApplication1.Controllers
 
                         var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                        if (!innerMessage.FromId.HasValue || innerMessage.FromId.Value <= 0)
+                        if (!innerMessage.UserId.HasValue || innerMessage.UserId.Value <= 0)
                             break;
 
-                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.FromId.Value);
+                        var subscriber = await CreateSubscriber(message.IdGroup, innerMessage.UserId.Value);
                         if (subscriber == null)
                             break;
 
@@ -100,13 +100,14 @@ namespace WebApplication1.Controllers
                         {
                             Dt = DateTime.UtcNow,
                             IsOutgoingMessage = false,
-                            IdSubscriber = subscriber.Id
+                            IdSubscriber = subscriber.Id,
+                            Text = innerMessage.Body
                         });
                         await _context.SaveChangesAsync();
 
                         var vkApi = await _vkPoolService.GetGroupVkApi(message.IdGroup);
 
-                        if (innerMessage.Text.ToLower() == "стоп")
+                        if (innerMessage.Body?.ToLower() == "стоп")
                         {
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
@@ -130,7 +131,7 @@ namespace WebApplication1.Controllers
                                 await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
                                 {
                                     Message = "Вы успешно отписаны от сообщений группы",
-                                    UserId = innerMessage.FromId
+                                    UserId = innerMessage.UserId
                                 });
                             }
 
@@ -157,21 +158,17 @@ namespace WebApplication1.Controllers
                         if (idAnswerMessage.HasValue)
                         {
                             MessageHelper messageHelper = new MessageHelper(_context);
-                            var tasks = new Task[]
+                            await messageHelper.SendMessages(vkApi, message.IdGroup, idAnswerMessage.Value, innerMessage.UserId.Value);
+                            await _context.History_Messages.AddAsync(new History_Messages()
                             {
-                                messageHelper.SendMessages(vkApi, message.IdGroup, idAnswerMessage.Value, innerMessage.FromId.Value),
-                                _context.History_Messages.AddAsync(new History_Messages()
-                                {
-                                    Dt = DateTime.UtcNow,
-                                    IsOutgoingMessage = true,
-                                    IdSubscriber = subscriber.Id,
-                                    IdMessage = idAnswerMessage
-                                }).ContinueWith(result => _context.SaveChanges())
-                            };
-                            await Task.WhenAll(tasks);
+                                Dt = DateTime.UtcNow,
+                                IsOutgoingMessage = true,
+                                IdSubscriber = subscriber.Id,
+                                IdMessage = idAnswerMessage
+                            }).ContinueWith(result => _context.SaveChanges());
                         }
                         else if (markAsRead)
-                            await vkApi.Messages.MarkAsReadAsync(innerMessage.FromId.ToString(), groupId: message.IdGroup);
+                            await vkApi.Messages.MarkAsReadAsync(innerMessage.UserId.ToString(), groupId: message.IdGroup);
                         break;
                     }
                 case "message_reply":

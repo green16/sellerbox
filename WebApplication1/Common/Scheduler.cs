@@ -177,19 +177,14 @@ namespace WebApplication1.Common
                 var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
                 MessageHelper messageHelper = new MessageHelper(dbContext);
-                var tasks = new Task[]
+                await messageHelper.SendMessages(vkApi, idGroup, item.Key, item.Value.Select(x => x.IdVkUser).ToArray());
+                await dbContext.History_Messages.AddRangeAsync(item.Value.Select(x => new History_Messages()
                 {
-                    messageHelper.SendMessages(vkApi, idGroup, item.Key, item.Value.Select(x => x.IdVkUser).ToArray()),
-                    dbContext.History_Messages.AddRangeAsync(item.Value.Select(x=>new History_Messages()
-                    {
-                        IdMessage = item.Key,
-                        IdSubscriber = x.Id,
-                        IsOutgoingMessage = true,
-                        Dt = dt
-                    })).ContinueWith(result => dbContext.SaveChanges())
-                };
-
-                await Task.WhenAll(tasks);
+                    IdMessage = item.Key,
+                    IdSubscriber = x.Id,
+                    IsOutgoingMessage = true,
+                    Dt = dt
+                })).ContinueWith(result => dbContext.SaveChanges());
             }
         }
 
@@ -397,17 +392,13 @@ namespace WebApplication1.Common
                 var vkApi = await _vkPoolService.GetUserVkApi(idGroupAdmin);
 
                 WallMessageHelper wallMessageHelper = new WallMessageHelper(dbContext);
-                var tasks = new Task[]
+                await wallMessageHelper.SendWallMessage(vkApi, idGroup, wallBirthdayScenario.IdMessage, vkUsersIds);
+                await dbContext.History_BirthdayWall.AddRangeAsync(vkUsersIds.Select(x => new History_BirthdayWall()
                 {
-                    wallMessageHelper.SendWallMessage(vkApi, idGroup, wallBirthdayScenario.IdMessage, vkUsersIds),
-                    dbContext.History_BirthdayWall.AddRangeAsync(vkUsersIds.Select(x => new History_BirthdayWall()
-                    {
-                        DtSend = dt,
-                        IdVkUser = x,
-                        IdGroup = wallBirthdayScenario.IdGroup
-                    })).ContinueWith(result => dbContext.SaveChanges())
-                };
-                await Task.WhenAll(tasks);
+                    DtSend = dt,
+                    IdVkUser = x,
+                    IdGroup = wallBirthdayScenario.IdGroup
+                })).ContinueWith(result => dbContext.SaveChanges());
             }
         }
     }

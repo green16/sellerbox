@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,19 +97,15 @@ namespace WebApplication1.Common.Hubs
 
             var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
-            var tasks = new Task[]
+            await messageHelper.SendMessages(vkApi, idGroup, idMessage, ids);
+            var subscriberIds = await _context.Subscribers.Where(x => ids.Contains(x.IdVkUser)).Select(x => x.Id).ToArrayAsync();
+            await _context.History_Messages.AddRangeAsync(subscriberIds.Select(x => new Models.Database.History_Messages()
             {
-                messageHelper.SendMessages(vkApi, idGroup, idMessage, ids),
-                _context.History_Messages.AddRangeAsync(ids.Select(x => new Models.Database.History_Messages()
-                {
-                    IdMessage = idMessage,
-                    IdSubscriber = _context.Subscribers.Where(y => y.IdVkUser == x).Select(y => y.Id).FirstOrDefault(),
-                    IsOutgoingMessage = true,
-                    Dt = DateTime.UtcNow
-                })).ContinueWith(result => _context.SaveChanges())
-            };
-
-            await Task.WhenAll(tasks);
+                IdMessage = idMessage,
+                IdSubscriber = x,
+                IsOutgoingMessage = true,
+                Dt = DateTime.UtcNow
+            })).ContinueWith(result => _context.SaveChanges());
 
             await Finish(idGroup);
         }

@@ -11,7 +11,7 @@ namespace WebApplication1.Common.Helpers
     {
         public static async Task<Guid?> ReplyToMessage(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message)
         {
-            if (!string.IsNullOrWhiteSpace(message.Text))
+            if (!string.IsNullOrWhiteSpace(message.Body))
             {
                 var scenario = await dbContext.Scenarios
                     .Where(x => x.IsEnabled)
@@ -19,7 +19,7 @@ namespace WebApplication1.Common.Helpers
                     .Include(x => x.Group)
                     .Include(x => x.Group.GroupAdmins)
                     .Where(x => x.Group.GroupAdmins.Any())
-                    .FirstOrDefaultAsync(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Text.ToLower()) || (!x.IsStrictMatch && message.Text.ToLower().Contains(x.InputMessage.ToLower())));
+                    .FirstOrDefaultAsync(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Body.ToLower()) || (!x.IsStrictMatch && message.Body.ToLower().Contains(x.InputMessage.ToLower())));
 
                 if (scenario != null)
                 {
@@ -31,7 +31,7 @@ namespace WebApplication1.Common.Helpers
                     });
                     await dbContext.SaveChangesAsync();
 
-                    return await ScenarioReply(dbContext, idGroup, idSubscriber, message, scenario);
+                    return await ScenarioReply(dbContext, idGroup, idSubscriber, scenario);
                 }
             }
             //Тут бот или картинки
@@ -62,7 +62,7 @@ namespace WebApplication1.Common.Helpers
             await dbContext.SaveChangesAsync();
         }
 
-        private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message, Scenarios scenario)
+        private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, long idGroup, Guid idSubscriber, Scenarios scenario)
         {
             if (scenario.Action == ScenarioActions.Message)
                 return scenario.IdMessage;
