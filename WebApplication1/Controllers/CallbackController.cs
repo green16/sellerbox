@@ -34,7 +34,17 @@ namespace WebApplication1.Controllers
             {
                 var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
-                var user = (await vkApi.Users.GetAsync(new long[] { idVkUser }))?.FirstOrDefault();
+                var user = (await vkApi.Users.GetAsync(new long[] { subscriber.IdVkUser }, VkNet.Enums.Filters.ProfileFields.BirthDate |
+                    VkNet.Enums.Filters.ProfileFields.City |
+                    VkNet.Enums.Filters.ProfileFields.Country |
+                    VkNet.Enums.Filters.ProfileFields.FirstName |
+                    VkNet.Enums.Filters.ProfileFields.LastName |
+                    VkNet.Enums.Filters.ProfileFields.Nickname |
+                    VkNet.Enums.Filters.ProfileFields.Domain |
+                    VkNet.Enums.Filters.ProfileFields.Photo50 |
+                    VkNet.Enums.Filters.ProfileFields.Photo400Orig |
+                    VkNet.Enums.Filters.ProfileFields.Sex |
+                    VkNet.Enums.Filters.ProfileFields.Blacklisted)).FirstOrDefault();
                 if (user == null)
                     return null;
 

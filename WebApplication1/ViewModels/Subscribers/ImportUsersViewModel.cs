@@ -6,6 +6,6 @@ namespace WebApplication1.ViewModels.Subscribers
     {
         public string Link { get; set; }
         public string FIO { get; set; }
-        public Uri Photo { get; set; }
+        public string Photo { get; set; }
     }
 }

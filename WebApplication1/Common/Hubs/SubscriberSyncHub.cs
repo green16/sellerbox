@@ -229,10 +229,10 @@ namespace WebApplication1.Common.Hubs
                             {
                                 vkUser = VkUsers.FromUser(vkMember);
                                 await _context.AddAsync(vkUser);
-                                await _context.SaveChangesAsync();
                             }
                             else
                                 vkUser.Update(vkMember);
+                            await _context.SaveChangesAsync();
 
                             var subscriber = await _context.Subscribers
                                 .Where(x => x.IdGroup == idGroup)

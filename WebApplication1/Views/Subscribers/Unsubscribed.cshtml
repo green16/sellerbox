@@ -13,7 +13,10 @@
     <link href="~/lib/sass-bootstrap-glyphicons/css/bootstrap-glyphicons.css" rel="stylesheet" type="text/css" />
 }
 
-<h2>Список отписавшихся от группы "<span style="color: darkgray">@ViewBag.GroupName</span>"</h2>
+<h2>
+    Список отписавшихся от группы 
+    "<a target="_blank" href="@ViewBag.LinkGroup"><span style="color: darkgray">@ViewBag.GroupName</span></a>"
+</h2>
 
 @if (!Model.Any())
 {
@@ -72,7 +75,16 @@ else
                             <img src="@item.Photo" />
                         </td>
                         <td>
-                            <a target="_blank" href="@item.Link">@item.FIO</a>
+                            @if (!string.IsNullOrWhiteSpace(item.Link))
+                            {
+                                <a target="_blank" href="@item.Link">
+                                    @Html.DisplayFor(modelItem => item.FIO)
+                                </a>
+                            }
+                            else
+                            {
+                                @Html.DisplayFor(modelItem => item.FIO)
+                            }
                         </td>
                         <td>
                             @if (item.Sex.HasValue)

@@ -93,7 +93,7 @@ namespace WebApplication1.Controllers
             ViewBag.Posts = await _context.WallPosts
                 .Where(x => x.IdGroup == selectedGroup.Key)
                 .OrderByDescending(x => x.DtAdd)
-                .ToDictionaryAsync(x => x.Id, x => $"{x.DtAdd:dd.MM.yyyy HH.mm}: {x.TextPart}");
+                .ToDictionaryAsync(x => x.Id, x => $"{x.DtAdd.ToLocalTime():dd.MM.yyyy HH.mm}: {x.TextPart}");
 
             return View("Edit", model);
         }
@@ -235,11 +235,6 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<IActionResult> RefreshPosts()
         {
-            DateTime? dtExpiresAt = await _userHelperService.GetVkUserAccessTokenExpiresAt(User);
-            string accessToken = await _userHelperService.GeVktUserAccessToken(User);
-            if (string.IsNullOrEmpty(accessToken) || !dtExpiresAt.HasValue || dtExpiresAt < DateTime.Now)
-                return Json(new { error = 1, redirectUrl = "/ExternalLogin/Account?provider=Vkontakte&returnUrl=/Reposts/Index" });
-
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
 
             var existsPostsIds = await _context.WallPosts
@@ -248,17 +243,20 @@ namespace WebApplication1.Controllers
                 .Select(x => x.IdVk)
                 .ToArrayAsync();
 
-            var vkApi = await _vkPoolService.GetGroupVkApi(selectedGroup.Key);
+            var idVkUser = await _userHelperService.GetUserIdVk(User);
+
+            var vkApi = await _vkPoolService.GetUserVkApi(idVkUser);
 
             var posts = await vkApi.Wall.GetAsync(new VkNet.Model.RequestParams.WallGetParams()
             {
-                OwnerId = selectedGroup.Key
+                OwnerId = -selectedGroup.Key,
+                Filter = VkNet.Enums.SafetyEnums.WallFilter.All
             });
             var newWallPosts = posts.WallPosts
                 .Where(x => !existsPostsIds.Contains(x.Id.Value))
                 .Select(x => new WallPosts()
                 {
-                    DtAdd = DateTime.UtcNow,
+                    DtAdd = x.Date ?? DateTime.UtcNow,
                     IdGroup = selectedGroup.Key,
                     IdVk = x.Id.Value,
                     Text = x.Text
@@ -270,7 +268,7 @@ namespace WebApplication1.Controllers
             var allPosts = await _context.WallPosts
                 .Where(x => x.IdGroup == selectedGroup.Key)
                 .OrderByDescending(x => x.DtAdd)
-                .ToDictionaryAsync(x => x.Id, x => x.TextPart);
+                .ToDictionaryAsync(x => x.Id, x => $"{x.DtAdd.ToLocalTime():dd.MM.yyyy HH.mm}: {x.TextPart}");
 
             return Json(new { error = 0, posts = allPosts });
         }

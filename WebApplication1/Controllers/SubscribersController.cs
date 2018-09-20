@@ -3,11 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReflectionIT.Mvc.Paging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Common;
-using WebApplication1.Common.Helpers;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
 using WebApplication1.ViewModels.Subscribers;
@@ -35,8 +33,9 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            ViewBag.GroupName = groupInfo.Value;
+
             var subscribers = _context.Subscribers
+                .Include(x => x.VkUser)
                 .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
                 .Select(x => new AllSubscribersViewModel()
                 {
@@ -47,8 +46,8 @@ namespace WebApplication1.Controllers
                     Country = x.VkUser.Country,
                     DtAdd = x.DtAdd,
                     FIO = $"{x.VkUser.LastName} {x.VkUser.FirstName}",
-                    Link = new Uri(x.VkUser.Link),
-                    Photo = new Uri(x.VkUser.PhotoSquare50),
+                    Link = x.VkUser.Link,
+                    Photo = x.VkUser.PhotoSquare50,
                     Sex = x.VkUser.Sex,
                     IsSubscriber = x.IsSubscribedToGroup,
                     IsChatAllowed = x.IsChatAllowed
@@ -57,6 +56,8 @@ namespace WebApplication1.Controllers
             var model = await PagingList.CreateAsync(subscribers, nameof(Index), "Subscribers", 20, page, sortExpression, nameof(AllSubscribersViewModel.DtAdd));
 
             ViewBag.IdGroup = groupInfo.Key;
+            ViewBag.GroupName = groupInfo.Value;
+            ViewBag.LinkGroup = $"https://vk.com/public{groupInfo.Key}";
             return View(model);
         }
         [HttpGet]
@@ -66,7 +67,7 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            ViewBag.GroupName = groupInfo.Value;
+
             var members = _context.Subscribers
                 .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
                 .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
@@ -79,14 +80,17 @@ namespace WebApplication1.Controllers
                     Country = x.VkUser.Country,
                     DtAdd = x.DtAdd,
                     FIO = $"{x.VkUser.LastName} {x.VkUser.FirstName}",
-                    Link = new Uri(x.VkUser.Link),
-                    Photo = new Uri(x.VkUser.PhotoSquare50),
+                    Link = x.VkUser.Link,
+                    Photo = x.VkUser.PhotoSquare50,
                     Sex = x.VkUser.Sex,
                     IsSubscriber = x.IsSubscribedToGroup
                 });
 
             var model = await PagingList.CreateAsync(members, nameof(Members), "Subscribers", 20, page, sortExpression, nameof(MemberIndexViewModel.DtAdd));
+
             ViewBag.IdGroup = groupInfo.Key;
+            ViewBag.GroupName = groupInfo.Value;
+            ViewBag.LinkGroup = $"https://vk.com/public{groupInfo.Key}";
             return View(model);
         }
         [HttpGet]
@@ -96,7 +100,6 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            ViewBag.GroupName = groupInfo.Value;
 
             var subscribers = _context.Subscribers
                 .Where(x => x.IdGroup == groupInfo.Key && !x.IsUnsubscribed)
@@ -110,14 +113,17 @@ namespace WebApplication1.Controllers
                     Country = x.VkUser.Country,
                     DtAdd = x.DtAdd,
                     FIO = $"{x.VkUser.LastName} {x.VkUser.FirstName}",
-                    Link = new Uri(x.VkUser.Link),
-                    Photo = new Uri(x.VkUser.PhotoSquare50),
+                    Link = x.VkUser.Link,
+                    Photo = x.VkUser.PhotoSquare50,
                     Sex = x.VkUser.Sex,
                     IsChatAllowed = x.IsChatAllowed
                 });
 
             var model = await PagingList.CreateAsync(subscribers, nameof(Subscribers), "Subscibers", 20, page, sortExpression, nameof(SubscriberIndexViewModel.DtAdd));
+
             ViewBag.IdGroup = groupInfo.Key;
+            ViewBag.GroupName = groupInfo.Value;
+            ViewBag.LinkGroup = $"https://vk.com/public{groupInfo.Key}";
             return View(model);
         }
         [HttpGet]
@@ -138,15 +144,17 @@ namespace WebApplication1.Controllers
                     Country = x.VkUser.Country,
                     DtAdd = x.DtAdd,
                     FIO = $"{x.VkUser.LastName} {x.VkUser.FirstName}",
-                    Link = new Uri(x.VkUser.Link),
-                    Photo = new Uri(x.VkUser.PhotoSquare50),
+                    Link = x.VkUser.Link,
+                    Photo = x.VkUser.PhotoSquare50,
                     Sex = x.VkUser.Sex,
                     IsSubscriber = x.IsSubscribedToGroup
                 });
 
             var model = await PagingList.CreateAsync(members, nameof(Unmembered), "Subscribers", 20, page, sortExpression, nameof(UnmemberedIndexViewModel.DtAdd));
+
             ViewBag.IdGroup = groupInfo.Key;
             ViewBag.GroupName = groupInfo.Value;
+            ViewBag.LinkGroup = $"https://vk.com/public{groupInfo.Key}";
             return View(model);
         }
         [HttpGet]
@@ -156,7 +164,7 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            ViewBag.GroupName = groupInfo.Value;
+
             var unsubscribed = _context.Subscribers
                 .Where(x => x.IdGroup == groupInfo.Key && x.IsUnsubscribed && x.DtUnsubscribe.HasValue)
                 .Select(x => new UnsubscribedIndexViewModel()
@@ -168,8 +176,8 @@ namespace WebApplication1.Controllers
                     Country = x.VkUser.Country,
                     DtAdd = x.DtAdd,
                     FIO = $"{x.VkUser.LastName} {x.VkUser.FirstName}",
-                    Link = new Uri(x.VkUser.Link),
-                    Photo = new Uri(x.VkUser.PhotoSquare50),
+                    Link = x.VkUser.Link,
+                    Photo = x.VkUser.PhotoSquare50,
                     Sex = x.VkUser.Sex,
                     DtUnsubscribe = x.DtUnsubscribe.Value,
                     IsChatAllowed = x.IsChatAllowed
@@ -177,6 +185,9 @@ namespace WebApplication1.Controllers
 
             var model = await PagingList.CreateAsync(unsubscribed, nameof(Unsubscribed), "Subscribers", 20, page, sortExpression, nameof(UnsubscribedIndexViewModel.DtAdd));
 
+            ViewBag.IdGroup = groupInfo.Key;
+            ViewBag.GroupName = groupInfo.Value;
+            ViewBag.LinkGroup = $"https://vk.com/public{groupInfo.Key}";
             return View(model);
         }
 
@@ -220,11 +231,20 @@ namespace WebApplication1.Controllers
                 .FirstOrDefaultAsync(x => x.Id == idSubscriber);
 
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
-            string groupAccessToken = _context.Groups.FirstOrDefault(x => x.IdVk == selectedGroup.Key)?.AccessToken;
 
             var vkApi = await _vkPoolService.GetGroupVkApi(selectedGroup.Key);
 
-            var vkUser = (await vkApi.Users.GetAsync(new long[] { subscriber.IdVkUser })).FirstOrDefault();
+            var vkUser = (await vkApi.Users.GetAsync(new long[] { subscriber.IdVkUser }, VkNet.Enums.Filters.ProfileFields.BirthDate |
+                VkNet.Enums.Filters.ProfileFields.City |
+                VkNet.Enums.Filters.ProfileFields.Country |
+                VkNet.Enums.Filters.ProfileFields.FirstName |
+                VkNet.Enums.Filters.ProfileFields.LastName |
+                VkNet.Enums.Filters.ProfileFields.Nickname |
+                VkNet.Enums.Filters.ProfileFields.Domain |
+                VkNet.Enums.Filters.ProfileFields.Photo50 |
+                VkNet.Enums.Filters.ProfileFields.Photo400Orig |
+                VkNet.Enums.Filters.ProfileFields.Sex |
+                VkNet.Enums.Filters.ProfileFields.Blacklisted)).FirstOrDefault();
             subscriber.VkUser.Update(vkUser);
             subscriber.IsBlocked = vkUser.Blacklisted;
 
@@ -245,7 +265,17 @@ namespace WebApplication1.Controllers
                 var groupInfo = _userHelperService.GetSelectedGroup(User);
                 var vkApi = await _vkPoolService.GetGroupVkApi(groupInfo.Key);
 
-                var vkUsers = await vkApi.Users.GetAsync(currentSubscribers.Select(x => x.IdVkUser));
+                var vkUsers = await vkApi.Users.GetAsync(currentSubscribers.Select(x => x.IdVkUser), VkNet.Enums.Filters.ProfileFields.BirthDate |
+                    VkNet.Enums.Filters.ProfileFields.City |
+                    VkNet.Enums.Filters.ProfileFields.Country |
+                    VkNet.Enums.Filters.ProfileFields.FirstName |
+                    VkNet.Enums.Filters.ProfileFields.LastName |
+                    VkNet.Enums.Filters.ProfileFields.Nickname |
+                    VkNet.Enums.Filters.ProfileFields.Domain |
+                    VkNet.Enums.Filters.ProfileFields.Photo50 |
+                    VkNet.Enums.Filters.ProfileFields.Photo400Orig |
+                    VkNet.Enums.Filters.ProfileFields.Sex |
+                    VkNet.Enums.Filters.ProfileFields.Blacklisted);
                 foreach (var vkUser in vkUsers)
                 {
                     var currentSubscriber = currentSubscribers.FirstOrDefault(x => x.IdVkUser == vkUser.Id);

@@ -20,7 +20,8 @@
 }
 
 <h2 id="title">
-    Список подписчиков группы "<span style="color: darkgray">@ViewBag.GroupName</span>"
+    Список подписчиков группы 
+    "<a target="_blank" href="@ViewBag.LinkGroup"><span style="color: darkgray">@ViewBag.GroupName</span></a>"
     <a id="sync" href="#" hidden>синхронизировать</a>
 </h2>
 
@@ -82,9 +83,16 @@ else
                         <img src="@item.Photo" />
                     </td>
                     <td>
-                        <a target="_blank" href="@item.Link">
+                        @if (!string.IsNullOrWhiteSpace(item.Link))
+                        {
+                            <a target="_blank" href="@item.Link">
+                                @Html.DisplayFor(modelItem => item.FIO)
+                            </a>
+                        }
+                        else
+                        {
                             @Html.DisplayFor(modelItem => item.FIO)
-                        </a>
+                        }
                     </td>
                     <td>
                         @if (item.Sex.HasValue)

@@ -7,9 +7,9 @@ namespace WebApplication1.ViewModels.Subscribers
     {
         public Guid Id { get; set; }
         public long IdVk { get; set; }
-        public Uri Link { get; set; }
+        public string Link { get; set; }
         [Display(Name ="Фото")]
-        public Uri Photo { get; set; }
+        public string Photo { get; set; }
         [Display(Name = "ФИО")]
         public string FIO { get; set; }
         [Display(Name = "Пол")]

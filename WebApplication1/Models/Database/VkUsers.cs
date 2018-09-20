@@ -30,7 +30,12 @@ namespace WebApplication1.Models.Database
             FirstName = user.FirstName;
             LastName = user.LastName;
             SecondName = user.Nickname;
-            Link = $"https://vk.com/{user.Domain}";
+            if (!string.IsNullOrWhiteSpace(user.Domain))
+                Link = $"https://vk.com/{user.Domain}";
+            else if (user.Id > 0)
+                Link = $"https://vk.com/id{user.Id}";
+            else
+                Link = null;
             PhotoSquare50 = user.Photo50?.AbsoluteUri;
             PhotoOrig400 = user.Photo400Orig?.AbsoluteUri;
             Sex = user.Sex == VkNet.Enums.Sex.Unknown || user.Sex == VkNet.Enums.Sex.Deactivated ? null : (bool?)(user.Sex == VkNet.Enums.Sex.Male);
