@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Common;
@@ -94,6 +95,26 @@ namespace WebApplication1.Controllers
                         Index = idx++
                     }).ToList()
                 };
+
+                var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
+                if (keyboard != null)
+                {
+                    model.Keyboard = new List<List<MessageButton>>();
+                    byte currentRowIdx = 0;
+                    foreach (var currentRow in keyboard.Buttons)
+                    {
+                        byte colIdx = 0;
+                        model.Keyboard.Add(currentRow.Select(x => new MessageButton()
+                        {
+                            ButtonColor = x.Color.ToString(),
+                            Column = colIdx++,
+                            CanDelete = colIdx == currentRow.Count(),
+                            Row = currentRowIdx,
+                            Text = x.Action.Label
+                        }).ToList());
+                        currentRowIdx++;
+                    }
+                }
             }
             else
                 model = new BirthdaySchedulerViewModel();

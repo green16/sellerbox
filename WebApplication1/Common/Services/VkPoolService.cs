@@ -38,7 +38,7 @@ namespace WebApplication1.Common.Services
                 Settings = VkNet.Enums.Filters.Settings.All
             });
 
-            GroupsVkApis.Add(idGroup, groupVkApi);
+            GroupsVkApis.TryAdd(idGroup, groupVkApi);
 
             return groupVkApi;
         }
@@ -74,7 +74,7 @@ namespace WebApplication1.Common.Services
                 });
             }
             catch { }
-            UsersVkApis.Add(idVkUser, userVkApi);
+            UsersVkApis.TryAdd(idVkUser, userVkApi);
 
             return userVkApi;
         }

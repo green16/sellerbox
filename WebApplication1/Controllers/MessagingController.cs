@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -11,7 +12,7 @@ using WebApplication1.Common;
 using WebApplication1.Common.Helpers;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
-using WebApplication1.ViewModels;
+using WebApplication1.ViewModels.Messaging;
 using WebApplication1.ViewModels.Shared;
 
 namespace WebApplication1.Controllers
@@ -33,23 +34,123 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            MessagingViewModel model = new MessagingViewModel()
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var model = await _context.Scheduler_Messaging
+                .Where(x => x.Message.IdGroup == groupInfo.Key)
+                .Where(x => x.Status != Models.Database.Common.MessagingStatus.Finished)
+                .Select(x => new MessagingViewModel()
+                {
+                    DtAdd = x.DtAdd,
+                    DtStart = x.DtStart,
+                    HasImages = x.Message.Files.Any(),
+                    Message = x.Message.Text,
+                    Name = x.Name,
+                    HasKeyboard = !string.IsNullOrEmpty(x.Message.Keyboard),
+                    IdMessaging = x.Id,
+                    RecipientsCount = x.RecipientsCount,
+                    Status = x.Status
+                }).ToArrayAsync();
+
+            ViewBag.IdGroup = groupInfo.Key;
+            return View(nameof(Index), model);
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var model = new EditMessagingViewModel()
             {
-                IdGroup = _userHelperService.GetSelectedGroup(User).Key,
+                IdGroup = groupInfo.Key,
             };
 
-            ViewBag.IdGroup = model.IdGroup;
-            return View(nameof(Index), model);
+            ViewBag.IdGroup = groupInfo.Key;
+            return View(nameof(Edit), model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(Guid? idMessaging)
+        {
+            if (!idMessaging.HasValue)
+                return RedirectToAction(nameof(Index));
+            
+            var messaging = await _context.Scheduler_Messaging
+                .FirstOrDefaultAsync(x => x.Id == idMessaging);
+            if (messaging == null)
+                return RedirectToAction(nameof(Index));
+
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            var model = new EditMessagingViewModel()
+            {
+                IdMessage = messaging.IdMessage,
+                DtStart = messaging.DtStart.ToString("dd.MM.yyyy HH:mm"),
+                Name = messaging.Name,
+                IdGroup = groupInfo.Key
+            };
+
+            if (model != null && model.IdMessage.HasValue)
+            {
+                Messages message = await _context.Messages
+                    .Include(x => x.Files)
+                    .FirstOrDefaultAsync(x => x.Id == model.IdMessage);
+                uint idx = 0;
+
+                model.Message = message.Text;
+                model.IsImageFirst = message.IsImageFirst;
+                model.Files = message.Files.Select(x => new FileModel()
+                {
+                    Id = x.IdFile,
+                    Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
+                    Index = idx++
+                }).ToList();
+
+                var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
+                if (keyboard != null)
+                {
+                    model.Keyboard = new List<List<MessageButton>>();
+                    byte currentRowIdx = 0;
+                    foreach (var currentRow in keyboard.Buttons)
+                    {
+                        byte colIdx = 0;
+                        model.Keyboard.Add(currentRow.Select(x => new MessageButton()
+                        {
+                            ButtonColor = x.Color.ToString(),
+                            Column = colIdx++,
+                            CanDelete = colIdx == currentRow.Count(),
+                            Row = currentRowIdx,
+                            Text = x.Action.Label
+                        }).ToList());
+                        currentRowIdx++;
+                    }
+                }
+
+            }
+
+            ViewBag.IdGroup = groupInfo.Key;
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Index(MessagingViewModel data)
+        public IActionResult Edit(EditMessagingViewModel data)
         {
             ViewBag.IdGroup = data.IdGroup;
-            return View(nameof(Index), data);
+            return View(data);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteMessaging([FromQuery]Guid? idMessaging)
+        {
+            if (!idMessaging.HasValue)
+                return NotFound(idMessaging);
+
+            _context.Scheduler_Messaging.RemoveRange(_context.Scheduler_Messaging.Where(x => x.Id == idMessaging));
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         [HttpPost, RequestSizeLimit(MaxRequestBodySize)]
@@ -135,30 +236,38 @@ namespace WebApplication1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessages(MessagingViewModel data)
+        public async Task<IActionResult> SendMessages(EditMessagingViewModel data)
         {
             if (!ModelState.IsValid)
-                return Index(data);
+                return Edit(data);
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-
             var message = await DbHelper.AddMessage(_context, groupInfo.Key, data.Message, data.GetVkKeyboard(), data.IsImageFirst, data.Files.Select(x => x.Id));
+
             long[] userIds = null;
+
             if (data.IsSelfSend)
                 userIds = new long[] { await _userHelperService.GetUserIdVk(User) };
+            //return Json(new { idMessage = message.Id, ids = new long[] { await _userHelperService.GetUserIdVk(User) } });
             else
                 userIds = await _context.Subscribers
-                    .Where(x => x.IdGroup == data.IdGroup)
+                    .Where(x => x.IdGroup == groupInfo.Key)
                     .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
                     .Select(x => x.IdVkUser)
                     .ToArrayAsync();
 
-            return Json(new { idMessage = message.Id, ids = userIds });
-        }
-
-        public IActionResult MessagesSent()
-        {
-            return Ok("Сообщение отправлено");
+            await _context.Scheduler_Messaging.AddAsync(new Scheduler_Messaging()
+            {
+                DtAdd = DateTime.UtcNow,
+                IdMessage = message.Id,
+                Name = data.Name,
+                RecipientsCount = userIds.LongLength,
+                Status = Models.Database.Common.MessagingStatus.Added,
+                DtStart = DateTime.SpecifyKind(DateTime.ParseExact(data.DtStart, "dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture), DateTimeKind.Local).ToUniversalTime(),
+                VkUserIds = string.Join(',', userIds)
+            });
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -25,7 +25,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://vk.it-web-develop.ru/"
+      "applicationUrl": "http://localhost:9854"
     }
   }
 }

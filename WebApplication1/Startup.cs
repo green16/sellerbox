@@ -14,6 +14,7 @@ using NLog.Targets;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using WebApplication1.Common;
+using WebApplication1.Common.Schedulers;
 using WebApplication1.Common.Services;
 using WebApplication1.Models.Database;
 
@@ -115,7 +116,14 @@ namespace WebApplication1
 
             services.AddTransient<UserHelperService>();
             services.AddTransient<VkPoolService>();
-            services.AddHostedService<Scheduler>();
+
+            services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService, VkCallbackWorkerService>();
+
+            services.AddHostedService<BirthdayScenariosScheduler>();
+            services.AddHostedService<RepostScheduler>();
+            services.AddHostedService<TextScenariosScheduler>();
+
+            services.AddHostedService<MessagingScheduler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

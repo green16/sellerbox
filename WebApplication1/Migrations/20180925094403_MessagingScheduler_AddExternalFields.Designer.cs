@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication1.Common;
 
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20180925094403_MessagingScheduler_AddExternalFields")]
+    partial class MessagingScheduler_AddExternalFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -725,18 +727,12 @@ namespace WebApplication1.Migrations
                     b.Property<DateTime?>("DtEnd")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DtStart")
+                    b.Property<DateTime?>("DtStart")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("IdMessage");
-
-                    b.Property<string>("Name");
-
-                    b.Property<long>("RecipientsCount");
+                    b.Property<Guid?>("IdMessage");
 
                     b.Property<byte>("Status");
-
-                    b.Property<string>("VkUserIds");
 
                     b.HasKey("Id");
 
@@ -1382,8 +1378,7 @@ namespace WebApplication1.Migrations
                 {
                     b.HasOne("WebApplication1.Models.Database.Messages", "Message")
                         .WithMany()
-                        .HasForeignKey("IdMessage")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("IdMessage");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Database.Segments", b =>

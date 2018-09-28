@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Common.Helpers;
+using WebApplication1.Common.Hubs.Common;
 using WebApplication1.Common.Services;
 
 namespace WebApplication1.Common.Hubs
@@ -12,22 +13,20 @@ namespace WebApplication1.Common.Hubs
     public class MessagingHub : Hub
     {
         private readonly DatabaseContext _context;
-        private readonly UserHelperService _userHelperService;
         private readonly VkPoolService _vkPoolService;
 
         private static readonly List<Pair<long, string>> connectedToGroups = new List<Pair<long, string>>();
-        private static readonly List<Pair<long, Pair<int, int>>> sendingStates = new List<Pair<long, Pair<int, int>>>();
+        private static readonly List<Pair<long, SendingState>> sendingStates = new List<Pair<long, SendingState>>();
 
         public MessagingHub(DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
         {
             _context = context;
-            _userHelperService = userHelperService;
             _vkPoolService = vkPoolService;
         }
 
-        public Pair<int, int> GetState(long idGroup) => sendingStates.FirstOrDefault(x => x.Item1 == idGroup)?.Item2;
+        public SendingState[] GetState(long idGroup) => sendingStates.Where(x => x.Item1 == idGroup).Select(x => x.Item2).ToArray();
 
-        public async Task<Pair<int, int>> Subscribe(long idGroup)
+        public async Task<SendingState[]> Subscribe(long idGroup)
         {
             connectedToGroups.Add(new Pair<long, string>(idGroup, Context.ConnectionId));
             await Groups.AddToGroupAsync(Context.ConnectionId, idGroup.ToString());
@@ -56,58 +55,60 @@ namespace WebApplication1.Common.Hubs
             }
         }
 
-        public async Task Start(long idGroup, Guid idMessage, params long[] ids)
+        public async Task Start(long idGroup, Guid idMessaging)
         {
             var sendingState = sendingStates.FirstOrDefault(x => x.Item1 == idGroup);
             if (sendingState == null)
-                sendingStates.Add(new Pair<long, Pair<int, int>>(idGroup, new Pair<int, int>(0, 0)));
-            await Clients.Group(idGroup.ToString()).SendAsync("ProgressStarted");
+            {
+                sendingState = new Pair<long, SendingState>(idGroup, new SendingState(0, 0, idMessaging));
+                sendingStates.Add(sendingState);
+            }
+            await Clients.Group(idGroup.ToString()).SendAsync("ProgressStarted", sendingState.Item2);
 
-            await DoWork(idGroup, idMessage, ids);
+            await DoWork(idGroup, idMessaging);
         }
 
-        private async Task Finish(long idGroup)
+        private async Task Finish(long idGroup, Guid idMessaging)
         {
-            sendingStates.RemoveAll(x => x.Item1 == idGroup);
-            await Clients.Group(idGroup.ToString()).SendAsync("ProgressFinished");
+            sendingStates.RemoveAll(x => x.Item1 == idGroup && x.Item2.IdMessaging == idMessaging);
+            await Clients.Group(idGroup.ToString()).SendAsync("ProgressFinished", idMessaging);
         }
 
-        private async Task Progress(long idGroup, int total, int progress)
+        private async Task Progress(long idGroup, SendingState sendingState)
         {
-            var sendingState = sendingStates.FirstOrDefault(x => x.Item1 == idGroup);
-            if (sendingState == null)
-                sendingStates.Add(new Pair<long, Pair<int, int>>(idGroup, new Pair<int, int>(total, progress)));
+            var currentSendingState = sendingStates.FirstOrDefault(x => x.Item1 == idGroup && x.Item2.IdMessaging == sendingState.IdMessaging);
+            if (currentSendingState == null)
+                sendingStates.Add(new Pair<long, SendingState>(idGroup, sendingState));
             else
             {
-                if (sendingState.Item2 == null)
-                    sendingState.Item2 = new Pair<int, int>(total, progress);
-                else
-                {
-                    sendingState.Item2.Item1 = total;
-                    sendingState.Item2.Item2 = progress;
-                }
+                currentSendingState.Item2.Total = sendingState.Total;
+                currentSendingState.Item2.Progress = sendingState.Progress;
             }
-            await Clients.Group(idGroup.ToString()).SendAsync("ProgressChanged", total, progress);
+            await Clients.Group(idGroup.ToString()).SendAsync("ProgressChanged", sendingState);
         }
 
-        public async Task DoWork(long idGroup, Guid idMessage, params long[] ids)
+        private async Task DoWork(long idGroup, Guid idMessaging)
         {
             MessageHelper messageHelper = new MessageHelper(_context);
-            messageHelper.MessageSent += async (sender, e) => await Progress(e.IdGroup, e.Total, e.Current);
+            messageHelper.MessageSent += async (sender, e) => await Progress(e.IdGroup, new SendingState(e.Total, e.Process, idMessaging));
+
+            var messaging = await _context.Scheduler_Messaging.FirstOrDefaultAsync(x => x.Id == idMessaging);
 
             var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
 
-            await messageHelper.SendMessages(vkApi, idGroup, idMessage, ids);
+            var ids = messaging.RecipientIds;
+
+            await messageHelper.SendMessages(vkApi, idGroup, messaging.IdMessage, ids);
             var subscriberIds = await _context.Subscribers.Where(x => ids.Contains(x.IdVkUser)).Select(x => x.Id).ToArrayAsync();
             await _context.History_Messages.AddRangeAsync(subscriberIds.Select(x => new Models.Database.History_Messages()
             {
-                IdMessage = idMessage,
+                IdMessage = messaging.IdMessage,
                 IdSubscriber = x,
                 IsOutgoingMessage = true,
                 Dt = DateTime.UtcNow
             })).ContinueWith(result => _context.SaveChanges());
 
-            await Finish(idGroup);
+            await Finish(idGroup, idMessaging);
         }
     }
 }

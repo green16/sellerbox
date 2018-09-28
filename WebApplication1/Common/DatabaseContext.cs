@@ -34,6 +34,11 @@ namespace WebApplication1.Common
         public DbSet<ChainContents> ChainContents { get; set; }
         public DbSet<SubscribersInChains> SubscribersInChains { get; set; }
 
+        public DbSet<ChatScenarios> ChatScenarios { get; set; }
+        public DbSet<ChatScenarioContents> ChatScenarioContents { get; set; }
+        public DbSet<SubscriberChatReplies> SubscriberChatReplies { get; set; }
+        public DbSet<SubscribersInChatProgress> SubscribersInChatProgress { get; set; }
+
         public DbSet<BirthdayScenarios> BirthdayScenarios { get; set; }
 
         public DbSet<BirthdayWallScenarios> BirthdayWallScenarios { get; set; }
@@ -44,8 +49,13 @@ namespace WebApplication1.Common
         public DbSet<History_Messages> History_Messages { get; set; }
         public DbSet<History_Scenarios> History_Scenarios { get; set; }
         public DbSet<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
+        public DbSet<History_SubscribersInChatScenarios> History_SubscribersInChatScenarios { get; set; }
+        public DbSet<History_SubscribersInChatScenariosContents> History_SubscribersInChatScenariosContents { get; set; }
         public DbSet<History_Synchronization> SyncHistory { get; set; }
         public DbSet<History_WallPosts> History_WallPosts { get; set; }
+
+        public DbSet<Scheduler_Messaging> Scheduler_Messaging { get; set; }
+
 
         public DatabaseContext()
         {
@@ -82,6 +92,11 @@ namespace WebApplication1.Common
                 .WithMany(x => x.SubscriberReposts)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<SubscriberChatReplies>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.SubscriberChatReplies)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<SubscribersInChains>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.SubscribersInChains)
@@ -90,6 +105,11 @@ namespace WebApplication1.Common
             modelBuilder.Entity<SubscribersInSegments>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.SubscribersInSegments)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SubscribersInChatProgress>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.SubscribersInChatProgress)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<BirthdayScenarios>()
@@ -130,6 +150,16 @@ namespace WebApplication1.Common
             modelBuilder.Entity<History_SubscribersInChainSteps>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.History_SubscribersInChainSteps)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_SubscribersInChatScenarios>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_SubscribersInChatScenarios)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<History_SubscribersInChatScenariosContents>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_SubscribersInChatScenariosContents)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<History_WallPosts>()

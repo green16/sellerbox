@@ -8,15 +8,16 @@ namespace WebApplication1.Common.Helpers
 {
     public class MessageSentEventArgs : EventArgs
     {
-        public long IdGroup { get; protected set; }
-        public int Total { get; protected set; }
-        public int Current { get; protected set; }
+        public long IdGroup { get; set; }
 
-        public MessageSentEventArgs(long idGroup, int total, int current)
+        public int Total { get; set; }
+        public int Process { get; set; }
+
+        public MessageSentEventArgs(long idGroup, int total, int process)
         {
             IdGroup = idGroup;
             Total = total;
-            Current = current;
+            Process = process;
         }
     }
 
@@ -37,7 +38,7 @@ namespace WebApplication1.Common.Helpers
         private readonly DatabaseContext _context;
 
         public event EventHandler<MessageSentEventArgs> MessageSent;
-        protected virtual void OnMessageSent(long idGroup, int total, int current) => MessageSent?.Invoke(this, new MessageSentEventArgs(idGroup, total, current));
+        protected virtual void OnMessageSent(long idGroup, int total, int process) => MessageSent?.Invoke(this, new MessageSentEventArgs(idGroup, total, process));
 
         public int Stepping { get; set; } = 100;
 
@@ -64,6 +65,8 @@ namespace WebApplication1.Common.Helpers
 
         private async Task SendMessage(VkNet.VkApi vkApi, bool isImageFirst, string text, IEnumerable<VkNet.Model.Attachments.MediaAttachment> attachments, VkNet.Model.Keyboard.MessageKeyboard keyboard, long[] ids)
         {
+            if (keyboard != null)
+                keyboard.OneTime = true;
             string nbspString = new string(new char[] { (char)160 });
             if (isImageFirst && attachments != null && attachments.Any())
             {

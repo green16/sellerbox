@@ -30,9 +30,15 @@
 @{
     bool hasElements = Model?.Any() ?? false;
 }
-<h5 @{if (hasElements) { <text> hidden</text>}}>
-    Проверок репостов нет.
-    <a asp-action="Create">Добавить первую</a>
+<h5>
+    @if (!hasElements)
+    {
+        <text>Проверок репостов нет.</text>
+    }
+    <a asp-action="Create">
+        Добавить@{if (!hasElements)
+            {<text> первую</text>} }
+    </a>
 </h5>
 @if (hasElements)
 {
@@ -93,5 +99,6 @@
                 <button type="button" class="btn btn-danger removeRepostScenarioButton" data-toggle="modal" data-target="#warningRemoveModal">Удалить</button>
             </div>
         </div>
+        <br /><hr /><br />
     }
 }

@@ -219,6 +219,7 @@ namespace WebApplication1.Controllers
             if (removingRepostScenario == null)
                 return NotFound(idRepostScenario);
 
+            _context.CheckedSubscribersInRepostScenarios.RemoveRange(_context.CheckedSubscribersInRepostScenarios.Where(x => x.IdRepostScenario == idRepostScenario.Value));
             _context.RepostScenarios.Remove(removingRepostScenario);
             await _context.SaveChangesAsync();
 

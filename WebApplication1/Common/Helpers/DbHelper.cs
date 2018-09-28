@@ -21,7 +21,7 @@ namespace WebApplication1.Common.Helpers
         }
 
         #endregion
-        
+
         #region ChainContents
 
         public static IQueryable<ChainContents> GetChainContents(DatabaseContext dbContext, Guid idChain)
@@ -56,7 +56,7 @@ namespace WebApplication1.Common.Helpers
             Messages result = new Messages()
             {
                 IdGroup = idGroup,
-                Keyboard = Newtonsoft.Json.JsonConvert.SerializeObject(keyboard),
+                Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard),
                 Text = message,
                 IsImageFirst = isImageFirst
             };
