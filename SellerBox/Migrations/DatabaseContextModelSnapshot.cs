@@ -505,27 +505,6 @@ namespace SellerBox.Migrations
                     b.ToTable("History_SubscribersInChainSteps");
                 });
 
-            modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChatScenarios", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime>("Dt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("IdChatScenario");
-
-                    b.Property<Guid>("IdSubscriber");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdChatScenario");
-
-                    b.HasIndex("IdSubscriber");
-
-                    b.ToTable("History_SubscribersInChatScenarios");
-                });
-
             modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChatScenariosContents", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1147,7 +1126,7 @@ namespace SellerBox.Migrations
             modelBuilder.Entity("SellerBox.Models.Database.ChatScenarioContents", b =>
                 {
                     b.HasOne("SellerBox.Models.Database.ChatScenarios", "ChatScenario")
-                        .WithMany()
+                        .WithMany("ChatScenarioContents")
                         .HasForeignKey("IdChatScenario")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
@@ -1275,19 +1254,6 @@ namespace SellerBox.Migrations
 
                     b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
                         .WithMany("History_SubscribersInChainSteps")
-                        .HasForeignKey("IdSubscriber")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChatScenarios", b =>
-                {
-                    b.HasOne("SellerBox.Models.Database.ChatScenarios", "ChatScenario")
-                        .WithMany()
-                        .HasForeignKey("IdChatScenario")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
-                        .WithMany("History_SubscribersInChatScenarios")
                         .HasForeignKey("IdSubscriber")
                         .OnDelete(DeleteBehavior.Restrict);
                 });

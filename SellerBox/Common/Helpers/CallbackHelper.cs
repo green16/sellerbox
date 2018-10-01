@@ -197,14 +197,6 @@ namespace SellerBox.Common.Helpers
             if (isInProgress)
                 return null;
 
-            await dbContext.History_SubscribersInChatScenarios.AddAsync(new History_SubscribersInChatScenarios()
-            {
-                IdChatScenario = chatScenario.Id,
-                IdSubscriber = idSubscriber,
-                Dt = DateTime.UtcNow
-            });
-            await dbContext.SaveChangesAsync();
-
             var firstChatContent = await dbContext.ChatScenarioContents
                 .Where(x => x.IdChatScenario == chatScenario.Id)
                 .OrderBy(x => x.Step)

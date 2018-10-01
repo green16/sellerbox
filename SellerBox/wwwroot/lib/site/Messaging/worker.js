@@ -1,8 +1,4 @@
-﻿const connection = new signalR.HubConnectionBuilder()
-	.withUrl("/messaginghub")
-	.build();
-
-$(function () {
+﻿$(function () {
 	var now = new Date();
 	var year = now.getFullYear();
 	var month = now.getMonth() + 1;

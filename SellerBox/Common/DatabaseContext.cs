@@ -49,7 +49,6 @@ namespace SellerBox.Common
         public DbSet<History_Messages> History_Messages { get; set; }
         public DbSet<History_Scenarios> History_Scenarios { get; set; }
         public DbSet<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
-        public DbSet<History_SubscribersInChatScenarios> History_SubscribersInChatScenarios { get; set; }
         public DbSet<History_SubscribersInChatScenariosContents> History_SubscribersInChatScenariosContents { get; set; }
         public DbSet<History_Synchronization> SyncHistory { get; set; }
         public DbSet<History_WallPosts> History_WallPosts { get; set; }
@@ -150,11 +149,6 @@ namespace SellerBox.Common
             modelBuilder.Entity<History_SubscribersInChainSteps>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.History_SubscribersInChainSteps)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<History_SubscribersInChatScenarios>()
-                .HasOne(x => x.Subscriber)
-                .WithMany(x => x.History_SubscribersInChatScenarios)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<History_SubscribersInChatScenariosContents>()

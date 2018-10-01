@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
@@ -13,5 +14,7 @@ namespace SellerBox.Models.Database
         [ForeignKey(nameof(Group))]
         public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
+
+        public virtual ICollection<ChatScenarioContents> ChatScenarioContents { get; set; }
     }
 }

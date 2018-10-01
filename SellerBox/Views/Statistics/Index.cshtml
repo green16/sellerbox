@@ -1,8 +1,61 @@
-﻿<div>
-    <div class="input-group mb-3">
+﻿@model SellerBox.ViewModels.Statistics.IndexViewModel
+
+@section scripts {
+    <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script src="~/lib/site/Statistics/index.js"></script>
+}
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" type="text/css" />
+}
+
+<form asp-action="Generate" asp-controller="Statistics" asp-antiforgery="true">
+    <div class="input-group">
         <div class="input-group-prepend">
-            <span class="input-group-text">Default</span>
+            <label asp-for="StatisticType" class="input-group-text"></label>
         </div>
-        <input type="text" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+        <select asp-for="StatisticType" class="custom-select">
+            <option value="@null" selected>Выберите тип статистики...</option>
+            <option value="@SellerBox.ViewModels.Statistics.StatisticType.Messages">Сообщения</option>
+            <option value="@SellerBox.ViewModels.Statistics.StatisticType.ChatScenarios">Чатбот</option>
+        </select>
     </div>
-</div>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="DtStart" class="input-group-text"></label>
+        </div>
+
+        <input asp-for="DtStart" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
+
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-success" title="toggle" data-toggle>
+                <img src="~/images/Calendar.png" />
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary" title="clear" data-clear>
+                <img src="~/images/Close.png" />
+            </button>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="DtEnd" class="input-group-text"></label>
+        </div>
+
+        <input asp-for="DtEnd" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
+
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-success" title="toggle" data-toggle>
+                <img src="~/images/Calendar.png" />
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary" title="clear" data-clear>
+                <img src="~/images/Close.png" />
+            </button>
+        </div>
+    </div>
+
+    <input type="submit" class="btn btn-primary" value="Сформировать" />
+</form>
