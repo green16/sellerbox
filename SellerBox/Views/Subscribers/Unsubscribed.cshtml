@@ -1,0 +1,158 @@
+﻿@using ReflectionIT.Mvc.Paging
+@model PagingList<SellerBox.ViewModels.Subscribers.UnsubscribedIndexViewModel>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+@section Scripts {
+    <script src="~/lib/site/Subscribers/checkers.js"></script>
+}
+
+@section Styles {
+    <link href="~/lib/sass-bootstrap-glyphicons/css/bootstrap-glyphicons.css" rel="stylesheet" type="text/css" />
+}
+
+<h2>
+    Список отписавшихся от группы 
+    "<a target="_blank" href="@ViewBag.LinkGroup"><span style="color: darkgray">@ViewBag.GroupName</span></a>"
+</h2>
+
+@if (!Model.Any())
+{
+    <h3>Отписавшихся людей нет.</h3>
+}
+else
+{
+    @await Html.PartialAsync("Pager", Model)
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    №
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Photo)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.FIO)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.Sex)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.Country)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.City)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.Birthday)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.DtAdd)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.DtUnsubscribe)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.IsChatAllowed)
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{int idx = (Model.PageIndex - 1) * Model.PageSize;
+                foreach (var item in Model)
+                {
+                    idx++;
+                    <tr>
+                        <td>
+                            @idx
+                        </td>
+                        <td>
+                            <img src="@item.Photo" />
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.Link))
+                            {
+                                <a target="_blank" href="@item.Link">
+                                    @Html.DisplayFor(modelItem => item.FIO)
+                                </a>
+                            }
+                            else
+                            {
+                                @Html.DisplayFor(modelItem => item.FIO)
+                            }
+                        </td>
+                        <td>
+                            @if (item.Sex.HasValue)
+                            {
+                                @if (item.Sex.Value)
+                                {
+                                    <img src="~/images/IconFemale.png" />
+                                }
+                                else
+                                {
+                                    <img src="~/images/IconMale.png" />
+                                }
+                            }
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Country)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.City)
+                        </td>
+                        <td>
+                            @if (item.Birthday.HasValue)
+                            {
+                                @if (item.Birthday.Value.Year == DateTime.MinValue.Year)
+                                {
+                                    @item.Birthday.Value.ToString("dd MMMM")
+                                }
+                                else
+                                {
+                                    @Html.DisplayFor(modelItem => item.Birthday)
+                                }
+                            }
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DtAdd)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DtUnsubscribe)
+                        </td>
+                        <td>
+                            @if (item.IsChatAllowed.HasValue)
+                            {
+                                if (item.IsChatAllowed.Value)
+                                {
+                                    <text>да</text>
+                                }
+                                else
+                                {
+                                    <text>нет</text>
+                                }
+                            }
+                            else
+                            {
+                                <a href="#" data-idVk="@item.IdVk" class="updateIsChatAllowed">
+                                    Неизвестно
+                                </a>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Card" asp-route-idSubscriber="@item.Id">
+                                <img src="~/images/Details.png" />
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    @await Html.PartialAsync("Pager", Model)
+}

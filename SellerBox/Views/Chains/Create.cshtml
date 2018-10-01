@@ -1,0 +1,32 @@
+﻿@model SellerBox.ViewModels.Chains.ChainViewModel
+
+@section scripts {
+    <script src="~/lib/site/Chains/addStep1.js"></script>
+}
+<form asp-antiforgery="true" asp-action="SaveChain" asp-controller="Chains">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="input-group-prepend">
+        <label asp-for="Name" class="input-group-text"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="input-group-prepend">
+        <label asp-for="IdGroup" class="input-group-text"></label>
+        <select asp-for="IdGroup" class="custom-select">
+            <option value="@null" selected>Выберите группу...</option>
+            @foreach (KeyValuePair<long, string> group in ViewBag.Groups)
+            {
+                if (ViewBag.IdSelectedGroup != null && ViewBag.IdSelectedGroup == group.Key)
+                {
+                    <option value="@group.Key" selected>@group.Value</option>
+                }
+                else
+                {
+                    <option value="@group.Key">@group.Value</option>
+                }
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить и продолжить</button>
+</form>

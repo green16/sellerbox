@@ -1,0 +1,57 @@
+﻿@model SellerBox.ViewModels.Messaging.EditMessagingViewModel
+@{
+    ViewData["Title"] = "View";
+}
+@section scripts {
+    <script type=text/javascript>
+        var MaxRequestBodySize = @SellerBox.Controllers.MessagingController.MaxRequestBodySize;
+        var idGroup = @ViewBag.IdGroup;
+    </script>
+    <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
+    <script src="~/lib/site/Messaging/worker.js"></script>
+}
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" type="text/css" />
+}
+
+@using (Html.BeginForm("SendMessages", "Messaging", FormMethod.Post))
+{
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
+
+    <input asp-for="IdGroup" type="hidden" />
+    
+    <hr />
+
+    <div id="datetimepicker" class="input-group">
+        <div class="input-group-prepend">
+            <span class="input-group-text">Запустить рассылку: </span>
+        </div>
+
+        <input asp-for="DtStart" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
+
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-success" title="toggle" data-toggle>
+                <img src="~/images/Calendar.png" />
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary" title="clear" data-clear>
+                <img src="~/images/Close.png" />
+            </button>
+        </div>
+    </div>
+
+    <br />
+
+    <div class="form-group">
+        <div class="checkbox">
+            <input id="isSelfSend" type="checkbox" name="@nameof(Model.IsSelfSendString)" @{if (Model.IsSelfSend) { <text> checked</text>} }>
+            Тестовая отправка
+        </div>
+    </div>
+
+    <input type="submit" class="btn btn-primary" value="Отправить" />
+}

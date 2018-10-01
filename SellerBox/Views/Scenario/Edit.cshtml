@@ -1,0 +1,117 @@
+﻿@using SellerBox.Models.Database.Common;
+@model SellerBox.ViewModels.Scenarios.ScenarioViewModel
+
+@{
+    ViewData["Title"] = "View";
+}
+@section scripts {
+    <script type=text/javascript>
+        var MaxRequestBodySize = @SellerBox.Controllers.MessagingController.MaxRequestBodySize;
+    </script>
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
+    <script src="~/lib/site/Scenario/site.js"></script>
+}
+
+<form asp-action="Save" asp-controller="Scenario" asp-antiforgery="true">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    @if (Model.IdScenario.HasValue)
+    {
+        <input asp-for="IdScenario" type="hidden" value="@Model.IdScenario" />
+    }
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="Name" class="input-group-text"></label>
+        </div>
+        <input asp-for="Name" type="text" class="form-control" aria-label="Сообщение" placeholder="Название сценария">
+    </div>
+
+    <h4>Условие срабатывания сценария</h4>
+    <div class="form-border">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label asp-for="InputMessage" class="input-group-text"></label>
+                <div class="input-group-text">
+                    <div class="form-check form-check-inline">
+                        <input asp-for="IsStrictMatch" class="form-check-input" type="radio" value="true" checked>
+                        <label class="form-check-label" for="messageOptionRadio1">Равно</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input asp-for="IsStrictMatch" class="form-check-input" type="radio" value="false">
+                        <label class="form-check-label" for="messageOptionRadio2">Содержит</label>
+                    </div>
+                </div>
+            </div>
+            <input asp-for="InputMessage" type="text" class="form-control" aria-label="Сообщение" placeholder="Текст сообщения">
+        </div>
+    </div>
+
+    <h4>Действие после срабатывания сценария</h4>
+
+    <h5>Выполнить действие</h5>
+    <div class="input-group mb-3" id="actionTypes">
+        <div class="form-check form-check-inline">
+            <input asp-for="Action" class="form-check-input" type="radio" data-id="0" value="@ScenarioActions.Message" checked>
+            <label class="form-check-label">Только ответить</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Action" class="form-check-input" type="radio" data-id="1" value="@ScenarioActions.AddToChain">
+            <label class="form-check-label">Добавить в цепочку</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Action" class="form-check-input" type="radio" data-id="2" value="@ScenarioActions.ChangeChain">
+            <label class="form-check-label">Переключить в цепочку</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Action" class="form-check-input" type="radio" data-id="3" value="@ScenarioActions.RemoveFromChain">
+            <label class="form-check-label">Исключить из цепочки</label>
+        </div>
+    </div>
+
+    <div id="action">
+        <div id="onlyReply" @{ if (Model.Action != ScenarioActions.Message) { <text> hidden</text>} }>
+            @if (Model.IdMessage.HasValue)
+            {
+                <input asp-for="IdMessage" type="hidden" value="@Model.IdMessage.Value" />
+            }
+
+            @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model.Message)
+        </div>
+
+        <div id="chain2" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.AddToChain || Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdChain2" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdChain2" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div id="chain1" class="input-group mb-3" @{ if (Model.Action == ScenarioActions.RemoveFromChain || Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdChain" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdChain" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div id="onError" @{ if (Model.Action == ScenarioActions.Message) { <text> hidden</text>} }>
+            @if (Model.IdErrorMessage.HasValue && Model.Action != ScenarioActions.Message)
+            {
+                <input asp-for="IdErrorMessage" type="hidden" value="@Model.IdErrorMessage.Value" />
+            }
+            <h5>Ответ бота при ошибке действия</h5>
+            @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model.ErrorMessage)
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

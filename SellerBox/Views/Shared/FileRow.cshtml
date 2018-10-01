@@ -1,0 +1,13 @@
+﻿@using SellerBox.ViewModels.Shared
+@model FileModel
+
+<div data-idFile="@Model.Id" class="list-group-item d-flex justify-content-between align-items-center">
+    @Model.Name
+    @{ string prefix = !string.IsNullOrWhiteSpace(Model.PropertiesPrefix) ? $"{Model.PropertiesPrefix}.Files[{Model.Index}]." : $"Files[{Model.Index}]."; }
+    <input name="@($"{prefix}{nameof(FileModel.Id)}")" type="hidden" value="@Model.Id" />
+    <input name="@($"{prefix}{nameof(FileModel.Name)}")" type="hidden" value="@Model.Name" />
+    <input name="@($"{prefix}{nameof(FileModel.Index)}")" type="hidden" value="@Model.Index" />
+    <button type="button" aria-label="Close" class="close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>

@@ -1,0 +1,91 @@
+﻿@inject SellerBox.Common.Services.UserHelperService UserHelperService
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Sellerbox</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-collapse collapse justify-content-between" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="homeDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Основные
+                </a>
+                <div class="dropdown-menu" aria-labelledby="homeDropdown">
+                    <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Home" asp-action="Index">Домой</a>
+                    <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Home" asp-action="Contact">Контакты</a>
+                </div>
+            </div>
+            @if (UserHelperService.HasLoggedUser(User))
+            {
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="groupsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Группы
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="groupsDropdown">
+                        <a class="nav-item nav-link" asp-area="" asp-controller="Groups" asp-action="IndexConnected">Связанные</a>
+                        <a class="nav-item nav-link" asp-area="" asp-controller="Groups" asp-action="Index">Все</a>
+                    </div>
+                </div>
+                if (UserHelperService.HasConnectedGroups(User))
+                {
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="subscribersDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Подписчики
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="subscribersDropdown">
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Index">Все</a>
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Members">Подписчики</a>
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Subscribers">Участники</a>
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Unmembered">Отписчики сообщений</a>
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Unsubscribed">Отписчики группы</a>
+                        </div>
+                    </div>
+                    <a class="nav-item nav-link" asp-area="" asp-controller="Messaging" asp-action="Index">Рассылка</a>
+                    <a class="nav-item nav-link" asp-area="" asp-controller="Chains" asp-action="Index">Цепочки</a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="scenariosDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Сценарии
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="scenariosDropdown">
+                            <a class="nav-item nav-link" asp-area="" asp-controller="StaticScenarios" asp-action="Index">Статические</a>
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Scenario" asp-action="Index">Текст</a>
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Reposts" asp-action="Index">Репосты</a>
+                        </div>
+                    </div>
+                    <a class="nav-item nav-link" asp-area="" asp-controller="Statistics" asp-action="Index">Статистика</a>
+                }
+            }
+        </div>
+        @if (UserHelperService.HasLoggedUser(User))
+        {
+            <div class="nav-item dropdown justify-content-end">
+                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    @UserHelperService.GetUserName(User)
+                </a>
+                <div class="dropdown-menu" aria-labelledby="userDropdown">
+                    @if (UserHelperService.HasSelectedGroup(User))
+                    {
+                        KeyValuePair<long, string> selectedGroup = UserHelperService.GetSelectedGroup(User);
+                        <a asp-area="" asp-controller="Groups" asp-action="IndexConnected" class="dropdown-item nav-item nav-link">@selectedGroup.Value</a>
+                    }
+                    else
+                    {
+                        <a asp-area="" asp-controller="Groups" asp-action="Index" class="dropdown-item nav-item nav-link text-danger">Текущая группа не выбрана</a>
+                    }
+                    <div class="dropdown-divider"></div>
+                    <a asp-area="" asp-controller="Manage" asp-action="Index" title="Manage" class="dropdown-item nav-item nav-link">Профиль</a>
+                    <a asp-area="" asp-controller="Account" asp-action="Logout" method="post" title="Manage" class="dropdown-item nav-item nav-link">Выйти</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="nav">
+                @*<a asp-area="" asp-controller="Account" asp-action="Register" class="nav-link nav-item">Зарегистрироваться</a>*@
+                <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link nav-item">Войти</a>
+            </div>
+        }
+
+    </div>
+</nav>

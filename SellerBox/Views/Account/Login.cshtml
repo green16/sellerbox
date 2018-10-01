@@ -1,0 +1,83 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using System.Linq
+@using SellerBox.Models.Database
+@using SellerBox.ViewModels
+
+@model LoginViewModel
+@inject SignInManager<Users> SignInManager
+
+@{
+    ViewData["Title"] = "Вход в систему";
+}
+
+<h2>@ViewData["Title"]</h2>
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
+                <h4>Учётные данные для входа</h4>
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox">
+                        <label asp-for="RememberMe">
+                            <input asp-for="RememberMe" />
+                            @Html.DisplayNameFor(m => m.RememberMe)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-default">Войти</button>
+                </div>
+                <div class="form-group">
+                    <p>
+                        <a asp-action="ForgotPassword">Забыли пароль?</a>
+                    </p>
+                    @*
+                        <p>
+                            <a asp-action="Register" asp-route-returnurl="@ViewData["ReturnUrl"]">Зарегистрироваться</a>
+                        </p>
+                    *@
+                </div>
+            </form>
+        </section>
+    </div>
+    @{
+        var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
+        if (loginProviders.Length > 0)
+        {
+            <div class="col-md-6 col-md-offset-2">
+                <section>
+                    <h4>Войти с помощью:</h4>
+                    <hr />
+                    <form asp-action="ExternalLogin" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal">
+                        <div>
+                            <p>
+                                @foreach (var provider in loginProviders)
+                                {
+                                    <button type="submit" class="btn btn-outline-primary" name="provider" value="@provider.Name" title="Войти с помощью @provider.DisplayName">
+                                        @{
+                                            string imageFileName = Url.Content($"~/images/LoginProviders/{provider.Name?.ToLower()}.png");
+                                            <img src="@imageFileName" width="32" height="32">
+                                            @provider.DisplayName
+                                        }
+                                    </button>
+                                }
+                            </p>
+                        </div>
+                    </form>
+
+                </section>
+            </div>
+        }
+    }
+</div>

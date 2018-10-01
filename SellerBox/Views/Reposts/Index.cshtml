@@ -1,0 +1,104 @@
+﻿@model IEnumerable<SellerBox.ViewModels.Reposts.IndexRepostScenarioViewModel>
+@{
+    ViewData["Title"] = "View";
+}
+@section scripts {
+    <script src="~/lib/site/Reposts/index.js"></script>
+}
+
+<div class="modal fade" id="warningRemoveModal" tabindex="-1" role="dialog" aria-labelledby="warningRemoveModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warningRemoveModalTitle">Внимание</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить данный сценарий?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Нет</button>
+                <button type="button" class="btn btn-primary" id="warningRemoveModalYesButton">Да</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="text-center">Проверки репостов</h3>
+@{
+    bool hasElements = Model?.Any() ?? false;
+}
+<h5>
+    @if (!hasElements)
+    {
+        <text>Проверок репостов нет.</text>
+    }
+    <a asp-action="Create">
+        Добавить@{if (!hasElements)
+            {<text> первую</text>} }
+    </a>
+</h5>
+@if (hasElements)
+{
+    foreach (var item in Model)
+    {
+        <div data-idRepostScenario="@item.Id" class="container bg-light">
+            <div style="float: left">
+                <p style="font-weight: bold; color: lightgreen">@item.Name</p>
+            </div>
+            <div style="float: right">
+                <span>Проверять в цепочке:</span>
+                <a asp-action="EditById" asp-controller="Chains" asp-route-idChain="@item.IdCheckingChain"><span style="color: blue">@item.CheckingChainName</span></a>
+            </div>
+
+            <br clear="all" />
+
+            <a href="@item.PostLink" target="_blank">Ссылка на пост</a>
+            <div class="text-center">
+                <div>
+                    <span>После сообщения №</span>
+                    <span style="color: blue">@item.MessageIndex:</span>
+                    <span style="color: blue">@item.MessageTextPart</span>
+                </div>
+
+                <hr />
+
+                <div>
+                    <span>Если <b>есть</b> репост - </span>
+                    @if (item.HasGoToChain)
+                    {
+                        <span>добавить в цепочку:</span>
+                        <span style="color: blue">@item.GoToChainName</span>
+                    }
+                    else
+                    {
+                        <span>действий не требуется</span>
+                    }
+                </div>
+                <div>
+                    <span>Если <b>нет</b> репоста - </span>
+                    @if (item.HasGoToChain2)
+                    {
+                        <span>добавить в цепочку</span>
+                        <span style="color: blue">@item.GoToChain2Name</span>
+                    }
+                    else
+                    {
+                        <span>действий не требуется</span>
+                    }
+                </div>
+            </div>
+
+            <div class="btn-group" role="group">
+                @using (Html.BeginForm("EditById", "Reposts", new { idRepostScenario = item.Id }))
+                {
+                    <button type="submit" class="btn btn-info">Редактировать</button>
+                }
+                <button type="button" class="btn btn-danger removeRepostScenarioButton" data-toggle="modal" data-target="#warningRemoveModal">Удалить</button>
+            </div>
+        </div>
+        <br /><hr /><br />
+    }
+}
