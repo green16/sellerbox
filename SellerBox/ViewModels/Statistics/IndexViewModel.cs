@@ -9,6 +9,6 @@ namespace SellerBox.ViewModels.Statistics
         [Display(Name = "Дата окончания")]
         public string DtEnd { get; set; }
         [Display(Name = "Тип отчёта")]
-        public StatisticType StatisticType { get; set; }
+        public byte StatisticType { get; set; }
     }
 }

@@ -16,8 +16,10 @@
         </div>
         <select asp-for="StatisticType" class="custom-select">
             <option value="@null" selected>Выберите тип статистики...</option>
-            <option value="@SellerBox.ViewModels.Statistics.StatisticType.Messages">Сообщения</option>
-            <option value="@SellerBox.ViewModels.Statistics.StatisticType.ChatScenarios">Чатбот</option>
+            @foreach (var statisticType in ViewBag.StatisticTypes)
+            {
+                <option value="@statisticType.Key">@statisticType.Value</option>
+            }
         </select>
     </div>
 

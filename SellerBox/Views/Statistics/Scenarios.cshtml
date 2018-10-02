@@ -1,9 +1,8 @@
-﻿@model SellerBox.ViewModels.Statistics.MessagesViewModel
+﻿@model SellerBox.ViewModels.Statistics.ScenariosViewModel
 
 @{
-    var Y1Values = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Sended).ToList());
-    var Y2Values = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Received).ToList());
     var XLabels = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList());
+    var YValues = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Count).ToList());
 }
 
 @section scripts {
@@ -12,14 +11,9 @@
         var barChartData = {
             labels: @Html.Raw(XLabels),
             datasets: [{
-                label: 'Отправлено',
-                backgroundColor: 'rgba(255, 0, 0, 1)',
-                data: @Html.Raw(Y1Values)
-            },
-                {
-                label: 'Получено',
+                label: 'Получено сообщений',
                     backgroundColor: 'rgba(0, 0, 255, 1)',
-                data: @Html.Raw(Y2Values)
+                data: @Html.Raw(YValues)
             }]
         };
 
@@ -41,6 +35,14 @@
                         yAxes: [{
                             stacked: true
                         }]
+                    },
+                    plugins: {
+                        datalabels: {
+                            formatter: function (value, context) {
+                                console.log(context.chart.data.labels[context.dataIndex]);
+                                return context.chart.data.labels[context.dataIndex];
+                            }
+                        }
                     }
                 }
             });
@@ -48,14 +50,11 @@
     </script>
 }
 
-<h2>Статистика по сообщениям</h2>
-
-<div class="box-body" @{if (Model.TotalReceived == 0 && Model.TotalSended == 0) { <text> hidden</text>} }>
+<h2>Статистика по сценариям</h2>
+<div class="box-body" @{if (Model.TotalReceived == 0) { <text> hidden</text>} }>
     <div class="chart-container">
         <canvas id="chart" style="width:100%; height:500px"></canvas>
     </div>
 </div>
 
 Получено сообщений: @Model.TotalReceived
-<br />
-Отправлено сообщений: @Model.TotalSended

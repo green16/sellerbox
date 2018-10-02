@@ -12,11 +12,21 @@ namespace SellerBox.Controllers
 {
     public class StatisticsController : Controller
     {
+        private readonly Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>[] statisticTypes;
+
         private readonly DatabaseContext _context;
         private readonly UserHelperService _userHelperService;
 
         public StatisticsController(DatabaseContext context, UserHelperService userHelperService)
         {
+            statisticTypes = new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>[]
+            {
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(0, "Сообщения", GenerateMessagesReport),
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(1, "Чатбот", GenerateChatScenariosReport),
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(2, "Сценарии", GenerateScenariosReport),
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(3, "Цепочки", GenerateChainsReport)
+            };
+
             _context = context;
             _userHelperService = userHelperService;
         }
@@ -28,6 +38,7 @@ namespace SellerBox.Controllers
                 DtStart = DateTime.Now.AddDays(-7).ToString("dd.MM.yyyy HH:mm"),
                 DtEnd = DateTime.Now.ToString("dd.MM.yyyy HH:mm")
             };
+            ViewBag.StatisticTypes = statisticTypes.ToDictionary(x => x.Item1, x => x.Item2);
             return View(model);
         }
 
@@ -41,14 +52,34 @@ namespace SellerBox.Controllers
             dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Local).ToUniversalTime();
             dtEnd = DateTime.SpecifyKind(dtEnd, DateTimeKind.Local).ToUniversalTime();
 
-            switch (indexViewModel.StatisticType)
+            var function = statisticTypes.FirstOrDefault(x => x.Item1 == indexViewModel.StatisticType);
+            if (function == null)
+                return RedirectToAction(nameof(Index), indexViewModel);
+
+            return await function.Item3.Invoke(dtStart, dtEnd);
+        }
+
+        private async Task<IActionResult> GenerateScenariosReport(DateTime dtStart, DateTime dtEnd)
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var perDayItems = await _context.History_Scenarios
+                .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
+                .GroupBy(x => x.Dt.Date)
+                .Select(x => new ScenariosViewModel.MessagesPerDayViewModel()
+                {
+                    Date = x.Key,
+                    Count = x.LongCount()
+                })
+                .ToArrayAsync();
+
+            var model = new ScenariosViewModel()
             {
-                case StatisticType.Messages:
-                    return await GenerateMessagesReport(dtStart, dtEnd);
-                case StatisticType.ChatScenarios:
-                    return await GenerateChatScenariosReport(dtStart, dtEnd);
-            }
-            return RedirectToAction(nameof(Index), indexViewModel);
+                TotalReceived = perDayItems.Sum(x => x.Count),
+                MessagesPerDay = perDayItems
+            };
+
+            return View("Scenarios", model);
         }
 
         private async Task<IActionResult> GenerateMessagesReport(DateTime dtStart, DateTime dtEnd)
@@ -56,7 +87,7 @@ namespace SellerBox.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             var perDayItems = await _context.History_Messages
                 .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
-                .Where(x => x.Dt <= dtEnd.Date && x.Dt >= dtStart.Date)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
                 .GroupBy(x => x.Dt.Date)
                 .Select(x => new MessagesViewModel.MessagesPerDayViewModel()
                 {
@@ -80,46 +111,49 @@ namespace SellerBox.Controllers
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            var model = new ChatContentsViewModel();
-
             var items = await _context.History_SubscribersInChatScenariosContents
                 .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
-                .Where(x => x.Dt <= dtEnd.Date && x.Dt >= dtStart.Date)
-                .Include(x => x.ChatScenarioContent)
-                .Include(x => x.ChatScenarioContent.ChatScenario)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
                 .GroupBy(x => x.Dt.Date)
-                .ToArrayAsync();
-            model = new ChatContentsViewModel()
-            {
-                TotalReceived = items.Sum(x => x.LongCount()),
-                MessagesPerChatScenarios = items.Select(x => new ChatContentsViewModel.MessagesPerChatScenario()
+                .Select(x => new ChatContentsViewModel.MessagesPerDayViewModel()
                 {
                     Date = x.Key,
-                    MessagesInChatScenarios = x.GroupBy(y => y.ChatScenarioContent.ChatScenario.Name).Select(y => new ChatContentsViewModel.ChatScenarioInfo()
-                    {
-                        Name = y.Key,
-                        MessagesBySteps = y.GroupBy(z => z.ChatScenarioContent.Step.ToString()).Select(z => new ChatContentsViewModel.ChatScenarioContentInfo()
-                        {
-                            Step = z.Key,
-                            MessagesCount = z.LongCount()
-                        }).ToArray()
-                    }).ToArray()
-                }).ToArray()
+                    Count = x.LongCount()
+                })
+                .ToArrayAsync();
+            var model = new ChatContentsViewModel()
+            {
+                TotalReceived = items.Sum(x => x.Count),
+                MessagesPerDay = items
             };
-            /*
-                new Tuple<DateTime, Tuple<string, Tuple<string, long>[]>[]>(
-                    x.Key,
-                    x.GroupBy(y => y.ChatScenarioContent.ChatScenario.Name)
-                    .Select(y => new Tuple<string, Tuple<string, long>[]>(
-                              y.Key,
-                              y.GroupBy(z => z.ChatScenarioContent.Step.ToString()).Select(z => new Tuple<string, long>(
-                                    z.Key,
-                                    z.LongCount()))
-                                .ToArray()))
-                    .ToArray()))
-                .ToArray();
-                */
             return View("ChatScenarios", model);
+        }
+
+        private async Task<IActionResult> GenerateChainsReport(DateTime dtStart, DateTime dtEnd)
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var perDayItems = await _context.History_SubscribersInChainSteps
+                .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
+                .Where(x => x.DtAdd <= dtEnd && x.DtAdd >= dtStart)
+                .GroupBy(x => x.DtAdd.Date)
+                .Select(x => new ChainsViewModel.ChainInfoViewModel()
+                {
+                    Date = x.Key,
+                    MessagesPerDay = x.GroupBy(z => z.ChainStep.Chain.Name).Select(z => new ChainsViewModel.MessagesPerDayViewModel()
+                    {
+                        Name = z.Key,
+                        Count = z.LongCount()
+                    }).ToArray()
+                })
+                .ToArrayAsync();
+
+            var model = new ChainsViewModel()
+            {
+                TotalReceived = perDayItems.Sum(x => x.MessagesPerDay.Sum(z => z.Count)),
+                ChainInfo = perDayItems
+            };
+
+            return View("Chains", model);
         }
     }
 }

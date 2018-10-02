@@ -2,7 +2,7 @@
 
 namespace SellerBox.ViewModels.Statistics
 {
-    public class ChatContentsViewModel
+    public class ScenariosViewModel
     {
         public class MessagesPerDayViewModel
         {

@@ -1,8 +1,24 @@
-﻿@model SellerBox.ViewModels.Statistics.ChatContentsViewModel
+﻿@model SellerBox.ViewModels.Statistics.ChainsViewModel
 
 @{
-    var XLabels = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList());
-    var YValues = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Count).ToList());
+    var XLabels = Newtonsoft.Json.JsonConvert.SerializeObject(Model.ChainInfo.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList());
+    Random random = new Random();
+    var count = Model.ChainInfo.Any() ? Model.ChainInfo.Max(x => x.MessagesPerDay.Length) : 0;
+    var arrs = new dynamic[count];
+    foreach (var item in Model.ChainInfo)
+    {
+        for (int idx = 0; idx < item.MessagesPerDay.Length; idx++)
+        {
+            arrs[idx] = new
+            {
+                label = item.MessagesPerDay[idx].Name,
+                stack = item.MessagesPerDay[idx].Name,
+                backgroundColor = string.Format("#{0:X6}", random.Next(0x1000000)),
+                data = Model.ChainInfo.Select(x => x.MessagesPerDay[idx].Count).ToArray()
+            };
+        }
+    }
+    var dataSet = Newtonsoft.Json.JsonConvert.SerializeObject(arrs);
 }
 
 @section scripts {
@@ -10,11 +26,7 @@
     <script>
         var barChartData = {
             labels: @Html.Raw(XLabels),
-            datasets: [{
-                label: 'Получено сообщений',
-                    backgroundColor: 'rgba(0, 0, 255, 1)',
-                data: @Html.Raw(YValues)
-            }]
+            datasets: @Html.Raw(dataSet)
         };
 
         window.onload = function () {
@@ -35,14 +47,6 @@
                         yAxes: [{
                             stacked: true
                         }]
-                    },
-                    plugins: {
-                        datalabels: {
-                            formatter: function (value, context) {
-                                console.log(context.chart.data.labels[context.dataIndex]);
-                                return context.chart.data.labels[context.dataIndex];
-                            }
-                        }
                     }
                 }
             });
@@ -50,7 +54,7 @@
     </script>
 }
 
-<h2>Статистика по чатботу</h2>
+<h2>Статистика по цепочкам</h2>
 <div class="box-body" @{if (Model.TotalReceived == 0) { <text> hidden</text>} }>
     <div class="chart-container">
         <canvas id="chart" style="width:100%; height:500px"></canvas>
