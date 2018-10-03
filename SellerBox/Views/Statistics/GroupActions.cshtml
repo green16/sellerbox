@@ -2,6 +2,11 @@
 
 @{
     Random random = new Random();
+    string[] backgroundColors = new string[7];
+    for (int i = 0; i < 7; i++)
+    {
+        backgroundColors[i] = string.Format("#{0:X6}", random.Next(0x1000000));
+    }
 }
 
 @section scripts {
@@ -12,37 +17,37 @@
             datasets: [
             {
                 label: 'Вступило в группу',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[0])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.JoinGroupCount).ToList()))
             },
             {
                 label: 'Вышло из группы',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[1])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.LeaveGroupCount).ToList()))
             },
             {
                 label: 'Запрет сообщений',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[2])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.BlockMessagingCount).ToList()))
             },
             {
                 label: 'Разрешение сообщений',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[3])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.AcceptMessagingCount).ToList()))
             },
             {
                 label: 'Отмена сообщений',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[4])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.CancelMessagingCount).ToList()))
             },
             {
                 label: 'Заблокировано',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[5])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.BlockedCount).ToList()))
             },
             {
                 label: 'Разблокировано',
-                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                backgroundColor: '@Html.Raw(backgroundColors[6])',
                 data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.UnblockedCount).ToList()))
             }]
         };
@@ -80,12 +85,31 @@
     </div>
 </div>
 <h4>Всего:</h4>
-<ul>
-    <li>Вступило в группу: @Model.TotalJoinGroupCount</li>
-    <li>Вышло из группы: @Model.TotalLeaveGroupCount</li>
-    <li>Запрет сообщений: @Model.TotalBlockMessagingCount</li>
-    <li>Разрешение сообщений: @Model.TotalAcceptMessagingCount</li>
-    <li>Отмена сообщений: @Model.TotalCancelMessagingCount</li>
-    <li>Заблокировано: @Model.TotalBlockedCount</li>
-    <li>Разблокировано: @Model.TotalUnblockedCount</li>
-</ul>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[0]); margin-right: 5px; margin-top: 4px"></div>
+    Вступило в группу: @Model.TotalJoinGroupCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[1]); margin-right: 5px; margin-top: 4px"></div>
+    Вышло из группы: @Model.TotalLeaveGroupCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[2]); margin-right: 5px; margin-top: 4px"></div>
+    Запрет сообщений: @Model.TotalBlockMessagingCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[3]); margin-right: 5px; margin-top: 4px"></div>
+    Разрешение сообщений: @Model.TotalAcceptMessagingCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[4]); margin-right: 5px; margin-top: 4px"></div>
+    Отмена сообщений: @Model.TotalCancelMessagingCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[5]); margin-right: 5px; margin-top: 4px"></div>
+    Заблокировано: @Model.TotalBlockedCount
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[6]); margin-right: 5px; margin-top: 4px"></div>
+    Разблокировано: @Model.TotalUnblockedCount
+</div>

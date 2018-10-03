@@ -4,6 +4,12 @@
     var Y1Values = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Sended).ToList());
     var Y2Values = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Received).ToList());
     var XLabels = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList());
+
+    string[] backgroundColors = new string[]
+    {
+        "rgba(255, 0, 0, 1)",
+        "rgba(0, 0, 255, 1)"
+    };
 }
 
 @section scripts {
@@ -13,12 +19,12 @@
             labels: @Html.Raw(XLabels),
             datasets: [{
                 label: 'Отправлено',
-                backgroundColor: 'rgba(255, 0, 0, 1)',
+                backgroundColor: '@Html.Raw(backgroundColors[0])',
                 data: @Html.Raw(Y1Values)
             },
                 {
                 label: 'Получено',
-                    backgroundColor: 'rgba(0, 0, 255, 1)',
+                backgroundColor: '@Html.Raw(backgroundColors[1])',
                 data: @Html.Raw(Y2Values)
             }]
         };
@@ -57,7 +63,11 @@
 </div>
 
 <h4>Всего:</h4>
-<ul>
-    <li>Получено сообщений: @Model.TotalReceived</li>
-    <li>Отправлено сообщений: @Model.TotalSended</li>
-</ul>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[0]); margin-right: 5px; margin-top: 4px"></div>
+    Получено сообщений: @Model.TotalReceived
+</div>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColors[1]); margin-right: 5px; margin-top: 4px"></div>
+    Отправлено сообщений: @Model.TotalSended
+</div>

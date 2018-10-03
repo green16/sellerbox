@@ -24,16 +24,14 @@
 @section scripts {
     <script src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
     <script>
-        var barChartData = {
-            labels: @Html.Raw(XLabels),
-            datasets: @Html.Raw(dataSet)
-        };
-
         window.onload = function () {
             var ctx = document.getElementById('chart').getContext('2d');
             window.myBar = new Chart(ctx, {
                 type: 'bar',
-                data: barChartData,
+                data: {
+                    labels: @Html.Raw(XLabels),
+                    datasets: @Html.Raw(dataSet)
+                },
                 options: {
                     tooltips: {
                         mode: 'index',
@@ -61,4 +59,7 @@
     </div>
 </div>
 
-Всего получено сообщений: @Model.TotalReceived
+<h4>Всего:</h4>
+<div style="display: flex; margin-left: 40px">
+    Получено сообщений: @Model.TotalReceived
+</div>

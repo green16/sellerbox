@@ -3,6 +3,7 @@
 @{
     var XLabels = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList());
     var YValues = Newtonsoft.Json.JsonConvert.SerializeObject(Model.MessagesPerDay.Select(x => x.Count).ToList());
+    string backgroundColor = "rgba(0, 0, 255, 1)";
 }
 
 @section scripts {
@@ -12,7 +13,7 @@
             labels: @Html.Raw(XLabels),
             datasets: [{
                 label: 'Получено сообщений',
-                    backgroundColor: 'rgba(0, 0, 255, 1)',
+                backgroundColor: '@Html.Raw(backgroundColor)',
                 data: @Html.Raw(YValues)
             }]
         };
@@ -57,4 +58,8 @@
     </div>
 </div>
 
-Всего получено сообщений: @Model.TotalReceived
+<h4>Всего:</h4>
+<div style="display: flex; margin-left: 40px">
+    <div style="height: 16px;  width: 16px; background-color: @Html.Raw(backgroundColor); margin-right: 5px; margin-top: 4px"></div>
+    Получено сообщений: @Model.TotalReceived
+</div>
