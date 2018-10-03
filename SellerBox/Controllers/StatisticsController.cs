@@ -24,7 +24,8 @@ namespace SellerBox.Controllers
                 new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(0, "Сообщения", GenerateMessagesReport),
                 new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(1, "Чатбот", GenerateChatScenariosReport),
                 new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(2, "Сценарии", GenerateScenariosReport),
-                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(3, "Цепочки", GenerateChainsReport)
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(3, "Цепочки", GenerateChainsReport),
+                new Tuple<byte, string, Func<DateTime, DateTime, Task<IActionResult>>>(4, "Действия в группе", GenerateGroupActionReport)
             };
 
             _context = context;
@@ -154,6 +155,41 @@ namespace SellerBox.Controllers
             };
 
             return View("Chains", model);
+        }
+
+        private async Task<IActionResult> GenerateGroupActionReport(DateTime dtStart, DateTime dtEnd)
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var perDayItems = await _context.History_GroupActions
+                .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
+                .GroupBy(x => x.Dt.Date)
+                .Select(x => new GroupActionsViewModel.ActionsPerDayViewModel()
+                {
+                    Date = x.Key,
+                    AcceptMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.AcceptMessaging),
+                    BlockedCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.Blocked),
+                    BlockMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.BlockMessaging),
+                    CancelMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.CancelMessaging),
+                    JoinGroupCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.JoinGroup),
+                    LeaveGroupCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.LeaveGroup),
+                    UnblockedCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.Unblocked)
+                })
+                .ToArrayAsync();
+
+            var model = new GroupActionsViewModel()
+            {
+                ActionsPerDay = perDayItems,
+                TotalAcceptMessagingCount = perDayItems.Sum(x => x.AcceptMessagingCount),
+                TotalBlockedCount = perDayItems.Sum(x => x.BlockedCount),
+                TotalBlockMessagingCount = perDayItems.Sum(x => x.BlockMessagingCount),
+                TotalCancelMessagingCount = perDayItems.Sum(x => x.CancelMessagingCount),
+                TotalJoinGroupCount = perDayItems.Sum(x => x.JoinGroupCount),
+                TotalLeaveGroupCount = perDayItems.Sum(x => x.LeaveGroupCount),
+                TotalUnblockedCount = perDayItems.Sum(x => x.UnblockedCount)
+            };
+
+            return View("GroupActions", model);
         }
     }
 }

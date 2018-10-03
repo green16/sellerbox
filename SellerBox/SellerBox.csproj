@@ -36,6 +36,8 @@
     <Compile Remove="Migrations\20180921111223_Add_ChatBotTables.Designer.cs" />
     <Compile Remove="Migrations\20180921111631_Add_ChatBotTables.cs" />
     <Compile Remove="Migrations\20180921111631_Add_ChatBotTables.Designer.cs" />
+    <Compile Remove="Migrations\20181003084615_Updates.cs" />
+    <Compile Remove="Migrations\20181003084615_Updates.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

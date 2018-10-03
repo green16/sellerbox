@@ -1,0 +1,91 @@
+﻿@model SellerBox.ViewModels.Statistics.GroupActionsViewModel
+
+@{
+    Random random = new Random();
+}
+
+@section scripts {
+    <script src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script>
+        var barChartData = {
+            labels: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToList())),
+            datasets: [
+            {
+                label: 'Вступило в группу',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.JoinGroupCount).ToList()))
+            },
+            {
+                label: 'Вышло из группы',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.LeaveGroupCount).ToList()))
+            },
+            {
+                label: 'Запрет сообщений',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.BlockMessagingCount).ToList()))
+            },
+            {
+                label: 'Разрешение сообщений',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.AcceptMessagingCount).ToList()))
+            },
+            {
+                label: 'Отмена сообщений',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.CancelMessagingCount).ToList()))
+            },
+            {
+                label: 'Заблокировано',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.BlockedCount).ToList()))
+            },
+            {
+                label: 'Разблокировано',
+                backgroundColor: @Html.Raw(string.Format("'#{0:X6}'", random.Next(0x1000000))),
+                data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ActionsPerDay.Select(x => x.UnblockedCount).ToList()))
+            }]
+        };
+
+        window.onload = function () {
+            var ctx = document.getElementById('chart').getContext('2d');
+            window.myBar = new Chart(ctx, {
+                type: 'bar',
+                data: barChartData,
+                options: {
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    responsive: true,
+                    scales: {
+                        xAxes: [{
+                            stacked: true,
+                        }],
+                        yAxes: [{
+                            stacked: true
+                        }]
+                    }
+                }
+            });
+        };
+    </script>
+}
+
+<h2>Статистика по группе:</h2>
+
+<div class="box-body" @{if (Model.TotalAcceptMessagingCount == 0 && Model.TotalBlockedCount == 0 && Model.TotalBlockMessagingCount == 0 && Model.TotalCancelMessagingCount == 0 && Model.TotalJoinGroupCount == 0 && Model.TotalLeaveGroupCount == 0 && Model.TotalUnblockedCount == 0) { <text> hidden</text>} }>
+    <div class="chart-container">
+        <canvas id="chart" style="width:100%; height:500px"></canvas>
+    </div>
+</div>
+<h4>Всего:</h4>
+<ul>
+    <li>Вступило в группу: @Model.TotalJoinGroupCount</li>
+    <li>Вышло из группы: @Model.TotalLeaveGroupCount</li>
+    <li>Запрет сообщений: @Model.TotalBlockMessagingCount</li>
+    <li>Разрешение сообщений: @Model.TotalAcceptMessagingCount</li>
+    <li>Отмена сообщений: @Model.TotalCancelMessagingCount</li>
+    <li>Заблокировано: @Model.TotalBlockedCount</li>
+    <li>Разблокировано: @Model.TotalUnblockedCount</li>
+</ul>
