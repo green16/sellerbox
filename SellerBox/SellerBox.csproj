@@ -41,6 +41,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Views\Statistics\Chains.cshtml" />
+    <Content Remove="Views\Statistics\ChatScenarios.cshtml" />
+    <Content Remove="Views\Statistics\GroupActions.cshtml" />
+    <Content Remove="Views\Statistics\Messages.cshtml" />
+    <Content Remove="Views\Statistics\Scenarios.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="1.1.0-preview2-35157" />

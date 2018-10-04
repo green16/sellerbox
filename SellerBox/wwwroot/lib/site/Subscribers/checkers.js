@@ -1,4 +1,5 @@
-﻿$("a.updateIsChatAllowed").click(function () {
+﻿$("a.updateIsChatAllowed").click(function (e) {
+	e.preventDefault();
 	var tag = $(this);
 	var idVkUser = $(this).attr("data-idVk");
 	$.ajax({
@@ -17,7 +18,8 @@
 	});
 });
 
-$("a.updateIsSubscriber").click(function () {
+$("a.updateIsSubscriber").click(function (e) {
+	e.preventDefault();
 	var tag = $(this);
 	var idVkUser = $(this).attr("data-idVk");
 	$.ajax({

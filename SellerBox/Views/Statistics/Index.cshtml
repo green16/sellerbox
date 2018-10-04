@@ -1,6 +1,7 @@
 ﻿@model SellerBox.ViewModels.Statistics.IndexViewModel
 
 @section scripts {
+    <script src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
     <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
     <script src="~/lib/site/Statistics/index.js"></script>
@@ -61,3 +62,15 @@
 
     <input type="submit" class="btn btn-primary" value="Сформировать" />
 </form>
+
+<div id="chartBlock" hidden>
+    <h2 id="title"></h2>
+    <div class="box-body">
+        <div class="chart-container">
+            <canvas id="chart" style="width:100%; height:500px"></canvas>
+        </div>
+    </div>
+
+    <h4>Всего:</h4>
+    <div id="legend"></div>
+</div>
