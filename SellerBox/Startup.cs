@@ -7,10 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NLog;
-using NLog.Config;
-using NLog.Layouts;
-using NLog.Targets;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using SellerBox.Common;
@@ -27,32 +23,6 @@ namespace SellerBox
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-        }
-
-        private void SetLogger(string dbConnectionString)
-        {
-            LoggingConfiguration loggingConfiguration = new LoggingConfiguration();
-            loggingConfiguration.Variables["botname"] = "admin";
-            var dbTarget = new DatabaseTarget
-            {
-                ConnectionString = dbConnectionString,
-                CommandText = @"INSERT INTO dbo.Logs ([Logged], [Level], [Message], [Logger], [CallSite], [Exception]) VALUES (@Logged, @Level, @Message, @Logger, @Callsite, @Exception)"
-            };
-
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@Logged", new SimpleLayout("${date}")));
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@Level", new SimpleLayout("${level:format=Ordinal}")));
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@Message", new SimpleLayout("${message}")));
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@Logger", new SimpleLayout("${logger}")));
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@CallSite", new SimpleLayout("${callsite}")));
-            dbTarget.Parameters.Add(new DatabaseParameterInfo("@Exception", new SimpleLayout("${exception:tostring}")));
-
-            loggingConfiguration.AddTarget("database", dbTarget);
-
-            LoggingRule dbRule = new LoggingRule("*", LogLevel.Trace, dbTarget);
-
-            loggingConfiguration.LoggingRules.Add(dbRule);
-
-            LogManager.Configuration = loggingConfiguration;
         }
 
         private static async Task RedirectToAuthorizationEndpoint(RedirectContext<OAuthOptions> context)
@@ -112,7 +82,6 @@ namespace SellerBox
                 x.ValueLengthLimit = int.MaxValue;
                 x.MultipartBodyLengthLimit = int.MaxValue; // In case of multipart
             });
-            SetLogger(dbConnectionString);
 
             services.AddTransient<UserHelperService>();
             services.AddTransient<VkPoolService>();
