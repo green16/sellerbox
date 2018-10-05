@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SellerBox.Migrations
 {
-    public partial class NewInitialCreate : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -26,21 +26,21 @@ namespace SellerBox.Migrations
                 name: "AspNetUsers",
                 columns: table => new
                 {
-                    AccessFailedCount = table.Column<int>(nullable: false),
-                    EmailConfirmed = table.Column<bool>(nullable: false),
-                    LockoutEnabled = table.Column<bool>(nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(nullable: false),
                     Id = table.Column<string>(nullable: false),
                     UserName = table.Column<string>(maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(maxLength: 256, nullable: true),
                     Email = table.Column<string>(maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(nullable: false),
                     PasswordHash = table.Column<string>(nullable: true),
                     SecurityStamp = table.Column<string>(nullable: true),
                     ConcurrencyStamp = table.Column<string>(nullable: true),
                     PhoneNumber = table.Column<string>(nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(nullable: true),
+                    LockoutEnabled = table.Column<bool>(nullable: false),
+                    AccessFailedCount = table.Column<int>(nullable: false),
                     IdVk = table.Column<long>(nullable: false),
                     IdCurrentGroup = table.Column<long>(nullable: false)
                 },
@@ -245,6 +245,29 @@ namespace SellerBox.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChatScenarios",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Name = table.Column<string>(nullable: true),
+                    IsEnabled = table.Column<bool>(nullable: false),
+                    InputMessage = table.Column<string>(nullable: true),
+                    HasFormula = table.Column<bool>(nullable: false),
+                    Formula = table.Column<string>(nullable: true),
+                    IdGroup = table.Column<long>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatScenarios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatScenarios_Groups_IdGroup",
+                        column: x => x.IdGroup,
+                        principalTable: "Groups",
+                        principalColumn: "IdVk",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "GroupAdmins",
                 columns: table => new
                 {
@@ -375,32 +398,6 @@ namespace SellerBox.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BirthdayHistory",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(nullable: false),
-                    IdVkUser = table.Column<long>(nullable: false),
-                    IdGroup = table.Column<long>(nullable: false),
-                    DtSend = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BirthdayHistory", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BirthdayHistory_Groups_IdGroup",
-                        column: x => x.IdGroup,
-                        principalTable: "Groups",
-                        principalColumn: "IdVk",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_BirthdayHistory_VkUsers_IdVkUser",
-                        column: x => x.IdVkUser,
-                        principalTable: "VkUsers",
-                        principalColumn: "IdVk",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Subscribers",
                 columns: table => new
                 {
@@ -428,6 +425,26 @@ namespace SellerBox.Migrations
                         column: x => x.IdVkUser,
                         principalTable: "VkUsers",
                         principalColumn: "IdVk",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatScenarioContents",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Step = table.Column<long>(nullable: false),
+                    IdChatScenario = table.Column<Guid>(nullable: false),
+                    IdMessage = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatScenarioContents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatScenarioContents_ChatScenarios_IdChatScenario",
+                        column: x => x.IdChatScenario,
+                        principalTable: "ChatScenarios",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -612,7 +629,32 @@ namespace SellerBox.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BirthdayWallHistory",
+                name: "Scheduler_Messaging",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Name = table.Column<string>(nullable: true),
+                    IdMessage = table.Column<Guid>(nullable: false),
+                    VkUserIds = table.Column<string>(nullable: true),
+                    RecipientsCount = table.Column<long>(nullable: false),
+                    Status = table.Column<byte>(nullable: false),
+                    DtAdd = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DtStart = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DtEnd = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Scheduler_Messaging", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Scheduler_Messaging_Messages_IdMessage",
+                        column: x => x.IdMessage,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_BirthdayWall",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(nullable: false),
@@ -623,25 +665,133 @@ namespace SellerBox.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BirthdayWallHistory", x => x.Id);
+                    table.PrimaryKey("PK_History_BirthdayWall", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_BirthdayWallHistory_Groups_IdGroup",
+                        name: "FK_History_BirthdayWall_Groups_IdGroup",
                         column: x => x.IdGroup,
                         principalTable: "Groups",
                         principalColumn: "IdVk",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_BirthdayWallHistory_WallPosts_IdPost",
+                        name: "FK_History_BirthdayWall_WallPosts_IdPost",
                         column: x => x.IdPost,
                         principalTable: "WallPosts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_BirthdayWallHistory_VkUsers_IdVkUser",
+                        name: "FK_History_BirthdayWall_VkUsers_IdVkUser",
                         column: x => x.IdVkUser,
                         principalTable: "VkUsers",
                         principalColumn: "IdVk",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_Birthday",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false),
+                    IdGroup = table.Column<long>(nullable: false),
+                    DtSend = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_Birthday", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_Birthday_Groups_IdGroup",
+                        column: x => x.IdGroup,
+                        principalTable: "Groups",
+                        principalColumn: "IdVk",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_Birthday_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_GroupActions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false),
+                    IdGroup = table.Column<long>(nullable: false),
+                    ActionType = table.Column<byte>(nullable: false),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_GroupActions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_GroupActions_Groups_IdGroup",
+                        column: x => x.IdGroup,
+                        principalTable: "Groups",
+                        principalColumn: "IdVk",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_GroupActions_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_Messages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IdMessage = table.Column<Guid>(nullable: true),
+                    IdSubscriber = table.Column<Guid>(nullable: false),
+                    IsOutgoingMessage = table.Column<bool>(nullable: false),
+                    Text = table.Column<string>(nullable: true),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_Messages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_Messages_Messages_IdMessage",
+                        column: x => x.IdMessage,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_History_Messages_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_WallPosts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IsRepost = table.Column<bool>(nullable: false),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IdPost = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_WallPosts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_WallPosts_WallPosts_IdPost",
+                        column: x => x.IdPost,
+                        principalTable: "WallPosts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_WallPosts_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -692,6 +842,113 @@ namespace SellerBox.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SubscribersInSegments_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_SubscribersInChatScenariosContents",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IdChatScenarioContent = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_SubscribersInChatScenariosContents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_SubscribersInChatScenariosContents_ChatScenarioContents_IdChatScenarioContent",
+                        column: x => x.IdChatScenarioContent,
+                        principalTable: "ChatScenarioContents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_SubscribersInChatScenariosContents_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubscriberChatReplies",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Text = table.Column<string>(nullable: true),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UniqueId = table.Column<Guid>(nullable: false),
+                    IdChatScenarioContent = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubscriberChatReplies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SubscriberChatReplies_ChatScenarioContents_IdChatScenarioContent",
+                        column: x => x.IdChatScenarioContent,
+                        principalTable: "ChatScenarioContents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SubscriberChatReplies_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubscribersInChatProgress",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    DtAdd = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UniqueId = table.Column<Guid>(nullable: false),
+                    IdChatScenarioContent = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubscribersInChatProgress", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SubscribersInChatProgress_ChatScenarioContents_IdChatScenarioContent",
+                        column: x => x.IdChatScenarioContent,
+                        principalTable: "ChatScenarioContents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SubscribersInChatProgress_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "History_SubscribersInChainSteps",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false),
+                    IdChainStep = table.Column<Guid>(nullable: false),
+                    DtAdd = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_SubscribersInChainSteps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_SubscribersInChainSteps_ChainContents_IdChainStep",
+                        column: x => x.IdChainStep,
+                        principalTable: "ChainContents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_SubscribersInChainSteps_Subscribers_IdSubscriber",
                         column: x => x.IdSubscriber,
                         principalTable: "Subscribers",
                         principalColumn: "Id",
@@ -771,6 +1028,32 @@ namespace SellerBox.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "History_Scenarios",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    IdSubscriber = table.Column<Guid>(nullable: false),
+                    IdScenario = table.Column<Guid>(nullable: false),
+                    Dt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_History_Scenarios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_History_Scenarios_Scenarios_IdScenario",
+                        column: x => x.IdScenario,
+                        principalTable: "Scenarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_History_Scenarios_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
+                        principalTable: "Subscribers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CheckedSubscribersInRepostScenarios",
                 columns: table => new
                 {
@@ -836,16 +1119,6 @@ namespace SellerBox.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BirthdayHistory_IdGroup",
-                table: "BirthdayHistory",
-                column: "IdGroup");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BirthdayHistory_IdVkUser",
-                table: "BirthdayHistory",
-                column: "IdVkUser");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_BirthdayScenarios_IdGroup",
                 table: "BirthdayScenarios",
                 column: "IdGroup");
@@ -854,22 +1127,6 @@ namespace SellerBox.Migrations
                 name: "IX_BirthdayScenarios_IdMessage",
                 table: "BirthdayScenarios",
                 column: "IdMessage");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BirthdayWallHistory_IdGroup",
-                table: "BirthdayWallHistory",
-                column: "IdGroup");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BirthdayWallHistory_IdPost",
-                table: "BirthdayWallHistory",
-                column: "IdPost",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BirthdayWallHistory_IdVkUser",
-                table: "BirthdayWallHistory",
-                column: "IdVkUser");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BirthdayWallScenarios_IdGroup",
@@ -912,6 +1169,16 @@ namespace SellerBox.Migrations
                 column: "IdGroup");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChatScenarioContents_IdChatScenario",
+                table: "ChatScenarioContents",
+                column: "IdChatScenario");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatScenarios_IdGroup",
+                table: "ChatScenarios",
+                column: "IdGroup");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CheckedSubscribersInRepostScenarios_IdRepostScenario",
                 table: "CheckedSubscribersInRepostScenarios",
                 column: "IdRepostScenario");
@@ -940,6 +1207,92 @@ namespace SellerBox.Migrations
                 name: "IX_GroupAdmins_IdUser",
                 table: "GroupAdmins",
                 column: "IdUser");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Birthday_IdGroup",
+                table: "History_Birthday",
+                column: "IdGroup");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Birthday_IdSubscriber",
+                table: "History_Birthday",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_BirthdayWall_IdGroup",
+                table: "History_BirthdayWall",
+                column: "IdGroup");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_BirthdayWall_IdPost",
+                table: "History_BirthdayWall",
+                column: "IdPost",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_BirthdayWall_IdVkUser",
+                table: "History_BirthdayWall",
+                column: "IdVkUser");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_GroupActions_IdGroup",
+                table: "History_GroupActions",
+                column: "IdGroup");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_GroupActions_IdSubscriber",
+                table: "History_GroupActions",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Messages_IdMessage",
+                table: "History_Messages",
+                column: "IdMessage");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Messages_IdSubscriber",
+                table: "History_Messages",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Scenarios_IdScenario",
+                table: "History_Scenarios",
+                column: "IdScenario");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_Scenarios_IdSubscriber",
+                table: "History_Scenarios",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_SubscribersInChainSteps_IdChainStep",
+                table: "History_SubscribersInChainSteps",
+                column: "IdChainStep");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_SubscribersInChainSteps_IdSubscriber",
+                table: "History_SubscribersInChainSteps",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_SubscribersInChatScenariosContents_IdChatScenarioContent",
+                table: "History_SubscribersInChatScenariosContents",
+                column: "IdChatScenarioContent");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_SubscribersInChatScenariosContents_IdSubscriber",
+                table: "History_SubscribersInChatScenariosContents",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_WallPosts_IdPost",
+                table: "History_WallPosts",
+                column: "IdPost");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_History_WallPosts_IdSubscriber",
+                table: "History_WallPosts",
+                column: "IdSubscriber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_IdGroup",
@@ -992,9 +1345,24 @@ namespace SellerBox.Migrations
                 column: "IdMessage");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Scheduler_Messaging_IdMessage",
+                table: "Scheduler_Messaging",
+                column: "IdMessage");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Segments_IdGroup",
                 table: "Segments",
                 column: "IdGroup");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubscriberChatReplies_IdChatScenarioContent",
+                table: "SubscriberChatReplies",
+                column: "IdChatScenarioContent");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubscriberChatReplies_IdSubscriber",
+                table: "SubscriberChatReplies",
+                column: "IdSubscriber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubscriberReposts_IdPost",
@@ -1024,6 +1392,16 @@ namespace SellerBox.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SubscribersInChains_IdSubscriber",
                 table: "SubscribersInChains",
+                column: "IdSubscriber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubscribersInChatProgress_IdChatScenarioContent",
+                table: "SubscribersInChatProgress",
+                column: "IdChatScenarioContent");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubscribersInChatProgress_IdSubscriber",
+                table: "SubscribersInChatProgress",
                 column: "IdSubscriber");
 
             migrationBuilder.CreateIndex(
@@ -1070,13 +1448,7 @@ namespace SellerBox.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "BirthdayHistory");
-
-            migrationBuilder.DropTable(
                 name: "BirthdayScenarios");
-
-            migrationBuilder.DropTable(
-                name: "BirthdayWallHistory");
 
             migrationBuilder.DropTable(
                 name: "BirthdayWallScenarios");
@@ -1091,16 +1463,46 @@ namespace SellerBox.Migrations
                 name: "GroupAdmins");
 
             migrationBuilder.DropTable(
+                name: "History_Birthday");
+
+            migrationBuilder.DropTable(
+                name: "History_BirthdayWall");
+
+            migrationBuilder.DropTable(
+                name: "History_GroupActions");
+
+            migrationBuilder.DropTable(
+                name: "History_Messages");
+
+            migrationBuilder.DropTable(
+                name: "History_Scenarios");
+
+            migrationBuilder.DropTable(
+                name: "History_SubscribersInChainSteps");
+
+            migrationBuilder.DropTable(
+                name: "History_SubscribersInChatScenariosContents");
+
+            migrationBuilder.DropTable(
+                name: "History_WallPosts");
+
+            migrationBuilder.DropTable(
                 name: "Logs");
 
             migrationBuilder.DropTable(
-                name: "Scenarios");
+                name: "Scheduler_Messaging");
+
+            migrationBuilder.DropTable(
+                name: "SubscriberChatReplies");
 
             migrationBuilder.DropTable(
                 name: "SubscriberReposts");
 
             migrationBuilder.DropTable(
                 name: "SubscribersInChains");
+
+            migrationBuilder.DropTable(
+                name: "SubscribersInChatProgress");
 
             migrationBuilder.DropTable(
                 name: "SubscribersInSegments");
@@ -1124,6 +1526,12 @@ namespace SellerBox.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
+                name: "Scenarios");
+
+            migrationBuilder.DropTable(
+                name: "ChatScenarioContents");
+
+            migrationBuilder.DropTable(
                 name: "Segments");
 
             migrationBuilder.DropTable(
@@ -1134,6 +1542,9 @@ namespace SellerBox.Migrations
 
             migrationBuilder.DropTable(
                 name: "WallPosts");
+
+            migrationBuilder.DropTable(
+                name: "ChatScenarios");
 
             migrationBuilder.DropTable(
                 name: "VkUsers");

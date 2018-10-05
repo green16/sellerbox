@@ -10,14 +10,14 @@ using SellerBox.Common;
 namespace SellerBox.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20180918103217_Update_Histories")]
-    partial class Update_Histories
+    [Migration("20181005110726_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.1.3-rtm-32065")
+                .HasAnnotation("ProductVersion", "2.2.0-preview2-35157")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -229,6 +229,48 @@ namespace SellerBox.Migrations
                     b.HasIndex("IdGroup");
 
                     b.ToTable("Chains");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ChatScenarioContents", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<Guid>("IdChatScenario");
+
+                    b.Property<Guid>("IdMessage");
+
+                    b.Property<long>("Step");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChatScenario");
+
+                    b.ToTable("ChatScenarioContents");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ChatScenarios", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Formula");
+
+                    b.Property<bool>("HasFormula");
+
+                    b.Property<long>("IdGroup");
+
+                    b.Property<string>("InputMessage");
+
+                    b.Property<bool>("IsEnabled");
+
+                    b.Property<string>("Name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroup");
+
+                    b.ToTable("ChatScenarios");
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.CheckedSubscribersInRepostScenarios", b =>
@@ -465,6 +507,27 @@ namespace SellerBox.Migrations
                     b.ToTable("History_SubscribersInChainSteps");
                 });
 
+            modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChatScenariosContents", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdChatScenarioContent");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChatScenarioContent");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("History_SubscribersInChatScenariosContents");
+                });
+
             modelBuilder.Entity("SellerBox.Models.Database.History_Synchronization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -632,6 +695,37 @@ namespace SellerBox.Migrations
                     b.ToTable("Scenarios");
                 });
 
+            modelBuilder.Entity("SellerBox.Models.Database.Scheduler_Messaging", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("DtAdd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DtEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DtStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdMessage");
+
+                    b.Property<string>("Name");
+
+                    b.Property<long>("RecipientsCount");
+
+                    b.Property<byte>("Status");
+
+                    b.Property<string>("VkUserIds");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdMessage");
+
+                    b.ToTable("Scheduler_Messaging");
+                });
+
             modelBuilder.Entity("SellerBox.Models.Database.Segments", b =>
                 {
                     b.Property<Guid>("Id")
@@ -649,6 +743,31 @@ namespace SellerBox.Migrations
                     b.HasIndex("IdGroup");
 
                     b.ToTable("Segments");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.SubscriberChatReplies", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime?>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdChatScenarioContent");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.Property<string>("Text");
+
+                    b.Property<Guid>("UniqueId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChatScenarioContent");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("SubscriberChatReplies");
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.SubscriberReposts", b =>
@@ -729,6 +848,29 @@ namespace SellerBox.Migrations
                     b.HasIndex("IdSubscriber");
 
                     b.ToTable("SubscribersInChains");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.SubscribersInChatProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("DtAdd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdChatScenarioContent");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.Property<Guid>("UniqueId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChatScenarioContent");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("SubscribersInChatProgress");
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.SubscribersInSegments", b =>
@@ -983,6 +1125,22 @@ namespace SellerBox.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("SellerBox.Models.Database.ChatScenarioContents", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ChatScenarios", "ChatScenario")
+                        .WithMany("ChatScenarioContents")
+                        .HasForeignKey("IdChatScenario")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ChatScenarios", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.Groups", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroup")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("SellerBox.Models.Database.CheckedSubscribersInRepostScenarios", b =>
                 {
                     b.HasOne("SellerBox.Models.Database.RepostScenarios", "RepostScenario")
@@ -1102,6 +1260,19 @@ namespace SellerBox.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChatScenariosContents", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ChatScenarioContents", "ChatScenarioContent")
+                        .WithMany()
+                        .HasForeignKey("IdChatScenarioContent")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("History_SubscribersInChatScenariosContents")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("SellerBox.Models.Database.History_Synchronization", b =>
                 {
                     b.HasOne("SellerBox.Models.Database.Groups", "Group")
@@ -1175,12 +1346,33 @@ namespace SellerBox.Migrations
                         .HasForeignKey("IdMessage");
                 });
 
+            modelBuilder.Entity("SellerBox.Models.Database.Scheduler_Messaging", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.Messages", "Message")
+                        .WithMany()
+                        .HasForeignKey("IdMessage")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("SellerBox.Models.Database.Segments", b =>
                 {
                     b.HasOne("SellerBox.Models.Database.Groups", "Group")
                         .WithMany()
                         .HasForeignKey("IdGroup")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.SubscriberChatReplies", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ChatScenarioContents", "ChatScenarioContent")
+                        .WithMany()
+                        .HasForeignKey("IdChatScenarioContent")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("SubscriberChatReplies")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.SubscriberReposts", b =>
@@ -1218,6 +1410,19 @@ namespace SellerBox.Migrations
 
                     b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
                         .WithMany("SubscribersInChains")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.SubscribersInChatProgress", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ChatScenarioContents", "ChatScenarioContent")
+                        .WithMany()
+                        .HasForeignKey("IdChatScenarioContent")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("SubscribersInChatProgress")
                         .HasForeignKey("IdSubscriber")
                         .OnDelete(DeleteBehavior.Restrict);
                 });

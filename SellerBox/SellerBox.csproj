@@ -28,19 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Migrations\20180918102516_Update_Histories.cs" />
-    <Compile Remove="Migrations\20180918102516_Update_Histories.Designer.cs" />
-    <Compile Remove="Migrations\20180918102710_Update_Histories.cs" />
-    <Compile Remove="Migrations\20180918102710_Update_Histories.Designer.cs" />
-    <Compile Remove="Migrations\20180921111223_Add_ChatBotTables.cs" />
-    <Compile Remove="Migrations\20180921111223_Add_ChatBotTables.Designer.cs" />
-    <Compile Remove="Migrations\20180921111631_Add_ChatBotTables.cs" />
-    <Compile Remove="Migrations\20180921111631_Add_ChatBotTables.Designer.cs" />
-    <Compile Remove="Migrations\20181003084615_Updates.cs" />
-    <Compile Remove="Migrations\20181003084615_Updates.Designer.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="Views\Statistics\Chains.cshtml" />
     <Content Remove="Views\Statistics\ChatScenarios.cshtml" />
     <Content Remove="Views\Statistics\GroupActions.cshtml" />
