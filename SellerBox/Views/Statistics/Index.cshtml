@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" type="text/css" />
 }
 
-<form asp-action="Generate" asp-controller="Statistics" asp-antiforgery="true">
+<form asp-action="Generate" asp-controller="Statistics" asp-antiforgery="true" style="margin-top: 10px">
     <div class="input-group">
         <div class="input-group-prepend">
             <label asp-for="StatisticType" class="input-group-text"></label>
@@ -24,46 +24,53 @@
         </select>
     </div>
 
-    <div class="input-group">
-        <div class="input-group-prepend">
-            <label asp-for="DtStart" class="input-group-text"></label>
+    <div class="row" style="margin-top: 10px">
+        <div class="col">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <label asp-for="DtStart" class="input-group-text"></label>
+                </div>
+
+                <input asp-for="DtStart" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
+
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                        <img src="~/images/Calendar.png" />
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                        <img src="~/images/Close.png" />
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <input asp-for="DtStart" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
+        <div class="col">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <label asp-for="DtEnd" class="input-group-text"></label>
+                </div>
 
-        <div class="input-group-append">
-            <button type="button" class="btn btn-outline-success" title="toggle" data-toggle>
-                <img src="~/images/Calendar.png" />
-            </button>
+                <input asp-for="DtEnd" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
 
-            <button type="button" class="btn btn-outline-secondary" title="clear" data-clear>
-                <img src="~/images/Close.png" />
-            </button>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                        <img src="~/images/Calendar.png" />
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                        <img src="~/images/Close.png" />
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="input-group">
-        <div class="input-group-prepend">
-            <label asp-for="DtEnd" class="input-group-text"></label>
-        </div>
-
-        <input asp-for="DtEnd" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input>
-
-        <div class="input-group-append">
-            <button type="button" class="btn btn-outline-success" title="toggle" data-toggle>
-                <img src="~/images/Calendar.png" />
-            </button>
-
-            <button type="button" class="btn btn-outline-secondary" title="clear" data-clear>
-                <img src="~/images/Close.png" />
-            </button>
-        </div>
-    </div>
-
-    <input type="submit" class="btn btn-primary" value="Сформировать" />
+    <input type="submit" class="btn btn-primary" value="Сформировать" style="margin-top: 10px" />
 </form>
 
 <div id="chartBlock" hidden>
+    <br />
     <h2 id="title"></h2>
     <div class="box-body">
         <div class="chart-container">
