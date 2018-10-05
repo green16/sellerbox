@@ -105,8 +105,13 @@ namespace SellerBox.Common.Helpers
             var attachments = await _context.Files
                 .Where(x => idFiles.Contains(x.Id))
                 .Select(x => x.VkUrl)
-                .Select(x => Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Attachments.Photo>(x))
                 .ToArrayAsync();
+
+            var images = attachments.Select(x =>
+            {
+                try { return Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Attachments.Photo>(x); }
+                catch { return null; }
+            }).Where(x => x != null);
 
             var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
 
@@ -116,7 +121,7 @@ namespace SellerBox.Common.Helpers
                 {
                     string text = await UpdateMessage(_context, vkUserIds[idx], message.Text);
 
-                    await SendMessage(vkApi, message.IsImageFirst, text, attachments, keyboard, new long[] { vkUserIds[idx] });
+                    await SendMessage(vkApi, message.IsImageFirst, text, images, keyboard, new long[] { vkUserIds[idx] });
 
                     OnMessageSent(idGroup, vkUserIds.Length, idx + 1);
                 }
@@ -127,7 +132,7 @@ namespace SellerBox.Common.Helpers
                 do
                 {
                     var currentUserIds = (Stepping > vkUserIds.Length - offset ? vkUserIds.Skip(offset) : vkUserIds.Skip(offset).Take(Stepping)).ToArray();
-                    await SendMessage(vkApi, message.IsImageFirst, message.Text, attachments, keyboard, currentUserIds);
+                    await SendMessage(vkApi, message.IsImageFirst, message.Text, images, keyboard, currentUserIds);
 
                     offset += currentUserIds.Length;
                     if (offset >= vkUserIds.Length)

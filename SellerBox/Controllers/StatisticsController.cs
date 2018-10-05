@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public class StatisticsController : Controller
     {
         private readonly Tuple<byte, string, Func<DateTime, DateTime, Task<ChartInfoViewModel>>>[] statisticTypes;
@@ -27,7 +28,7 @@ namespace SellerBox.Controllers
                 new Tuple<byte, string, Func<DateTime, DateTime, Task<ChartInfoViewModel>>>(3, "Цепочки", GenerateChainsReport),
                 new Tuple<byte, string, Func<DateTime, DateTime, Task<ChartInfoViewModel>>>(4, "Действия в группе", GenerateGroupActionReport)
             };
-            
+
             _context = context;
             _userHelperService = userHelperService;
         }
