@@ -16,5 +16,12 @@ namespace SellerBox.Models.Database
         public virtual ICollection<BirthdayScenarios> BirthdayScenarios { get; set; }
         public virtual ICollection<GroupAdmins> GroupAdmins { get; set; }
         public virtual ICollection<BirthdayWallScenarios> BirthdayWallScenarios { get; set; }
+
+        public void Update(VkNet.Model.Group vkGroup)
+        {
+            IdVk = vkGroup.Id;
+            Name = vkGroup.Name;
+            Photo = vkGroup.Photo50.ToString();
+        }
     }
 }

@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SellerBox.Common;
+using SellerBox.Common.Services;
+using SellerBox.Models.Database;
+using SellerBox.ViewModels;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using VkNet.Utils;
-using SellerBox.Common;
-using SellerBox.Common.Services;
-using SellerBox.Models.Database;
-using SellerBox.ViewModels;
 
 namespace SellerBox.Controllers
 {
@@ -53,6 +53,14 @@ namespace SellerBox.Controllers
                     .Include(y => y.Group)
                     .Any(y => y.IdGroup == x.Id && y.IdUser == idUser && !string.IsNullOrEmpty(y.Group.AccessToken))
             });
+
+            foreach (var connectedGroupModel in models.Where(x => x.IsConnected))
+            {
+                var connectedGroup = await _context.Groups.FirstAsync(x => x.IdVk == connectedGroupModel.IdVk);
+                connectedGroup.Update(groups.First(x => x.Id == connectedGroup.IdVk));
+            }
+            await _context.SaveChangesAsync();
+
             return View(models);
         }
 
