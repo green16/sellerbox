@@ -36,7 +36,8 @@ namespace SellerBox.Controllers
             var idVkUser = await _userHelperService.GetUserIdVk(User);
 
             var vkApi = await _vkPoolService.GetUserVkApi(idVkUser);
-
+            if (vkApi == null)
+                return RedirectToAction(nameof(AccountController.ExternalLogin), "Account", new { provider = "Vkontakte", returnUrl = "/Groups" });
             var groups = await vkApi.Groups.GetAsync(new VkNet.Model.RequestParams.GroupsGetParams()
             {
                 UserId = idVkUser,

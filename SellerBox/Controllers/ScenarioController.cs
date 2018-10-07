@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SellerBox.Common;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.ViewModels.Scenarios;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -76,9 +76,9 @@ namespace SellerBox.Controllers
             if (idScenario == null)
                 return NotFound();
 
-            Scenarios scenario = DbHelper.GetScenario(_context, idScenario.Value);
+            var scenario = await _context.Scenarios.FirstOrDefaultAsync(x => x.Id == idScenario);
 
-            ScenarioViewModel model = new ScenarioViewModel()
+            var model = new ScenarioViewModel()
             {
                 IdScenario = idScenario,
                 Name = scenario.Name,
@@ -91,48 +91,6 @@ namespace SellerBox.Controllers
                 InputMessage = scenario.InputMessage
             };
 
-            if (scenario.IdErrorMessage.HasValue)
-            {
-                var message = await _context.Messages
-                    .Include(x => x.Files)
-                    .FirstOrDefaultAsync(x => x.Id == scenario.IdErrorMessage.Value);
-
-                if (message != null)
-                {
-                    uint idx = 0;
-
-                    model.ErrorMessage.IsImageFirst = message.IsImageFirst;
-                    model.ErrorMessage.Message = message.Text;
-
-                    var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
-                    if (keyboard != null)
-                    {
-                        model.ErrorMessage.Keyboard = new List<List<ViewModels.Shared.MessageButton>>();
-                        byte currentRowIdx = 0;
-                        foreach (var currentRow in keyboard.Buttons)
-                        {
-                            byte colIdx = 0;
-                            model.ErrorMessage.Keyboard.Add(currentRow.Select(x => new ViewModels.Shared.MessageButton()
-                            {
-                                ButtonColor = x.Color.ToString(),
-                                Column = colIdx++,
-                                CanDelete = colIdx == currentRow.Count(),
-                                Row = currentRowIdx,
-                                Text = x.Action.Label
-                            }).ToList());
-                            currentRowIdx++;
-                        }
-                    }
-
-                    model.ErrorMessage.Files = message.Files.Select(x => new ViewModels.Shared.FileModel()
-                    {
-                        Id = x.IdFile,
-                        Name = _context.Files.FirstOrDefault(y => y.Id == x.IdFile)?.Name,
-                        Index = idx++,
-                        PropertiesPrefix = nameof(ScenarioViewModel.ErrorMessage)
-                    }).ToList();
-                }
-            }
             if (scenario.IdMessage.HasValue)
             {
                 var message = await _context.Messages
@@ -171,6 +129,49 @@ namespace SellerBox.Controllers
                         Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
                         Index = idx++,
                         PropertiesPrefix = nameof(ScenarioViewModel.Message)
+                    }).ToList();
+                }
+            }
+
+            if (scenario.IdErrorMessage.HasValue)
+            {
+                var message = await _context.Messages
+                    .Include(x => x.Files)
+                    .FirstOrDefaultAsync(x => x.Id == scenario.IdErrorMessage.Value);
+
+                if (message != null)
+                {
+                    uint idx = 0;
+
+                    model.ErrorMessage.Message = message.Text;
+                    model.ErrorMessage.IsImageFirst = message.IsImageFirst;
+
+                    var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
+                    if (keyboard != null)
+                    {
+                        model.ErrorMessage.Keyboard = new List<List<ViewModels.Shared.MessageButton>>();
+                        byte currentRowIdx = 0;
+                        foreach (var currentRow in keyboard.Buttons)
+                        {
+                            byte colIdx = 0;
+                            model.ErrorMessage.Keyboard.Add(currentRow.Select(x => new ViewModels.Shared.MessageButton()
+                            {
+                                ButtonColor = x.Color.ToString(),
+                                Column = colIdx++,
+                                CanDelete = colIdx == currentRow.Count(),
+                                Row = currentRowIdx,
+                                Text = x.Action.Label
+                            }).ToList());
+                            currentRowIdx++;
+                        }
+                    }
+
+                    model.ErrorMessage.Files = message.Files.Select(x => new ViewModels.Shared.FileModel()
+                    {
+                        Id = x.IdFile,
+                        Name = _context.Files.FirstOrDefault(y => y.Id == x.IdFile)?.Name,
+                        Index = idx++,
+                        PropertiesPrefix = nameof(ScenarioViewModel.ErrorMessage)
                     }).ToList();
                 }
             }
@@ -237,7 +238,7 @@ namespace SellerBox.Controllers
         {
             if (!idScenario.HasValue)
                 return NotFound(idScenario);
-            var removingScenario = DbHelper.GetScenario(_context, idScenario.Value);
+            var removingScenario = await _context.Scenarios.FirstOrDefaultAsync(x => x.Id == idScenario.Value);
             if (removingScenario == null)
                 return NotFound(idScenario);
 
@@ -263,7 +264,7 @@ namespace SellerBox.Controllers
 
             Scenarios scenario = null;
             if (model.IdScenario.HasValue)
-                scenario = DbHelper.GetScenario(_context, model.IdScenario.Value);
+                scenario = await _context.Scenarios.FirstOrDefaultAsync(x => x.Id == model.IdScenario.Value);
             if (scenario == null)
             {
                 scenario = new Scenarios
@@ -311,14 +312,15 @@ namespace SellerBox.Controllers
             {
                 if (model.IdMessage.HasValue)
                 {
-                    scenario.Message.Text = model.Message.Message;
-
-                    var keyboard = model.Message.GetVkKeyboard();
-                    scenario.Message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
-                    
                     var message = await _context.Messages
                         .Include(x => x.Files)
                         .FirstOrDefaultAsync(x => x.Id == model.IdMessage.Value);
+
+                    message.Text = model.Message.Message;
+                    message.IsImageFirst = model.Message.IsImageFirst;
+
+                    var keyboard = model.Message.GetVkKeyboard();
+                    message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
 
                     if (model.Message.Files != null && model.Message.Files.Any())
                     {
@@ -350,14 +352,14 @@ namespace SellerBox.Controllers
                 }
                 else if (model.IdErrorMessage.HasValue)
                 {
-                    scenario.ErrorMessage.Text = model.ErrorMessage.Message;
-
-                    var keyboard = model.ErrorMessage.GetVkKeyboard();
-                    scenario.ErrorMessage.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
-
                     var message = await _context.Messages
                         .Include(x => x.Files)
                         .FirstOrDefaultAsync(x => x.Id == model.IdErrorMessage.Value);
+                    message.Text = model.ErrorMessage.Message;
+                    message.IsImageFirst = model.ErrorMessage.IsImageFirst;
+
+                    var keyboard = model.ErrorMessage.GetVkKeyboard();
+                    message.Keyboard = keyboard == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(keyboard);
 
                     if (model.Message.Files != null && model.Message.Files.Any())
                     {

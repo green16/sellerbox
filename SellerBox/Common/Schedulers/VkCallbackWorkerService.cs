@@ -92,7 +92,7 @@ namespace SellerBox.Common.Schedulers
             {
                 await DoWork(serviceProvider);
             }
-            catch (Exception ex)
+            catch
             {
 #if DEBUG
                 Console.WriteLine($"Ошибка в {nameof(VkCallbackWorkerService)}: {ex.Message}");

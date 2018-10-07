@@ -9,19 +9,6 @@ namespace SellerBox.Common.Helpers
 {
     internal static class DbHelper
     {
-        #region Scenarios
-
-        public static Scenarios GetScenario(DatabaseContext dbContext, Guid idScenario)
-        {
-            return dbContext.Scenarios
-                .Include(x => x.Message)
-                .Include(x => x.ErrorMessage)
-                .Include(x => x.Message.Files)
-                .FirstOrDefault(x => x.Id == idScenario);
-        }
-
-        #endregion
-
         #region ChainContents
 
         public static IQueryable<ChainContents> GetChainContents(DatabaseContext dbContext, Guid idChain)
