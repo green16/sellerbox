@@ -12,5 +12,7 @@ namespace SellerBox.ViewModels.Chains
         public bool IsEnabled { get; set; }
         [Display(Name = "Подписчиков в цепочке")]
         public int SubscribersInChain { get; set; }
+        [Display(Name = "Всего участвовало в цепочке")]
+        public int TotalSubscribersInChain { get; set; }
     }
 }

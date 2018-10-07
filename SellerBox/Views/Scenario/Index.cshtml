@@ -55,16 +55,16 @@
                     @Html.DisplayNameFor(model => model.Name)
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.IsStrictMatch)
+                    @Html.DisplayNameFor(model => model.IsEnabled)
                 </th>
                 <th>
                     @Html.DisplayNameFor(model => model.InputMessage)
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.Action)
+                    @Html.DisplayNameFor(model => model.IsStrictMatch)
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.IsEnabled)
+                    @Html.DisplayNameFor(model => model.Action)
                 </th>
                 <th></th>
             </tr>
@@ -74,68 +74,65 @@
             @foreach (var item in Model)
             {
                 idx++;
-                <tr data-idScenario="@item.Id">
-                    <td>
-                        @idx
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Name)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.IsStrictMatch, "CheckBoxTemplate")
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.InputMessage)
-                    </td>
-                    <td>
-                        @switch (item.Action)
-                        {
-                            case SellerBox.Models.Database.Common.ScenarioActions.Message:
-                                {
-                                    <span>Отправить сообщение</span>
-                                    break;
-                                }
-                            case SellerBox.Models.Database.Common.ScenarioActions.AddToChain:
-                                {
-                                    <span>Добавить в цепочку: </span>
-                                    <span style="color: blue">@item.ChainName</span>
-                                    break;
-                                }
-                            case SellerBox.Models.Database.Common.ScenarioActions.RemoveFromChain:
-                                {
-                                    <span>Исключить из цепочки: </span>
-                                    <span style="color: blue">@item.ChainName</span>
-                                    break;
-                                }
-                            case SellerBox.Models.Database.Common.ScenarioActions.ChangeChain:
-                                {
-                                    <span>Сменить на цепочку: </span>
-                                    <span style="color: blue">@item.ChainName</span>
-                                    break;
-                                }
-                        }
-                    </td>
-                    <td>
-                        <a class="toogleIsEnabled" href="#">
-                            @if (item.IsEnabled)
+            <tr data-idScenario="@item.Id">
+                <td>
+                    @idx
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    <label class="checkbox_custom">
+                        <input type="checkbox" data-type="IsEnabled" @{ if (item.IsEnabled) { <text> checked</text>} }>
+                        <div class="checkbox_custom__text"></div>
+                    </label>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.InputMessage)
+                </td>
+                <td>
+                    <label class="checkbox_custom">
+                        <input type="checkbox" data-type="IsStrictMatch" @{ if (item.IsStrictMatch) {<text>checked</text>} }>
+                        <div class="checkbox_custom__text"></div>
+                    </label>
+                </td>
+                <td>
+                    @switch (item.Action)
+                    {
+                        case SellerBox.Models.Database.Common.ScenarioActions.Message:
                             {
-                                <text>Активен</text>
+                                <span>Отправить сообщение</span>
+                                break;
                             }
-                            else
+                        case SellerBox.Models.Database.Common.ScenarioActions.AddToChain:
                             {
-                                <text>Отключен</text>
+                                <span>Добавить в цепочку: </span>
+                                <span style="color: blue">@item.ChainName</span>
+                                break;
                             }
-                        </a>
-                    </td>
-                    <td>
-                        <a asp-action="Edit" asp-route-idScenario="@item.Id">
-                            <img src="~/images/Edit.png" />
-                        </a> |
-                        <a class="removeScenario" href="#">
-                            <img src="~/images/Trash.png" />
-                        </a>
-                    </td>
-                </tr>
+                        case SellerBox.Models.Database.Common.ScenarioActions.RemoveFromChain:
+                            {
+                                <span>Исключить из цепочки: </span>
+                                <span style="color: blue">@item.ChainName</span>
+                                break;
+                            }
+                        case SellerBox.Models.Database.Common.ScenarioActions.ChangeChain:
+                            {
+                                <span>Сменить на цепочку: </span>
+                                <span style="color: blue">@item.ChainName</span>
+                                break;
+                            }
+                    }
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-idScenario="@item.Id">
+                        <img src="~/images/Edit.png" />
+                    </a> |
+                    <a class="removeScenario" href="#">
+                        <img src="~/images/Trash.png" />
+                    </a>
+                </td>
+            </tr>
             }
         </tbody>
     </table>

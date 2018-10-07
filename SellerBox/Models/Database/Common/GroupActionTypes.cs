@@ -1,6 +1,6 @@
 ﻿namespace SellerBox.Models.Database.Common
 {
-    public enum GroupActionTypes : byte
+    public enum GroupActionTypes
     {
         JoinGroup,
         LeaveGroup,

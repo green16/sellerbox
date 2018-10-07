@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Edm.Library;
 using Microsoft.EntityFrameworkCore;
 using SellerBox.Common;
 using SellerBox.Common.Services;
@@ -260,7 +261,7 @@ namespace SellerBox.Controllers
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             var perDayItems = await _context.History_GroupActions
-                .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
+                .Where(x => x.IdGroup == groupInfo.Key)
                 .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
                 .GroupBy(x => x.Dt.Date)
                 .Select(x => new GroupActionsPerDayViewModel()

@@ -54,7 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\Shared\DisplayTemplates\" />
     <Folder Include="wwwroot\lib\signalr\" />
   </ItemGroup>
 

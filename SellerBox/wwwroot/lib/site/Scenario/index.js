@@ -1,10 +1,25 @@
 ﻿$("table input[type=checkbox]").click(function (evt) {
 	var idScenario = $(this).closest("tr").attr("data-idScenario");
-	$.ajax({
-		type: "POST",
-		url: "/Scenario/ToogleIsStrictMatch?idScenario=" + idScenario,
-		contentType: "application/json; charset=utf-8"
-	});
+
+	var checkboxType = $(this).attr("data-type");
+	switch (checkboxType) {
+		case "IsStrictMatch": {
+			$.ajax({
+				type: "POST",
+				url: "/Scenario/ToogleIsStrictMatch?idScenario=" + idScenario,
+				contentType: "application/json; charset=utf-8"
+			});
+			break;
+		}
+		case "IsEnabled":{
+			$.ajax({
+				type: "POST",
+				url: "/Scenario/ToogleIsEnabled?idScenario=" + idScenario,
+				contentType: "application/json; charset=utf-8",
+			});
+			break;
+		}
+	}
 });
 
 $("a.removeScenario").click(function (evt) {
@@ -12,25 +27,6 @@ $("a.removeScenario").click(function (evt) {
 	var idScenario = container.attr("data-idScenario");
 	$('#warningRemoveModal').attr("data-idRemovingScenario", idScenario);
 	$('#warningRemoveModal').modal("show");
-});
-
-$("a.toogleIsEnabled").click(function () {
-	var link = $(this);
-	var container = $(this).closest("tr");
-	var idScenario = container.attr("data-idScenario");
-	$.ajax({
-		url: "/Scenario/ToogleIsEnabled?idScenario=" + idScenario,
-		contentType: "application/json; charset=utf-8",
-		type: "POST",
-		success: function (data) {
-			if (data.error == 0) {
-				if (data.isEnabled == 0)
-					link.text("Отключен");
-				else
-					link.text("Активен");
-			}
-		}
-	});
 });
 
 $('#warningRemoveModal').on('hide.bs.modal', function (evt) {

@@ -60,6 +60,9 @@
                     <th>
                         @Html.DisplayNameFor(model => model.SubscribersInChain)
                     </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.TotalSubscribersInChain)
+                    </th>
                     <th></th>
                 </tr>
             </thead>
@@ -76,10 +79,16 @@
                         @Html.DisplayFor(modelItem => item.Name)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.IsEnabled, "CheckBoxTemplate")
+                        <label class="checkbox_custom">
+                            <input type="checkbox" data-type="IsEnabled" @{ if (item.IsEnabled) { <text> checked</text>} }>
+                            <div class="checkbox_custom__text"></div>
+                        </label>
                     </td>
                     <td>
                         @Html.DisplayFor(modelItem => item.SubscribersInChain)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TotalSubscribersInChain)
                     </td>
                     <td>
                         <a asp-action="EditById" asp-route-idChain="@item.Id">

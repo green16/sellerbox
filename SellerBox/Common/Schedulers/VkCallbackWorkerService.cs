@@ -200,22 +200,21 @@ namespace SellerBox.Common.Schedulers
                                 await _context.SaveChangesAsync();
                             }
 
-                            var idAnswerMessage = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, subscriber.Id, innerMessage);
-                            bool markAsRead = !idAnswerMessage.HasValue;
-
-                            if (idAnswerMessage.HasValue)
+                            var replyToMessageResult = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, subscriber.Id, innerMessage);
+                            
+                            if (replyToMessageResult.Item1.HasValue)
                             {
                                 MessageHelper messageHelper = new MessageHelper(_context);
-                                await messageHelper.SendMessages(vkApi, message.IdGroup, idAnswerMessage.Value, innerMessage.UserId.Value);
+                                await messageHelper.SendMessages(vkApi, message.IdGroup, replyToMessageResult.Item1.Value, innerMessage.UserId.Value);
                                 await _context.History_Messages.AddAsync(new History_Messages()
                                 {
                                     Dt = DateTime.UtcNow,
                                     IsOutgoingMessage = true,
                                     IdSubscriber = subscriber.Id,
-                                    IdMessage = idAnswerMessage
+                                    IdMessage = replyToMessageResult.Item1
                                 }).ContinueWith(result => _context.SaveChanges());
                             }
-                            else if (markAsRead)
+                            else if (replyToMessageResult.Item2)
                                 await vkApi.Messages.MarkAsReadAsync(innerMessage.UserId.ToString(), groupId: message.IdGroup);
                             break;
                         }

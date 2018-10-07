@@ -39,7 +39,10 @@ namespace SellerBox.Controllers
                     Id = x.Id,
                     Name = x.Name,
                     IsEnabled = x.IsEnabled,
-                    SubscribersInChain = _context.SubscribersInChains.Include(y => y.ChainStep).Count(y => !y.IsSended && y.ChainStep.IdChain == x.Id)
+                    SubscribersInChain = _context.SubscribersInChains.Count(y => !y.IsSended && y.ChainStep.IdChain == x.Id),
+                    TotalSubscribersInChain = _context.History_SubscribersInChainSteps
+                        .Where(y => y.ChainStep.IdChain == x.Id)
+                        .GroupBy(y => y.IdSubscriber).Count()
                 }).ToListAsync();
             return View(model);
         }

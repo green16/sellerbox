@@ -9,7 +9,7 @@ namespace SellerBox.Common.Helpers
 {
     public static class CallbackHelper
     {
-        public static async Task<Guid?> ReplyToMessage(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message)
+        public static async Task<Tuple<Guid?, bool>> ReplyToMessage(DatabaseContext dbContext, long idGroup, Guid idSubscriber, VkNet.Model.Message message)
         {
             if (string.IsNullOrWhiteSpace(message.Body))
                 return null;
@@ -18,18 +18,16 @@ namespace SellerBox.Common.Helpers
                 .AnyAsync(x => x.IdSubscriber == idSubscriber);
 
             if (isChatAnswer)
-                return await ChatScenarioContentReply(dbContext, idGroup, idSubscriber, message);
+                return new Tuple<Guid?, bool>(await ChatScenarioContentReply(dbContext, idGroup, idSubscriber, message), true);
 
             var scenario = await dbContext.Scenarios
                 .Where(x => x.IsEnabled)
                 .Where(x => x.IdGroup == idGroup)
-                //.Include(x => x.Group)
-                //.Include(x => x.Group.GroupAdmins)
                 .Where(x => x.Group.GroupAdmins.Any())
                 .FirstOrDefaultAsync(x => (x.IsStrictMatch && x.InputMessage.ToLower() == message.Body.ToLower()) || (!x.IsStrictMatch && message.Body.ToLower().Contains(x.InputMessage.ToLower())));
 
             if (scenario != null)
-                return await ScenarioReply(dbContext, idGroup, idSubscriber, scenario);
+                return new Tuple<Guid?, bool>(await ScenarioReply(dbContext, idGroup, idSubscriber, scenario), true);
 
             var chatScenario = await dbContext.ChatScenarios
                 .Where(x => x.IsEnabled)
@@ -38,10 +36,10 @@ namespace SellerBox.Common.Helpers
                 .FirstOrDefaultAsync(x => x.InputMessage.ToLower() == message.Body.ToLower());
 
             if (chatScenario != null)
-                return await ChatScenarioReply(dbContext, idGroup, idSubscriber, chatScenario);
+                return new Tuple<Guid?, bool>(await ChatScenarioReply(dbContext, idGroup, idSubscriber, chatScenario), true);
             //Тут бот или картинки
 
-            return null;
+            return new Tuple<Guid?, bool>(null, false);
         }
 
         private static async Task AddSubscriberToChain(DatabaseContext dbContext, Guid idSubscriber, Guid idChain)
