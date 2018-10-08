@@ -243,10 +243,12 @@ namespace SellerBox.Controllers
                 return NotFound(idScenario);
 
             if (removingScenario.IdErrorMessage.HasValue)
-                DbHelper.RemoveMessage(_context, removingScenario.IdErrorMessage.Value);
+                await DbHelper.RemoveMessage(_context, removingScenario.IdErrorMessage.Value);
 
             if (removingScenario.IdMessage.HasValue)
-                DbHelper.RemoveMessage(_context, removingScenario.IdMessage.Value);
+                await DbHelper.RemoveMessage(_context, removingScenario.IdMessage.Value);
+
+            _context.History_Scenarios.RemoveRange(_context.History_Scenarios.Where(x => x.IdScenario == idScenario.Value));
 
             _context.Scenarios.Remove(removingScenario);
             await _context.SaveChangesAsync();
@@ -340,14 +342,14 @@ namespace SellerBox.Controllers
             else if (scenario.Message != null)
             {
                 scenario.IdMessage = null;
-                DbHelper.RemoveMessage(_context, scenario.IdMessage.Value);
+                await DbHelper.RemoveMessage(_context, scenario.IdMessage.Value);
             }
 
             if (model.ErrorMessage?.HasMessage ?? false)
             {
                 if (model.Action == Models.Database.Common.ScenarioActions.Message)
                 {
-                    DbHelper.RemoveMessage(_context, scenario.IdErrorMessage.Value);
+                    await DbHelper.RemoveMessage(_context, scenario.IdErrorMessage.Value);
                     scenario.IdErrorMessage = null;
                 }
                 else if (model.IdErrorMessage.HasValue)
@@ -378,7 +380,7 @@ namespace SellerBox.Controllers
             else if (scenario.ErrorMessage != null)
             {
                 scenario.IdErrorMessage = null;
-                DbHelper.RemoveMessage(_context, scenario.IdErrorMessage.Value);
+                await DbHelper.RemoveMessage(_context, scenario.IdErrorMessage.Value);
             }
 
             await _context.SaveChangesAsync();

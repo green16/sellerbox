@@ -1,18 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Common.Helpers;
+using SellerBox.Models.Database;
+using SellerBox.Models.Vk;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SellerBox.Common.Helpers;
-using SellerBox.Common.Services;
-using SellerBox.Models.Database;
-using SellerBox.Models.Vk;
 
-namespace SellerBox.Common.Schedulers
+namespace SellerBox.Common.Services
 {
     public class VkCallbackWorkerService : IHostedService
     {
@@ -20,11 +18,7 @@ namespace SellerBox.Common.Schedulers
 
         public const int PeriodSeconds = 1;
         private Task _executingTask;
-
-        internal VkCallbackWorkerService First()
-        {
-            throw new NotImplementedException();
-        }
+        private readonly AutoResetEvent waitHandler;
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
@@ -32,6 +26,7 @@ namespace SellerBox.Common.Schedulers
         public VkCallbackWorkerService(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
+            waitHandler = new AutoResetEvent(false);
         }
 
         public virtual Task StartAsync(CancellationToken cancellationToken)
@@ -64,16 +59,29 @@ namespace SellerBox.Common.Schedulers
             }
         }
 
-        public void AddCallbackMessage(CallbackMessage callbackMessage) => CallbackMessages.Enqueue((CallbackMessage)callbackMessage.Clone());
+        public void AddCallbackMessage(CallbackMessage callbackMessage)
+        {
+            CallbackMessages.Enqueue((CallbackMessage)callbackMessage.Clone());
+            waitHandler.Set();
+        }
 
         protected virtual async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             do
             {
-                while (!CallbackMessages.Any())
-                    await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
+                try
+                {
+                    waitHandler.WaitOne();
 
-                await Process();
+                    if (!CallbackMessages.Any())
+                    {
+                        waitHandler.Reset();
+                        continue;
+                    }
+
+                    await Process();
+                }
+                catch { }
             }
             while (!stoppingToken.IsCancellationRequested);
         }
@@ -82,22 +90,7 @@ namespace SellerBox.Common.Schedulers
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             {
-                await ProcessInScope(scope.ServiceProvider);
-            }
-        }
-
-        private async Task ProcessInScope(IServiceProvider serviceProvider)
-        {
-            try
-            {
-                await DoWork(serviceProvider);
-            }
-            catch
-            {
-#if DEBUG
-                Console.WriteLine($"Ошибка в {nameof(VkCallbackWorkerService)}: {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-#endif
+                await DoWork(scope.ServiceProvider);
             }
         }
 
@@ -106,13 +99,8 @@ namespace SellerBox.Common.Schedulers
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            while (CallbackMessages.Count > 0)
+            while (CallbackMessages.TryDequeue(out CallbackMessage message))
             {
-                if (!CallbackMessages.TryDequeue(out CallbackMessage message))
-                {
-                    Thread.Sleep(100);
-                    continue;
-                }
                 string json = message.Object?.ToString(Newtonsoft.Json.Formatting.None);
 
                 bool isRepeatCallbackMessage = _context.VkCallbackMessages.Any(x => x.Type == message.Type && x.IdGroup == message.IdGroup && x.Object == json);
@@ -201,7 +189,7 @@ namespace SellerBox.Common.Schedulers
                             }
 
                             var replyToMessageResult = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, subscriber.Id, innerMessage);
-                            
+
                             if (replyToMessageResult.Item1.HasValue)
                             {
                                 MessageHelper messageHelper = new MessageHelper(_context);
@@ -559,7 +547,6 @@ namespace SellerBox.Common.Schedulers
                             break;
                         }
                 }
-
             }
         }
 

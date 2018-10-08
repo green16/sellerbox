@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SellerBox.Common;
+using SellerBox.Common.Services;
 using System.Linq;
 using System.Threading.Tasks;
-using SellerBox.Common;
-using SellerBox.Common.Schedulers;
 
 namespace SellerBox.Controllers
 {

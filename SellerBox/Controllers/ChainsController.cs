@@ -25,6 +25,21 @@ namespace SellerBox.Controllers
             _userHelperService = userHelperService;
         }
 
+        private async Task RemoveChainContent(Guid idChainContent)
+        {
+            var removingChainContent = await _context.ChainContents.FirstOrDefaultAsync(x => x.Id == idChainContent);
+
+            _context.CheckedSubscribersInRepostScenarios.RemoveRange(_context.CheckedSubscribersInRepostScenarios.Where(x => x.RepostScenario.IdCheckingChainContent == idChainContent));
+            if(removingChainContent.IdMessage.HasValue)
+                await DbHelper.RemoveMessage(_context, removingChainContent.IdMessage.Value);
+            
+            _context.History_SubscribersInChainSteps.RemoveRange(_context.History_SubscribersInChainSteps.Where(x => x.IdChainStep == idChainContent));
+            _context.SubscribersInChains.RemoveRange(_context.SubscribersInChains.Where(x => x.IdChainStep == idChainContent));
+            _context.ChainContents.RemoveRange(_context.ChainContents.Where(x => x.Id == idChainContent));
+
+            await _context.SaveChangesAsync();
+        }
+
         // GET: Chains
         public async Task<IActionResult> Index()
         {
@@ -239,8 +254,7 @@ namespace SellerBox.Controllers
             if (string.IsNullOrEmpty(idChainContent) || !Guid.TryParse(idChainContent, out Guid id))
                 return RedirectToAction(nameof(Index), "Chains");
 
-            _context.ChainContents.RemoveRange(_context.ChainContents.Where(x => x.Id == id));
-            await _context.SaveChangesAsync();
+            await RemoveChainContent(id);
 
             return Json(new { state = 0 });
         }
@@ -352,21 +366,15 @@ namespace SellerBox.Controllers
         {
             if (!idChain.HasValue)
                 return NotFound(idChain);
-
+            
+            var removingChainContentIds = await _context.ChainContents
+                .Where(x => x.IdChain == idChain.Value)
+                .Select(x => x.Id)
+                .ToArrayAsync();
+            foreach (var removingChainContentsId in removingChainContentIds)
+                await RemoveChainContent(removingChainContentsId);
+            
             _context.Chains.RemoveRange(_context.Chains.Where(x => x.Id == idChain.Value));
-
-            var removingChainContents = _context.ChainContents.Where(x => x.IdChain == idChain.Value);
-            var removingChainContentsIds = removingChainContents.Select(x => x.Id);
-            foreach (var removingChainContentsId in removingChainContentsIds)
-            {
-                _context.SubscribersInChains.RemoveRange(_context.SubscribersInChains.Where(x => x.IdChainStep == removingChainContentsId));
-                _context.CheckedSubscribersInRepostScenarios.RemoveRange(_context.CheckedSubscribersInRepostScenarios.Where(x => x.RepostScenario.IdCheckingChainContent == removingChainContentsId));
-
-                Guid? idMessage = await _context.ChainContents.Where(x => x.Id == removingChainContentsId).Select(x => x.IdMessage).FirstOrDefaultAsync();
-                if (idMessage.HasValue)
-                    DbHelper.RemoveMessage(_context, idMessage.Value);
-            }
-            _context.ChainContents.RemoveRange(removingChainContents);
             await _context.SaveChangesAsync();
 
             return Ok();

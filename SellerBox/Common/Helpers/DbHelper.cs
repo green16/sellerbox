@@ -67,19 +67,17 @@ namespace SellerBox.Common.Helpers
             return result;
         }
 
-        public static void RemoveMessage(DatabaseContext dbContext, Guid idMessage)
+        public static async Task RemoveMessage(DatabaseContext dbContext, Guid idMessage)
         {
-            var messages = dbContext.Messages.Include(x => x.Files).Where(x => x.Id == idMessage);
-            dbContext.Messages.RemoveRange(messages);
+            var filesInMessages = await dbContext.FilesInMessage.Where(x => x.IdMessage == idMessage).ToArrayAsync();
+                foreach (var fileInMessage in filesInMessages)
 
-            var filesInMessages = messages.SelectMany(x => x.Files);
+            dbContext.Files.RemoveRange(dbContext.Files.Where(x => x.Id == fileInMessage.IdFile));
             dbContext.FilesInMessage.RemoveRange(filesInMessages);
+            dbContext.History_Messages.RemoveRange(dbContext.History_Messages.Where(x => x.IdMessage == idMessage));
+            dbContext.Messages.RemoveRange(dbContext.Messages.Where(x => x.Id == idMessage));
 
-            var files = filesInMessages.Include(x => x.File);
-            foreach (var file in files)
-                dbContext.Files.RemoveRange(files.Select(x => x.File));
-
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
         }
 
         #endregion
