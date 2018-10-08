@@ -1,10 +1,9 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
-using SellerBox.Models.Database.Common;
 
 namespace SellerBox.Models.Database
 {
-    public class History_GroupActions : BaseEntity
+    public class History_GroupActions : BaseHistory
     {
         [ForeignKey(nameof(Subscriber))]
         public Guid IdSubscriber { get; set; }
@@ -14,9 +13,6 @@ namespace SellerBox.Models.Database
         public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
-        public GroupActionTypes ActionType { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime Dt { get; set; }
+        public int ActionType { get; set; }
     }
 }

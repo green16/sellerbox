@@ -55,6 +55,7 @@ namespace SellerBox.Common
 
         public DbSet<Scheduler_Messaging> Scheduler_Messaging { get; set; }
 
+        public DbSet<Notifications> Notifications { get; set; }
 
         public DatabaseContext()
         {

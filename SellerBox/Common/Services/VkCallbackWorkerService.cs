@@ -147,7 +147,7 @@ namespace SellerBox.Common.Services
                             {
                                 await _context.History_GroupActions.AddAsync(new History_GroupActions()
                                 {
-                                    ActionType = Models.Database.Common.GroupActionTypes.CancelMessaging,
+                                    ActionType = (int)Models.Database.Common.GroupActionTypes.CancelMessaging,
                                     IdGroup = message.IdGroup,
                                     IdSubscriber = subscriber.Id,
                                     Dt = DateTime.UtcNow
@@ -178,7 +178,7 @@ namespace SellerBox.Common.Services
                             {
                                 await _context.History_GroupActions.AddAsync(new History_GroupActions()
                                 {
-                                    ActionType = Models.Database.Common.GroupActionTypes.AcceptMessaging,
+                                    ActionType = (int)Models.Database.Common.GroupActionTypes.AcceptMessaging,
                                     IdGroup = message.IdGroup,
                                     IdSubscriber = subscriber.Id,
                                     Dt = DateTime.UtcNow
@@ -227,7 +227,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.AcceptMessaging,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.AcceptMessaging,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow
@@ -249,7 +249,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.BlockMessaging,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.BlockMessaging,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow
@@ -447,7 +447,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.LeaveGroup,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.LeaveGroup,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow
@@ -472,7 +472,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.JoinGroup,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.JoinGroup,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow
@@ -492,7 +492,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.Blocked,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.Blocked,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow
@@ -513,7 +513,7 @@ namespace SellerBox.Common.Services
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
                             {
-                                ActionType = Models.Database.Common.GroupActionTypes.Unblocked,
+                                ActionType = (int)Models.Database.Common.GroupActionTypes.Unblocked,
                                 IdGroup = message.IdGroup,
                                 IdSubscriber = subscriber.Id,
                                 Dt = DateTime.UtcNow

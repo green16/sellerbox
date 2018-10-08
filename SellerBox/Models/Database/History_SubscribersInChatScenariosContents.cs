@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class History_SubscribersInChatScenariosContents : BaseEntity
+    public class History_SubscribersInChatScenariosContents : BaseHistory
     {
-        [Column(TypeName = "datetime2")]
-        public DateTime Dt { get; set; }
-
         [ForeignKey(nameof(ChatScenarioContent))]
         public Guid IdChatScenarioContent { get; set; }
         public virtual ChatScenarioContents ChatScenarioContent { get; set; }

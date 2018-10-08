@@ -59,7 +59,7 @@ namespace SellerBox.Common.Helpers
             {
                 IdChainStep = firstChainStepId,
                 IdSubscriber = idSubscriber,
-                DtAdd = DateTime.UtcNow
+                Dt = DateTime.UtcNow
             });
 
             await dbContext.SaveChangesAsync();

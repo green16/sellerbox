@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class History_Birthday : BaseEntity
+    public class History_Birthday : BaseHistory
     {
         [ForeignKey(nameof(Subscriber))]
         public Guid IdSubscriber { get; set; }
@@ -12,8 +12,5 @@ namespace SellerBox.Models.Database
         [ForeignKey(nameof(Group))]
         public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime DtSend { get; set; }
     }
 }

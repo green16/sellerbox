@@ -109,7 +109,7 @@ namespace SellerBox.Common.Schedulers
             {
                 var subscribers = await _context.Subscribers
                     .Where(x => x.IdGroup == birthdayScenario.IdGroup)
-                    .Where(x => !_context.History_Birthday.Any(y => y.Id == x.Id && y.DtSend.Year == dt.Year))
+                    .Where(x => !_context.History_Birthday.Any(y => y.Id == x.Id && y.Dt.Year == dt.Year))
                     .Include(x => x.VkUser)
                     .Where(x => x.VkUser.Birthday.HasValue && x.VkUser.Birthday.Value.Month == dt.Date.Month && x.VkUser.Birthday.Value.Day == dt.Date.AddDays(birthdayScenario.DaysBefore).Day)
                     .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
@@ -133,7 +133,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             _context.History_Birthday.AddRangeAsync(subscribers.Select(x => new History_Birthday()
                             {
-                                DtSend = dt,
+                                Dt = dt,
                                 IdSubscriber = x.Id,
                                 IdGroup = birthdayScenario.IdGroup
                             })),

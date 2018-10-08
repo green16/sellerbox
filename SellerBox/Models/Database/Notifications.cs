@@ -1,17 +1,20 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
-using SellerBox.Common.Hubs;
 
 namespace SellerBox.Models.Database
 {
-    public class History_Synchronization : BaseHistory
+    public class Notifications : BaseEntity
     {
         [ForeignKey(nameof(Group))]
         public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
 
-        public SyncType SyncType { get; set; }
         [Column(TypeName = "datetime2")]
-        public DateTime? DtEnd { get; set; }
+        public DateTime DtCreate { get; set; }
+
+        public string IdElement { get; set; }
+        public int ElementType { get; set; }
+        public string NotifyTo { get; set; }
+        public int NotificationType { get; set; }
     }
 }

@@ -204,8 +204,8 @@ namespace SellerBox.Controllers
             var groupInfo = _userHelperService.GetSelectedGroup(User);
             var perDayItems = await _context.History_SubscribersInChainSteps
                 .Where(x => x.Subscriber.IdGroup == groupInfo.Key)
-                .Where(x => x.DtAdd <= dtEnd && x.DtAdd >= dtStart)
-                .GroupBy(x => x.DtAdd.Date)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
+                .GroupBy(x => x.Dt.Date)
                 .Select(x => new ChainInfoViewModel()
                 {
                     Date = x.Key,
@@ -267,13 +267,13 @@ namespace SellerBox.Controllers
                 .Select(x => new GroupActionsPerDayViewModel()
                 {
                     Date = x.Key,
-                    AcceptMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.AcceptMessaging),
-                    BlockedCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.Blocked),
-                    BlockMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.BlockMessaging),
-                    CancelMessagingCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.CancelMessaging),
-                    JoinGroupCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.JoinGroup),
-                    LeaveGroupCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.LeaveGroup),
-                    UnblockedCount = x.LongCount(y => y.ActionType == Models.Database.Common.GroupActionTypes.Unblocked)
+                    AcceptMessagingCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.AcceptMessaging),
+                    BlockedCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.Blocked),
+                    BlockMessagingCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.BlockMessaging),
+                    CancelMessagingCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.CancelMessaging),
+                    JoinGroupCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.JoinGroup),
+                    LeaveGroupCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.LeaveGroup),
+                    UnblockedCount = x.LongCount(y => y.ActionType == (int)Models.Database.Common.GroupActionTypes.Unblocked)
                 })
                 .ToArrayAsync();
 

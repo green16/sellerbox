@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class History_Messages : BaseEntity
+    public class History_Messages : BaseHistory
     {
         [ForeignKey(nameof(Message))]
         public Guid? IdMessage { get; set; }
@@ -16,8 +16,5 @@ namespace SellerBox.Models.Database
         public bool IsOutgoingMessage { get; set; }
 
         public string Text { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime Dt { get; set; }
     }
 }

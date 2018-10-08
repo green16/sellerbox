@@ -1,8 +1,8 @@
 ﻿namespace SellerBox.Models.Database.Common
 {
-    public enum GroupActionTypes
+    public enum GroupActionTypes : int
     {
-        JoinGroup,
+        JoinGroup = 0,
         LeaveGroup,
         BlockMessaging,
         AcceptMessaging,

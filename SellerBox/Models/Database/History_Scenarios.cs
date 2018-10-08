@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class History_Scenarios : BaseEntity
+    public class History_Scenarios : BaseHistory
     {
         [ForeignKey(nameof(Subscriber))]
         public Guid IdSubscriber { get; set; }
@@ -12,8 +12,5 @@ namespace SellerBox.Models.Database
         [ForeignKey(nameof(Scenario))]
         public Guid IdScenario { get; set; }
         public virtual Scenarios Scenario { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime Dt { get; set; }
     }
 }

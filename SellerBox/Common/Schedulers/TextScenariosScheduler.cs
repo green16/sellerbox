@@ -159,7 +159,7 @@ namespace SellerBox.Common.Schedulers
                     {
                         IdChainStep = nextChainContent.Id,
                         IdSubscriber = subscriberInChain.IdSubscriber,
-                        DtAdd = dt
+                        Dt = dt
                     });
                 }
 

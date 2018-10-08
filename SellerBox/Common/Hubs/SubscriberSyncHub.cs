@@ -81,7 +81,7 @@ namespace SellerBox.Common.Hubs
         {
             await _context.SyncHistory.AddAsync(new History_Synchronization()
             {
-                DtStart = DateTime.UtcNow,
+                Dt = DateTime.UtcNow,
                 IdGroup = idGroup,
                 SyncType = syncType
             });
