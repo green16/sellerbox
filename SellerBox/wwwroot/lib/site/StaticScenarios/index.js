@@ -1,29 +1,29 @@
-﻿$("a.toogleBirthdayIsEnabled").click(function () {
-	var link = $(this);
-	$.ajax({
-		url: "/StaticScenarios/ToogleBirthdayIsEnabled",
-		contentType: "application/json; charset=utf-8",
-		type: "POST",
-		success: function (data) {
-			if (data.isEnabled == 0)
-				link.text("Отключен");
-			else
-				link.text("Активен");
+﻿$("table input[type=checkbox]").click(function (evt) {
+	var checkboxType = $(this).attr("data-type");
+	switch (checkboxType) {
+		case "IsMaleBirthdayEnabled": {
+			$.ajax({
+				type: "POST",
+				url: "/StaticScenarios/ToogleBirthdayIsEnabled?isMale=true",
+				contentType: "application/json; charset=utf-8"
+			});
+			break;
 		}
-	});
-});
-
-$("a.toogleBirthdayWallIsEnabled").click(function () {
-	var link = $(this);
-	$.ajax({
-		url: "/StaticScenarios/ToogleBirthdayWallIsEnabled",
-		contentType: "application/json; charset=utf-8",
-		type: "POST",
-		success: function (data) {
-			if (data.isEnabled == 0)
-				link.text("Отключен");
-			else
-				link.text("Активен");
+		case "IsFemaleBirthdayEnabled": {
+			$.ajax({
+				type: "POST",
+				url: "/StaticScenarios/ToogleBirthdayIsEnabled?isMale=false",
+				contentType: "application/json; charset=utf-8",
+			});
+			break;
 		}
-	});
+		case "IsBirthdayWallEnabled": {
+			$.ajax({
+				type: "POST",
+				url: "/StaticScenarios/ToogleBirthdayWallIsEnabled",
+				contentType: "application/json; charset=utf-8"
+			});
+			break;
+		}
+	}
 });

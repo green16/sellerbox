@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SellerBox.Models.Database;
+using SellerBox.Models.Database.Common;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using SellerBox.Models.Database;
-using SellerBox.Models.Database.Common;
 
 namespace SellerBox.Common.Helpers
 {
@@ -42,7 +42,7 @@ namespace SellerBox.Common.Helpers
             return new Tuple<Guid?, bool>(null, false);
         }
 
-        private static async Task AddSubscriberToChain(DatabaseContext dbContext, Guid idSubscriber, Guid idChain)
+        private static async Task AddSubscriberToChain(DatabaseContext dbContext, long idGroup, Guid idSubscriber, Guid idChain)
         {
             var firstChainStepId = await dbContext.ChainContents.Where(x => x.IdChain == idChain).OrderBy(x => x.Index).Select(x => x.Id).FirstOrDefaultAsync();
             if (firstChainStepId == default(Guid))
@@ -62,6 +62,22 @@ namespace SellerBox.Common.Helpers
                 Dt = DateTime.UtcNow
             });
 
+            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            {
+                Dt = DateTime.UtcNow,
+                IdGroup = idGroup,
+                IdElement = idChain,
+                IdSubscriber = idSubscriber,
+                SourceType = 1
+            });
+            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            {
+                Dt = DateTime.UtcNow,
+                IdGroup = idGroup,
+                IdElement = firstChainStepId,
+                IdSubscriber = idSubscriber,
+                SourceType = 2
+            });
             await dbContext.SaveChangesAsync();
         }
 
@@ -74,6 +90,15 @@ namespace SellerBox.Common.Helpers
                 Dt = DateTime.UtcNow
             });
             await dbContext.SaveChangesAsync();
+
+            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            {
+                Dt = DateTime.UtcNow,
+                IdGroup = idGroup,
+                IdElement = scenario.Id,
+                IdSubscriber = idSubscriber,
+                SourceType = 0
+            });
 
             if (scenario.Action == ScenarioActions.Message)
                 return scenario.IdMessage;
@@ -95,7 +120,7 @@ namespace SellerBox.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, idSubscriber, scenario.IdChain.Value);
+                        await AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
                         break;
                     }
                 case ScenarioActions.ChangeChain:
@@ -112,8 +137,7 @@ namespace SellerBox.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, idSubscriber, scenario.IdChain.Value);
-
+                        await AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
                         break;
                     }
                 case ScenarioActions.RemoveFromChain:

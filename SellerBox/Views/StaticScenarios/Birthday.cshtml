@@ -15,7 +15,7 @@
 
 <form asp-action="SaveBirthday" asp-controller="StaticScenarios" asp-antiforgery="true">
     <div asp-validation-summary="All" class="text-danger"></div>
-
+    <input asp-for="IsMale" hidden>
     <div class="input-group">
         <div class="input-group-prepend">
             <label asp-for="DaysBefore" class="input-group-text"></label>

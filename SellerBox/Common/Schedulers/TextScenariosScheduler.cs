@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Common.Helpers;
+using SellerBox.Common.Services;
+using SellerBox.Models.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SellerBox.Common.Helpers;
-using SellerBox.Common.Services;
-using SellerBox.Models.Database;
 
 namespace SellerBox.Common.Schedulers
 {
@@ -160,6 +160,14 @@ namespace SellerBox.Common.Schedulers
                         IdChainStep = nextChainContent.Id,
                         IdSubscriber = subscriberInChain.IdSubscriber,
                         Dt = dt
+                    });
+                    NotifierService.AddNotifyEvent(new NotifierService.NotifyEvent()
+                    {
+                        Dt = DateTime.UtcNow,
+                        IdGroup = subscriberInChain.ChainStep.Chain.IdGroup,
+                        IdElement = nextChainContent.Id,
+                        IdSubscriber = subscriberInChain.IdSubscriber,
+                        SourceType = 2
                     });
                 }
 

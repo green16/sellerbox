@@ -2,6 +2,8 @@
 {
     public static class Logins
     {
+        public const string EmailAddress = "sellerbox@it-rkomi.ru";
+        public const string EmailPassword = "wHCZq9J4anU8heRb";
 #if DEBUG
         public const int VkApplicationId = 6691268;
         public const string VkApplicationPassword = "d2uFXkIYY9oQRmkQq71M";

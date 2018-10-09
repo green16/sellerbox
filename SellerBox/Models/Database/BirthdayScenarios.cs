@@ -8,6 +8,7 @@ namespace SellerBox.Models.Database
         public byte SendAt { get; set; }
         public int DaysBefore { get; set; }
         public bool IsEnabled { get; set; }
+        public bool IsMale { get; set; }
 
         [ForeignKey(nameof(Group))]
         public long IdGroup { get; set; }

@@ -16,20 +16,17 @@ namespace SellerBox.Common.Services
     {
         private static ConcurrentQueue<CallbackMessage> CallbackMessages = new ConcurrentQueue<CallbackMessage>();
 
-        public const int PeriodSeconds = 1;
         private Task _executingTask;
-        private readonly AutoResetEvent waitHandler;
+        private static readonly AutoResetEvent waitHandler = new AutoResetEvent(false);
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         public VkCallbackWorkerService(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
-            waitHandler = new AutoResetEvent(false);
         }
 
-        public void AddCallbackMessage(CallbackMessage callbackMessage)
+        public static void AddCallbackMessage(CallbackMessage callbackMessage)
         {
             if (callbackMessage == null)
                 return;
@@ -41,7 +38,7 @@ namespace SellerBox.Common.Services
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            return Task.Run(async () =>
+            _executingTask = Task.Run(async () =>
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -63,6 +60,8 @@ namespace SellerBox.Common.Services
                     catch { }
                 }
             }, stoppingToken);
+
+            return _executingTask;
         }
 
         private async Task DoWork(IServiceProvider serviceProvider)

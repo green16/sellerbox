@@ -1,13 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Common.Helpers;
+using SellerBox.Common.Services;
+using SellerBox.Models.Database;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SellerBox.Common.Helpers;
-using SellerBox.Common.Services;
-using SellerBox.Models.Database;
 
 namespace SellerBox.Common.Schedulers
 {
@@ -113,6 +113,7 @@ namespace SellerBox.Common.Schedulers
                     .Include(x => x.VkUser)
                     .Where(x => x.VkUser.Birthday.HasValue && x.VkUser.Birthday.Value.Month == dt.Date.Month && x.VkUser.Birthday.Value.Day == dt.Date.AddDays(birthdayScenario.DaysBefore).Day)
                     .Where(x => x.IsChatAllowed.HasValue && x.IsChatAllowed.Value)
+                    .Where(x => x.VkUser.Sex.HasValue && x.VkUser.Sex.Value == birthdayScenario.IsMale)
                     .ToArrayAsync();
                 if (!subscribers.Any())
                     continue;

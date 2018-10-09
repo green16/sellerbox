@@ -88,6 +88,7 @@ namespace SellerBox
             services.AddTransient<VkPoolService>();
 
             services.AddSingleton<IHostedService, VkCallbackWorkerService>();
+            services.AddSingleton<IHostedService, NotifierService>();
 
             services.AddHostedService<BirthdayScenariosScheduler>();
             services.AddHostedService<RepostScheduler>();

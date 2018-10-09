@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SellerBox.Common;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.ViewModels.Shared;
 using SellerBox.ViewModels.StaticScenarios;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -29,22 +29,22 @@ namespace SellerBox.Controllers
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            bool? isBirthdayEnabled = (await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled;
-            ViewBag.HasBirthday = isBirthdayEnabled != null;
-            ViewBag.IsBirthdayEnabled = isBirthdayEnabled ?? false;
+            var model = new IndexViewModel()
+            {
+                IsMaleBirthdayEnabled = await _context.BirthdayScenarios.Where(x => x.IdGroup == groupInfo.Key && x.IsMale).Select(x => (bool?)x.IsEnabled).FirstOrDefaultAsync(),
+                IsFemaleBirthdayEnabled = await _context.BirthdayScenarios.Where(x => x.IdGroup == groupInfo.Key && !x.IsMale).Select(x => (bool?)x.IsEnabled).FirstOrDefaultAsync(),
+                IsBirthdayWallEnabled = await _context.BirthdayWallScenarios.Where(x => x.IdGroup == groupInfo.Key).Select(x => (bool?)x.IsEnabled).FirstOrDefaultAsync()
+            };
 
-            bool? isBirthdayWallEnabled = (await _context.BirthdayWallScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key))?.IsEnabled;
-            ViewBag.HasBirthdayWall = isBirthdayWallEnabled != null;
-            ViewBag.IsBirthdayWallEnabled = isBirthdayWallEnabled ?? false;
-            return View();
+            return View(model);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToogleBirthdayIsEnabled()
+        public async Task<IActionResult> ToogleBirthdayIsEnabled([FromQuery]bool isMale)
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            BirthdayScenarios birthdayScenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            BirthdayScenarios birthdayScenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key && x.IsMale == isMale);
             if (birthdayScenario == null)
                 return null;
             birthdayScenario.IsEnabled = !birthdayScenario.IsEnabled;
@@ -68,33 +68,34 @@ namespace SellerBox.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Birthday()
+        public async Task<IActionResult> Birthday([FromQuery]bool isMale)
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
-            BirthdayScenarios scenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key);
+            BirthdayScenarios scenario = await _context.BirthdayScenarios.FirstOrDefaultAsync(x => x.IdGroup == groupInfo.Key && x.IsMale == isMale);
 
-            BirthdaySchedulerViewModel model = null;
+            BirthdaySchedulerViewModel model = new BirthdaySchedulerViewModel()
+            {
+                IsMale = isMale
+            };
             if (scenario != null)
             {
                 Messages message = await _context.Messages
                     .Include(x => x.Files)
                     .FirstOrDefaultAsync(x => x.Id == scenario.IdMessage);
                 uint idx = 0;
-                model = new BirthdaySchedulerViewModel()
+
+                model.IdMessage = scenario.IdMessage;
+                model.DaysBefore = scenario.DaysBefore;
+                model.SendAt = scenario.SendAt;
+                model.Message = message.Text;
+                model.IsImageFirst = message.IsImageFirst;
+                model.Files = message.Files.Select(x => new FileModel()
                 {
-                    IdMessage = scenario.IdMessage,
-                    DaysBefore = scenario.DaysBefore,
-                    SendAt = scenario.SendAt,
-                    Message = message.Text,
-                    IsImageFirst = message.IsImageFirst,
-                    Files = message.Files.Select(x => new FileModel()
-                    {
-                        Id = x.IdFile,
-                        Name = _context.Files.FirstOrDefault(y => y.Id == x.IdFile)?.Name,
-                        Index = idx++
-                    }).ToList()
-                };
+                    Id = x.IdFile,
+                    Name = _context.Files.FirstOrDefault(y => y.Id == x.IdFile)?.Name,
+                    Index = idx++
+                }).ToList();
 
                 var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
                 if (keyboard != null)
@@ -116,8 +117,6 @@ namespace SellerBox.Controllers
                     }
                 }
             }
-            else
-                model = new BirthdaySchedulerViewModel();
 
             return View(model);
         }
@@ -179,6 +178,7 @@ namespace SellerBox.Controllers
                 scenario.IdMessage = message.Id;
             scenario.DaysBefore = model.DaysBefore;
             scenario.SendAt = model.SendAt;
+            scenario.IsMale = model.IsMale;
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

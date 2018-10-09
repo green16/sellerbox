@@ -24,6 +24,7 @@
 
 $('#NotificationType').change(function () {
 	var notificationType = $(this).val();
-
+	if (notificationType != 0)
+		$('#emailInput').find('input').val("");
 	$('#emailInput').prop("hidden", notificationType == 0);
 });

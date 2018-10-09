@@ -11,12 +11,12 @@ namespace SellerBox.Controllers
     public class CallbackController : Controller
     {
         private readonly DatabaseContext _context;
-        private readonly VkCallbackWorkerService _vkCallbackWorkerService;
+        //private readonly VkCallbackWorkerService _vkCallbackWorkerService;
 
         public CallbackController(System.Collections.Generic.IEnumerable<Microsoft.Extensions.Hosting.IHostedService> hostedServices, DatabaseContext context)
         {
             _context = context;
-            _vkCallbackWorkerService = hostedServices.OfType<VkCallbackWorkerService>().First();
+         //   _vkCallbackWorkerService = hostedServices.OfType<VkCallbackWorkerService>().First();
         }
 
         [AllowAnonymous]
@@ -36,7 +36,7 @@ namespace SellerBox.Controllers
                 return Ok(callbackConfirmationCode);
             }
 
-            _vkCallbackWorkerService.AddCallbackMessage(message);
+            VkCallbackWorkerService.AddCallbackMessage(message);
 
             return Content("ok");
         }

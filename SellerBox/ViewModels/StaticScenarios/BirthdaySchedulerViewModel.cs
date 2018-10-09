@@ -11,5 +11,6 @@ namespace SellerBox.ViewModels.StaticScenarios
         public byte SendAt { get; set; }
         [Display(Name = "За сколько дней отправлять: ")]
         public int DaysBefore { get; set; }
+        public bool IsMale { get; set; }
     }
 }

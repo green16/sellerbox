@@ -1,4 +1,6 @@
-﻿@section scripts {
+﻿@model SellerBox.ViewModels.StaticScenarios.IndexViewModel
+
+@section scripts {
     <script src="~/lib/site/StaticScenarios/index.js"></script>
 }
 
@@ -22,22 +24,15 @@
                 1
             </td>
             <td>
-                <a asp-action="Birthday">Дни рождения</a>
+                <a asp-action="Birthday" asp-route-isMale="true">Дни рождения (мужчины)</a>
             </td>
             <td>
-                @if (ViewBag.HasBirthday)
+                @if (Model.IsMaleBirthdayEnabled.HasValue)
                 {
-                    <a class="toogleBirthdayIsEnabled" href="#">
-                        @if (ViewBag.IsBirthdayEnabled)
-                        {
-                            <text>Активен</text>
-                        }
-                        else
-                        {
-                            <text>Отключен</text>
-                        }
-
-                    </a>
+                    <label class="checkbox_custom">
+                        <input type="checkbox" data-type="IsMaleBirthdayEnabled" @{ if (Model.IsMaleBirthdayEnabled.Value) { <text> checked</text>} }>
+                        <div class="checkbox_custom__text"></div>
+                    </label>
                 }
                 else
                 {
@@ -50,21 +45,36 @@
                 2
             </td>
             <td>
+                <a asp-action="Birthday" asp-route-isMale="false">Дни рождения (женщины)</a>
+            </td>
+            <td>
+                @if (Model.IsFemaleBirthdayEnabled.HasValue)
+                {
+                    <label class="checkbox_custom">
+                        <input type="checkbox" data-type="IsFemaleBirthdayEnabled" @{ if (Model.IsFemaleBirthdayEnabled.Value) { <text> checked</text>} }>
+                        <div class="checkbox_custom__text"></div>
+                    </label>
+                }
+                else
+                {
+                    <text>Не подключен</text>
+                }
+            </td>
+        </tr>
+        <tr>
+            <td>
+                3
+            </td>
+            <td>
                 <a asp-action="BirthdayWall">Дни рождения на стене</a>
             </td>
             <td>
-                @if (ViewBag.HasBirthdayWall)
+                @if (Model.IsBirthdayWallEnabled.HasValue)
                 {
-                    <a class="toogleBirthdayWallIsEnabled" href="#">
-                        @if (ViewBag.IsBirthdayWallEnabled)
-                        {
-                            <text>Активен</text>
-                        }
-                        else
-                        {
-                            <text>Отключен</text>
-                        }
-                    </a>
+                    <label class="checkbox_custom">
+                        <input type="checkbox" data-type="IsBirthdayWallEnabled" @{ if (Model.IsBirthdayWallEnabled.Value) { <text> checked</text>} }>
+                        <div class="checkbox_custom__text"></div>
+                    </label>
                 }
                 else
                 {
