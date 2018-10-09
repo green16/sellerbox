@@ -1,0 +1,83 @@
+﻿@model SellerBox.ViewModels.Notifications.EditViewModel
+
+@section scripts
+    {
+    <script src="~/lib/site/Notifications/edit.js"></script>
+}
+
+<form asp-action="Save" asp-controller="Notifications" asp-antiforgery="true">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    @if (Model.Id.HasValue)
+    {
+        <input asp-for="Id" type="hidden" value="@Model.Id" />
+    }
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="Name" class="input-group-text"></label>
+        </div>
+        <input asp-for="Name" type="text" class="form-control" aria-label="Сообщение" placeholder="Название уведомления">
+    </div>
+
+    <h4>Условие срабатывания события</h4>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <label asp-for="ElementType" class="input-group-text"></label>
+        </div>
+        <select asp-for="ElementType" class="custom-select">
+            <option value="@null" selected>Выберите ...</option>
+            @foreach (KeyValuePair<int, string> elementType in ViewBag.NotificationElementTypes)
+            {
+                <option value="@elementType.Key">@elementType.Value</option>
+            }
+        </select>
+    </div>
+
+    @{ bool elementsExists = ViewBag.Elements != null && ViewBag.Elements.Count != 0; }
+
+    <div class="input-group mb-3" @{ if (!elementsExists) { <text> hidden</text>} }>
+        <div class="input-group-prepend">
+            <label asp-for="IdElement" class="input-group-text"></label>
+        </div>
+        <select asp-for="IdElement" class="custom-select">
+            <option value="@null">Выберите ...</option>
+            @if (elementsExists)
+            {
+                @foreach (var element in ViewBag.Elements)
+                {
+                    @if (element.Key.ToString() == Model.IdElement)
+                    {
+                        <option value="@element.Key" selected>@element.Value</option>
+                    }
+                    else
+                    {
+                        <option value="@element.Key">@element.Value</option>
+                    }
+                }
+            }
+        </select>
+    </div>
+
+    <br />
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <label asp-for="NotificationType" class="input-group-text"></label>
+        </div>
+        <select asp-for="NotificationType" class="custom-select">
+            <option value="@null" selected>Выберите ...</option>
+            @foreach (KeyValuePair<int, string> elementType in ViewBag.NotificationTypes)
+            {
+                <option value="@elementType.Key">@elementType.Value</option>
+            }
+        </select>
+    </div>
+    <div id="emailInput" class="input-group mb-3" @{ if (!Model.NotificationType.HasValue || Model.NotificationType == 0) { <text> hidden</text>} }>
+        <div class="input-group-prepend">
+            <label asp-for="NotifyTo" class="input-group-text"></label>
+        </div>
+        <input asp-for="NotifyTo" type="text" class="form-control" aria-label="Адрес" placeholder="Адрес">
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

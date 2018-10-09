@@ -1,0 +1,127 @@
+﻿@model IEnumerable<SellerBox.ViewModels.Notifications.IndexViewModel>
+
+
+@section scripts {
+    <script src="~/lib/site/Notifications/index.js"></script>
+}
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="modal fade" id="warningRemoveModal" tabindex="-1" role="dialog" aria-labelledby="warningRemoveModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warningRemoveModalTitle">Внимание</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить данное уведомление?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Нет</button>
+                <button type="button" class="btn btn-primary" id="warningRemoveModalYesButton">Да</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    bool hasElements = Model != null && Model.Any();
+    if (hasElements)
+    {
+        using (Html.BeginForm("Create", "Notifications", FormMethod.Get))
+        {
+            <button type="submit" class="btn btn-primary">Добавить уведомление</button>
+        }
+    }
+}
+<div>
+    <h5 @{if (hasElements) { <text> hidden</text>}}>
+        Нет ни одного уведомления.
+        <a asp-action="Create">Добавьте первое</a>
+    </h5>
+    @if (hasElements)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        №
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Name)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.IsEnabled)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.DtCreate)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.ElementType)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.ElementName)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.NotificationType)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.NotifyTo)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{int idx = 0; }
+                @foreach (var item in Model)
+                {
+                    idx++;
+                    <tr data-idChain="@item.Id">
+                        <td>
+                            @idx
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            <label class="checkbox_custom">
+                                <input type="checkbox" data-type="IsEnabled" @{ if (item.IsEnabled) { <text> checked</text>} }>
+                                <div class="checkbox_custom__text"></div>
+                            </label>
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DtCreate)
+                        </td>
+                        <td>
+                            @ViewBag.NotificationElementTypes[item.ElementType]
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ElementName)
+                        </td>
+                        <td>
+                            @ViewBag.NotificationTypes[item.NotificationType]
+                        </td>
+                        <td>
+                            <a href="@item.NotifyToUrl" target="_blank">
+                                @Html.DisplayFor(modelItem => item.NotifyTo)
+                            </a>
+                        </td>
+                        <td>
+                            <a asp-action="EditById" asp-route-idNotification="@item.Id">
+                                <img src="~/images/Edit.png" />
+                            </a> |
+                            <a class="removeNotification" href="#">
+                                <img src="~/images/Trash.png" />
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

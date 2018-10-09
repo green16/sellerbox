@@ -7,12 +7,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using SellerBox.Common;
 using SellerBox.Common.Schedulers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SellerBox
 {
@@ -86,7 +87,7 @@ namespace SellerBox
             services.AddTransient<UserHelperService>();
             services.AddTransient<VkPoolService>();
 
-            services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService, VkCallbackWorkerService>();
+            services.AddSingleton<IHostedService, VkCallbackWorkerService>();
 
             services.AddHostedService<BirthdayScenariosScheduler>();
             services.AddHostedService<RepostScheduler>();
@@ -96,7 +97,7 @@ namespace SellerBox
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
