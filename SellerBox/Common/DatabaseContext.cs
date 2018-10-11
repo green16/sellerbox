@@ -48,6 +48,7 @@ namespace SellerBox.Common
         public DbSet<History_GroupActions> History_GroupActions { get; set; }
         public DbSet<History_Messages> History_Messages { get; set; }
         public DbSet<History_Scenarios> History_Scenarios { get; set; }
+        public DbSet<History_ShortUrlClicks> History_ShortUrlClicks { get; set; }
         public DbSet<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
         public DbSet<History_SubscribersInChatScenariosContents> History_SubscribersInChatScenariosContents { get; set; }
         public DbSet<History_Synchronization> SyncHistory { get; set; }
@@ -56,6 +57,8 @@ namespace SellerBox.Common
         public DbSet<Scheduler_Messaging> Scheduler_Messaging { get; set; }
 
         public DbSet<Notifications> Notifications { get; set; }
+
+        public DbSet<ShortUrls> ShortUrls { get; set; }
 
         public DatabaseContext()
         {

@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SellerBox.Models;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -17,6 +19,18 @@ namespace SellerBox.Controllers
         public IActionResult Contact()
         {
             return View();
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> ShortLink(string key, string id)
+        {
+            var guid = System.Guid.Parse("89877DEF-CDE0-4CB4-37C2-08D61E2E3F88");
+
+            var encode = Common.Helpers.UrlShortenerHelper.Encode(guid);
+            var idSubscriber = Common.Helpers.UrlShortenerHelper.Decode(encode);
+
+            var result = Common.Helpers.UrlShortenerHelper.Convert(idSubscriber);
+            return Redirect("http://www.google.ru");
         }
 
         public IActionResult Error()
