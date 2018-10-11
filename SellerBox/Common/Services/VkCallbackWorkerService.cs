@@ -44,17 +44,17 @@ namespace SellerBox.Common.Services
                 {
                     try
                     {
-                        waitHandler.WaitOne();
-
-                        if (!CallbackMessages.Any())
+                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(5)) || CallbackMessages.Any())
+                        {
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                await DoWork(scope.ServiceProvider);
+                            }
+                        }
+                        else
                         {
                             waitHandler.Reset();
                             continue;
-                        }
-
-                        using (var scope = _serviceScopeFactory.CreateScope())
-                        {
-                            await DoWork(scope.ServiceProvider);
                         }
                     }
                     catch { }
