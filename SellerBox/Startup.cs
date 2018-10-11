@@ -38,12 +38,14 @@ namespace SellerBox
         public void ConfigureServices(IServiceCollection services)
         {
 #if DEBUG
-            string dbConnectionString = Configuration.GetConnectionString("dbConnectionStringDebug");
+            string dbConnectionString = "Data Source=192.168.46.1\\SQLEXPRESS;Initial Catalog=VkDb;User=vk;Password=vk12345";
 #else
-            string dbConnectionString = Configuration.GetConnectionString("dbConnectionStringRelease");
+            string dbConnectionString = "Data Source=192.168.46.1\\SQLEXPRESS;Initial Catalog=Sellerbox;User=vk;Password=vk12345";
 #endif
+            services.AddOptions();
 
             services.AddSingleton(Configuration);
+
             services.AddEntityFrameworkSqlServer()
                     .AddDbContext<DatabaseContext>(options => options.UseSqlServer(dbConnectionString), ServiceLifetime.Transient);
 
@@ -110,6 +112,11 @@ namespace SellerBox
             {
                 app.UseExceptionHandler("/Home/Error");
             }
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            });
 
             app.UseAuthentication();
             app.UseStaticFiles();

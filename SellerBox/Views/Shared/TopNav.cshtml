@@ -53,7 +53,15 @@
                             <a class="nav-item nav-link" asp-area="" asp-controller="Reposts" asp-action="Index">Репосты</a>
                         </div>
                     </div>
-                    <a class="nav-item nav-link" asp-area="" asp-controller="Statistics" asp-action="Index">Статистика</a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="subscribersDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Статистика
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="subscribersDropdown">
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Statistics" asp-action="Reports">Отчёты</a>
+                            <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Statistics" asp-action="Notifications">Уведомления</a>
+                        </div>
+                    </div>
                     <a class="nav-item nav-link" asp-area="" asp-controller="Notifications" asp-action="Index">Уведомления</a>
                 }
             }

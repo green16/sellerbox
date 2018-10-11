@@ -2,7 +2,7 @@
 
 namespace SellerBox.ViewModels.Statistics
 {
-    public class IndexViewModel
+    public class ReportsViewModel
     {
         [Display(Name = "Дата начала")]
         public string DtStart { get; set; }
