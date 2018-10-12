@@ -5,100 +5,88 @@ using SellerBox.Common.Helpers;
 using SellerBox.Models.Database;
 using SellerBox.Models.Vk;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SellerBox.Common.Services
 {
-    public class VkCallbackWorkerService : BackgroundService
+    public class VkCallbackWorkerService : IHostedService
     {
-        private static ConcurrentQueue<CallbackMessage> CallbackMessages = new ConcurrentQueue<CallbackMessage>();
-
-        private static Task _executingTask;
-        private static CancellationToken _stoppingToken;
-        private static readonly AutoResetEvent waitHandler = new AutoResetEvent(false);
-
-        private static IServiceScopeFactory _serviceScopeFactory;
+        public const int PeriodSeconds = 5;
+        private Task _executingTask;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         public VkCallbackWorkerService(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public static void AddCallbackMessage(CallbackMessage callbackMessage)
+        public virtual Task StartAsync(CancellationToken cancellationToken)
         {
-            if (callbackMessage == null)
+            // Store the task we're executing
+            _executingTask = ExecuteAsync(_stoppingCts.Token);
+
+            // If the task is completed then return it,
+            // this will bubble cancellation and failure to the caller
+            if (_executingTask.IsCompleted)
+            {
+                return _executingTask;
+            }
+
+            // Otherwise it's running
+            return Task.CompletedTask;
+        }
+
+        public virtual async Task StopAsync(CancellationToken cancellationToken)
+        {
+            // Stop called without start
+            if (_executingTask == null)
+            {
                 return;
-            if (CallbackMessages == null)
-                CallbackMessages = new ConcurrentQueue<CallbackMessage>();
+            }
 
-            CallbackMessages.Enqueue((CallbackMessage)callbackMessage.Clone());
-            waitHandler.Set();
+            try
+            {
+                // Signal cancellation to the executing method
+                _stoppingCts.Cancel();
+            }
+            finally
+            {
+                // Wait until the task completes or the stop token triggers
+                await Task.WhenAny(_executingTask, Task.Delay(Timeout.Infinite, cancellationToken));
+            }
         }
 
-        public static void Restart()
+        protected virtual async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _executingTask = Task.Run(async () =>
+            do
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    await LoadCallbackMessages(scope.ServiceProvider);
-                }
-                while (!_stoppingToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(1)) || CallbackMessages.Any())
-                        {
-                            using (var scope = _serviceScopeFactory.CreateScope())
-                            {
-                                await DoWork(scope.ServiceProvider);
-                            }
-                        }
-                        else
-                        {
-                            waitHandler.Reset();
-                            continue;
-                        }
-                    }
-                    catch { }
-                }
-            }, _stoppingToken);
+                await Process();
+
+                await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
+            }
+            while (!stoppingToken.IsCancellationRequested);
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected async Task Process()
         {
-            _stoppingToken = stoppingToken;
-            _executingTask = Task.Run(async () =>
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    await LoadCallbackMessages(scope.ServiceProvider);
-                }
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(1)) || CallbackMessages.Any())
-                        {
-                            using (var scope = _serviceScopeFactory.CreateScope())
-                            {
-                                await DoWork(scope.ServiceProvider);
-                            }
-                        }
-                        else
-                        {
-                            waitHandler.Reset();
-                            continue;
-                        }
-                    }
-                    catch { }
-                }
-            }, stoppingToken);
+                await ProcessInScope(scope.ServiceProvider);
+            }
+        }
 
-            return _executingTask;
+        public async Task ProcessInScope(IServiceProvider serviceProvider)
+        {
+#if DEBUG
+            Console.WriteLine($"VkCallbackWorkerService started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
+            await DoWork(serviceProvider);
+#if DEBUG
+            Console.WriteLine($"VkCallbackWorkerService finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
         }
 
         private static async Task<bool> IsPassedCallbackMessage(DatabaseContext _context, CallbackMessage message)
@@ -115,13 +103,13 @@ namespace SellerBox.Common.Services
             return false;
         }
 
-        private static async Task LoadCallbackMessages(IServiceProvider serviceProvider)
+        private static async Task DoWork(IServiceProvider serviceProvider)
         {
             var _context = serviceProvider.GetService<DatabaseContext>();
+            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var notPassedOldCallbackMessages = await _context.VkCallbackMessages
+            var callbackMessages = await _context.VkCallbackMessages
                 .Where(x => !x.IsProcessed)
-                .OrderBy(x => x.Dt)
                 .Select(x => new CallbackMessage()
                 {
                     IdGroup = x.IdGroup,
@@ -130,25 +118,7 @@ namespace SellerBox.Common.Services
                     Type = x.Type
                 }).ToArrayAsync();
 
-            if (CallbackMessages == null)
-                CallbackMessages = new ConcurrentQueue<CallbackMessage>(notPassedOldCallbackMessages);
-            else
-            {
-                foreach (var message in notPassedOldCallbackMessages)
-                    CallbackMessages.Enqueue(message);
-            }
-        }
-
-        private static async Task DoWork(IServiceProvider serviceProvider)
-        {
-            var _context = serviceProvider.GetService<DatabaseContext>();
-            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
-
-            var debug = false;
-            if (debug)
-                await LoadCallbackMessages(serviceProvider);
-
-            while (CallbackMessages.TryDequeue(out CallbackMessage message))
+            foreach (var message in callbackMessages)
             {
                 switch (message.Type)
                 {

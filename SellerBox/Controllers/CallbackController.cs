@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SellerBox.Common;
-using SellerBox.Common.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,7 +15,7 @@ namespace SellerBox.Controllers
         public CallbackController(System.Collections.Generic.IEnumerable<Microsoft.Extensions.Hosting.IHostedService> hostedServices, DatabaseContext context)
         {
             _context = context;
-         //   _vkCallbackWorkerService = hostedServices.OfType<VkCallbackWorkerService>().First();
+            //   _vkCallbackWorkerService = hostedServices.OfType<VkCallbackWorkerService>().First();
         }
 
         [AllowAnonymous]
@@ -45,9 +44,6 @@ namespace SellerBox.Controllers
             };
             await _context.VkCallbackMessages.AddAsync(callbackMessage);
             await _context.SaveChangesAsync();
-            message.IdVkCallbackMessage = callbackMessage.Id;
-
-            VkCallbackWorkerService.AddCallbackMessage(message);
 
             return Content("ok");
         }

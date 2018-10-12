@@ -21,13 +21,6 @@ namespace SellerBox.Controllers
             return View();
         }
 
-        public IActionResult Restart()
-        {
-            Common.Services.VkCallbackWorkerService.Restart();
-
-            return RedirectToAction(nameof(Index));
-        }
-
         [AllowAnonymous]
         public async Task<IActionResult> ShortLink(string key, string id)
         {
