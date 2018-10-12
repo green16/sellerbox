@@ -36,6 +36,17 @@ namespace SellerBox.Controllers
                 return Ok(callbackConfirmationCode);
             }
 
+            var callbackMessage = new Models.Database.VkCallbackMessages()
+            {
+                Dt = System.DateTime.UtcNow,
+                Type = message.Type,
+                IdGroup = message.IdGroup,
+                Object = message.ToJSON()
+            };
+            await _context.VkCallbackMessages.AddAsync(callbackMessage);
+            await _context.SaveChangesAsync();
+            message.IdVkCallbackMessage = callbackMessage.Id;
+
             VkCallbackWorkerService.AddCallbackMessage(message);
 
             return Content("ok");

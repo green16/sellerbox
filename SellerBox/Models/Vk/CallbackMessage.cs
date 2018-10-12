@@ -6,6 +6,8 @@ namespace SellerBox.Models.Vk
 {
     public class CallbackMessage : IEquatable<CallbackMessage>, ICloneable
     {
+        public Guid IdVkCallbackMessage { get; set; }
+
         [JsonProperty("type")]
         public string Type { get; set; }
         [JsonProperty("group_id")]
@@ -33,5 +35,8 @@ namespace SellerBox.Models.Vk
         {
             return Object.GetHashCode();
         }
+
+        public string ToJSON() => Object?.ToString(Formatting.None);
+        public static JObject FromJson(string json) => JObject.Parse(json);
     }
 }

@@ -5,6 +5,8 @@ namespace SellerBox.Models.Database
 {
     public class VkCallbackMessages : BaseEntity
     {
+        public bool IsProcessed { get; set; }
+
         public string Type { get; set; }
         [Column(TypeName = "datetime2")]
         public DateTime Dt { get; set; }

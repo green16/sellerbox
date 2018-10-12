@@ -16,7 +16,7 @@ namespace SellerBox.Common.Services
     {
         private static ConcurrentQueue<CallbackMessage> CallbackMessages = new ConcurrentQueue<CallbackMessage>();
 
-        private Task _executingTask;
+        private static Task _executingTask;
         private static readonly AutoResetEvent waitHandler = new AutoResetEvent(false);
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -32,6 +32,7 @@ namespace SellerBox.Common.Services
                 return;
             if (CallbackMessages == null)
                 CallbackMessages = new ConcurrentQueue<CallbackMessage>();
+
             CallbackMessages.Enqueue((CallbackMessage)callbackMessage.Clone());
             waitHandler.Set();
         }
@@ -40,11 +41,15 @@ namespace SellerBox.Common.Services
         {
             _executingTask = Task.Run(async () =>
             {
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    await LoadCallbackMessages(scope.ServiceProvider);
+                }
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     try
                     {
-                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(5)) || CallbackMessages.Any())
+                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(1)) || CallbackMessages.Any())
                         {
                             using (var scope = _serviceScopeFactory.CreateScope())
                             {
@@ -64,27 +69,54 @@ namespace SellerBox.Common.Services
             return _executingTask;
         }
 
+        private async Task<bool> IsPassedCallbackMessage(DatabaseContext _context, CallbackMessage message)
+        {
+            string json = message.ToJSON();
+
+            var callbackMessages = await _context.VkCallbackMessages.Where(x => x.Type == message.Type && x.IdGroup == message.IdGroup && x.Object == json && x.IsProcessed).ToArrayAsync();
+            if (callbackMessages != null && callbackMessages.Any(x => x.Id != message.IdVkCallbackMessage))
+            {
+                await _context.VkCallbackMessages.Where(x => x.Type == message.Type && x.IdGroup == message.IdGroup && x.Object == json && !x.IsProcessed).ForEachAsync(x => x.IsProcessed = true);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        private async Task LoadCallbackMessages(IServiceProvider serviceProvider)
+        {
+            var _context = serviceProvider.GetService<DatabaseContext>();
+
+            var notPassedOldCallbackMessages = await _context.VkCallbackMessages
+                .Where(x => !x.IsProcessed)
+                .Select(x => new CallbackMessage()
+                {
+                    IdGroup = x.IdGroup,
+                    IdVkCallbackMessage = x.Id,
+                    Object = CallbackMessage.FromJson(x.Object),
+                    Type = x.Type
+                }).ToArrayAsync();
+
+            if (CallbackMessages == null)
+                CallbackMessages = new ConcurrentQueue<CallbackMessage>(notPassedOldCallbackMessages);
+            else
+            {
+                foreach (var message in notPassedOldCallbackMessages)
+                    CallbackMessages.Enqueue(message);
+            }
+        }
+
         private async Task DoWork(IServiceProvider serviceProvider)
         {
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
+            var debug = false;
+            if (debug)
+                await LoadCallbackMessages(serviceProvider);
+
             while (CallbackMessages.TryDequeue(out CallbackMessage message))
             {
-                string json = message.Object?.ToString(Newtonsoft.Json.Formatting.None);
-
-                bool isRepeatCallbackMessage = _context.VkCallbackMessages.Any(x => x.Type == message.Type && x.IdGroup == message.IdGroup && x.Object == json);
-                if (isRepeatCallbackMessage)
-                    continue;
-                await _context.VkCallbackMessages.AddAsync(new VkCallbackMessages()
-                {
-                    Dt = DateTime.UtcNow,
-                    Type = message.Type,
-                    IdGroup = message.IdGroup,
-                    Object = json
-                });
-                await _context.SaveChangesAsync();
-
                 switch (message.Type)
                 {
                     case "message_typing_state":
@@ -93,6 +125,8 @@ namespace SellerBox.Common.Services
                         }
                     case "message_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
                             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
                             if (!innerMessage.UserId.HasValue || innerMessage.UserId.Value <= 0)
@@ -178,17 +212,23 @@ namespace SellerBox.Common.Services
                         }
                     case "message_reply":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "message_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "message_allow":
                         {
                             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.FromId.Value);
+                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -230,14 +270,23 @@ namespace SellerBox.Common.Services
                         }
                     case "photo_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+                            
                             break;
                         }
                     case "photo_comment_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "photo_comment_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "photo_comment_delete":
@@ -246,22 +295,37 @@ namespace SellerBox.Common.Services
                         }
                     case "photo_comment_restore":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "audio_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "video_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "video_comment_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "video_comment_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "video_comment_delete":
@@ -270,10 +334,16 @@ namespace SellerBox.Common.Services
                         }
                     case "video_comment_restore":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "wall_post_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             var newPost = VkNet.Model.Wall.FromJson(new VkNet.Utils.VkResponse(message.Object));
                             if (!newPost.Id.HasValue || await _context.WallPosts.AnyAsync(x => x.IdGroup == message.IdGroup && x.IdVk == newPost.Id))
                                 break;
@@ -306,6 +376,9 @@ namespace SellerBox.Common.Services
                         }
                     case "wall_repost":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             var repost = VkNet.Model.Wall.FromJson(new VkNet.Utils.VkResponse(message.Object));
                             if (!repost.FromId.HasValue || repost.FromId.Value <= 0)
                                 break;
@@ -357,10 +430,16 @@ namespace SellerBox.Common.Services
                         }
                     case "wall_reply_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "wall_reply_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "wall_reply_delete":
@@ -369,14 +448,23 @@ namespace SellerBox.Common.Services
                         }
                     case "wall_reply_restore":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "board_post_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "board_post_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "board_post_delete":
@@ -385,14 +473,23 @@ namespace SellerBox.Common.Services
                         }
                     case "board_post_restore":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "market_comment_new":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "market_comment_edit":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "market_comment_delete":
@@ -401,6 +498,9 @@ namespace SellerBox.Common.Services
                         }
                     case "market_comment_restore":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                     case "group_leave":
@@ -428,7 +528,7 @@ namespace SellerBox.Common.Services
                         }
                     case "group_join":
                         {
-                            var innerMessage = message.Object.ToObject<Models.Vk.GroupJoin>();
+                            var innerMessage = message.Object.ToObject<GroupJoin>();
                             if (!innerMessage.IdUser.HasValue || innerMessage.IdUser.Value <= 0)
                                 break;
 
@@ -514,9 +614,16 @@ namespace SellerBox.Common.Services
                         }
                     case "vkpay_transaction":
                         {
+                            if (await IsPassedCallbackMessage(_context, message))
+                                continue;
+
                             break;
                         }
                 }
+
+                var callbackMessage = await _context.VkCallbackMessages.FirstAsync(x => x.Id == message.IdVkCallbackMessage);
+                callbackMessage.IsProcessed = true;
+                await _context.SaveChangesAsync();
             }
         }
 
