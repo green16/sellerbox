@@ -17,9 +17,10 @@ namespace SellerBox.Common.Services
         private static ConcurrentQueue<CallbackMessage> CallbackMessages = new ConcurrentQueue<CallbackMessage>();
 
         private static Task _executingTask;
+        private static CancellationToken _stoppingToken;
         private static readonly AutoResetEvent waitHandler = new AutoResetEvent(false);
 
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private static IServiceScopeFactory _serviceScopeFactory;
 
         public VkCallbackWorkerService(IServiceScopeFactory serviceScopeFactory) : base()
         {
@@ -37,8 +38,39 @@ namespace SellerBox.Common.Services
             waitHandler.Set();
         }
 
+        public static void Restart()
+        {
+            _executingTask = Task.Run(async () =>
+            {
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    await LoadCallbackMessages(scope.ServiceProvider);
+                }
+                while (!_stoppingToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        if (waitHandler.WaitOne(TimeSpan.FromMinutes(1)) || CallbackMessages.Any())
+                        {
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                await DoWork(scope.ServiceProvider);
+                            }
+                        }
+                        else
+                        {
+                            waitHandler.Reset();
+                            continue;
+                        }
+                    }
+                    catch { }
+                }
+            }, _stoppingToken);
+        }
+
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _stoppingToken = stoppingToken;
             _executingTask = Task.Run(async () =>
             {
                 using (var scope = _serviceScopeFactory.CreateScope())
@@ -69,7 +101,7 @@ namespace SellerBox.Common.Services
             return _executingTask;
         }
 
-        private async Task<bool> IsPassedCallbackMessage(DatabaseContext _context, CallbackMessage message)
+        private static async Task<bool> IsPassedCallbackMessage(DatabaseContext _context, CallbackMessage message)
         {
             string json = message.ToJSON();
 
@@ -83,7 +115,7 @@ namespace SellerBox.Common.Services
             return false;
         }
 
-        private async Task LoadCallbackMessages(IServiceProvider serviceProvider)
+        private static async Task LoadCallbackMessages(IServiceProvider serviceProvider)
         {
             var _context = serviceProvider.GetService<DatabaseContext>();
 
@@ -106,7 +138,7 @@ namespace SellerBox.Common.Services
             }
         }
 
-        private async Task DoWork(IServiceProvider serviceProvider)
+        private static async Task DoWork(IServiceProvider serviceProvider)
         {
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
@@ -627,7 +659,7 @@ namespace SellerBox.Common.Services
             }
         }
 
-        private async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long idVkUser)
+        private static async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long idVkUser)
         {
             var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
             if (subscriber != null)
