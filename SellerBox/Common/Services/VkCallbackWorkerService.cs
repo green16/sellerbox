@@ -121,6 +121,7 @@ namespace SellerBox.Common.Services
 
             var notPassedOldCallbackMessages = await _context.VkCallbackMessages
                 .Where(x => !x.IsProcessed)
+                .OrderBy(x => x.Dt)
                 .Select(x => new CallbackMessage()
                 {
                     IdGroup = x.IdGroup,
@@ -304,7 +305,7 @@ namespace SellerBox.Common.Services
                         {
                             if (await IsPassedCallbackMessage(_context, message))
                                 continue;
-                            
+
                             break;
                         }
                     case "photo_comment_new":
