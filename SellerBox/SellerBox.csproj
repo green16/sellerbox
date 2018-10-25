@@ -41,7 +41,6 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="1.1.0-preview2-35157" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0-preview2-35157" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="VkNet" Version="1.38.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\vknet\vk\VkNet\VkNet.csproj" />
     <ProjectReference Include="..\AspNet.Security.OAuth.Vkontakte\AspNet.Security.OAuth.Vkontakte.csproj" />
     <ProjectReference Include="..\ReflectionIT.Mvc.Paging\ReflectionIT.Mvc.Paging.csproj" />
   </ItemGroup>

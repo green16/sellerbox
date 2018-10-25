@@ -120,14 +120,18 @@ namespace SellerBox.Common.Schedulers
 
                 var idGroup = (await _context.Messages
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == birthdayScenario.IdMessage)).IdGroup;
+                    .FirstOrDefaultAsync(x => x.Id == birthdayScenario.IdMessage))?.IdGroup;
+                if (!idGroup.HasValue)
+                    continue;
 
-                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
+                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup.Value);
+                if (vkApi == null)
+                    continue;
 
                 var messageHelper = new MessageHelper(_context);
                 var tasks = new Task[]
                 {
-                    messageHelper.SendMessages(vkApi, idGroup, birthdayScenario.IdMessage, subscribers.Select(x => x.IdVkUser).ToArray()),
+                    messageHelper.SendMessages(vkApi, idGroup.Value, birthdayScenario.IdMessage, subscribers.Select(x => x.IdVkUser).ToArray()),
                     new Task(async () =>
                     {
                         var addingTasks = new Task[]

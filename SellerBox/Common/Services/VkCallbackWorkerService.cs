@@ -63,8 +63,14 @@ namespace SellerBox.Common.Services
         {
             do
             {
-                await Process();
-
+                try
+                {
+                    await Process();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"VkCallbackWorkerService exception: {ex.Message} {Environment.NewLine}{ex.StackTrace}");
+                }
                 await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
             }
             while (!stoppingToken.IsCancellationRequested);
@@ -83,7 +89,9 @@ namespace SellerBox.Common.Services
 #if DEBUG
             Console.WriteLine($"VkCallbackWorkerService started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
 #endif
+
             await DoWork(serviceProvider);
+
 #if DEBUG
             Console.WriteLine($"VkCallbackWorkerService finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
 #endif
@@ -148,40 +156,8 @@ namespace SellerBox.Common.Services
                             });
                             await _context.SaveChangesAsync();
 
-                            var vkApi = await _vkPoolService.GetGroupVkApi(message.IdGroup);
-
-                            if (innerMessage.Body?.ToLower() == "стоп")
-                            {
-                                await _context.History_GroupActions.AddAsync(new History_GroupActions()
-                                {
-                                    ActionType = (int)Models.Database.Common.GroupActionTypes.CancelMessaging,
-                                    IdGroup = message.IdGroup,
-                                    IdSubscriber = subscriber.Id,
-                                    Dt = DateTime.UtcNow
-                                });
-                                if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed.Value)
-                                {
-                                    subscriber.IsChatAllowed = false;
-
-                                    await _context.History_Messages.AddAsync(new History_Messages()
-                                    {
-                                        Dt = DateTime.UtcNow,
-                                        IsOutgoingMessage = true,
-                                        IdSubscriber = subscriber.Id,
-                                        Text = "Вы успешно отписаны от сообщений группы"
-                                    });
-
-                                    await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
-                                    {
-                                        Message = "Вы успешно отписаны от сообщений группы",
-                                        UserId = innerMessage.UserId
-                                    });
-                                }
-
-                                await _context.SaveChangesAsync();
-                                break;
-                            }
-                            else if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed == false)
+                            bool isCancelMessaging = innerMessage.Body?.ToLower() == "стоп";
+                            if (!isCancelMessaging && (subscriber.IsChatAllowed ?? false))
                             {
                                 await _context.History_GroupActions.AddAsync(new History_GroupActions()
                                 {
@@ -195,7 +171,48 @@ namespace SellerBox.Common.Services
                                 await _context.SaveChangesAsync();
                             }
 
+                            var vkApi = await _vkPoolService.GetGroupVkApi(message.IdGroup);
+
+                            if (isCancelMessaging)
+                            {
+                                await _context.History_GroupActions.AddAsync(new History_GroupActions()
+                                {
+                                    ActionType = (int)Models.Database.Common.GroupActionTypes.CancelMessaging,
+                                    IdGroup = message.IdGroup,
+                                    IdSubscriber = subscriber.Id,
+                                    Dt = DateTime.UtcNow
+                                });
+                                if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed.Value)
+                                {
+                                    subscriber.IsChatAllowed = false;
+                                    if (vkApi != null)
+                                    {
+                                        await _context.History_Messages.AddAsync(new History_Messages()
+                                        {
+                                            Dt = DateTime.UtcNow,
+                                            IsOutgoingMessage = true,
+                                            IdSubscriber = subscriber.Id,
+                                            Text = "Вы успешно отписаны от сообщений группы"
+                                        });
+
+                                        await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                                        {
+                                            Message = "Вы успешно отписаны от сообщений группы",
+                                            UserId = innerMessage.UserId
+                                        });
+                                    }
+                                }
+
+                                await _context.SaveChangesAsync();
+                                break;
+                            }
+
+                            if (vkApi == null)
+                                break;
+
                             var replyToMessageResult = await CallbackHelper.ReplyToMessage(_context, message.IdGroup, subscriber.Id, innerMessage);
+                            if (replyToMessageResult == null)
+                                break;
 
                             if (replyToMessageResult.Item1.HasValue)
                             {
@@ -253,7 +270,7 @@ namespace SellerBox.Common.Services
                         {
                             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.FromId.Value);
+                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -347,7 +364,7 @@ namespace SellerBox.Common.Services
                             if (await IsPassedCallbackMessage(_context, message))
                                 continue;
 
-                            var newPost = VkNet.Model.Wall.FromJson(new VkNet.Utils.VkResponse(message.Object));
+                            var newPost = VkNet.Model.Post.FromJson(new VkNet.Utils.VkResponse(message.Object));
                             if (!newPost.Id.HasValue || await _context.WallPosts.AnyAsync(x => x.IdGroup == message.IdGroup && x.IdVk == newPost.Id))
                                 break;
 
@@ -640,6 +657,8 @@ namespace SellerBox.Common.Services
             if (vkUser == null)
             {
                 var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
+                if (vkApi == null)
+                    return null;
 
                 var user = (await vkApi.Users.GetAsync(new long[] { idVkUser }, VkNet.Enums.Filters.ProfileFields.BirthDate |
                     VkNet.Enums.Filters.ProfileFields.City |
