@@ -113,7 +113,8 @@ namespace SellerBox.Controllers
                 result = await response.Content.ReadAsStringAsync();
 
                 Newtonsoft.Json.Linq.JObject obj = Newtonsoft.Json.Linq.JObject.Parse(result);
-                var token = obj.Properties().First(x => x.Name.StartsWith("access_token_"));
+                //TODO: Добавить проверку на null у token
+                var token = obj.Properties().FirstOrDefault(x => x.Name.StartsWith("access_token_"));
                 var idGroup = long.Parse(token.Name.Split('_').Last());
                 string tokenValue = token.Value.ToString();
 
