@@ -68,7 +68,7 @@ namespace SellerBox.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Birthday([FromQuery]bool isMale)
+        public async Task<IActionResult> Birthday(bool isMale)
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
@@ -163,7 +163,7 @@ namespace SellerBox.Controllers
                 message = await DbHelper.AddMessage(_context, groupInfo.Key, model.Message, model.GetVkKeyboard(), model.IsImageFirst, model.Files.Select(x => x.Id));
 
 
-            BirthdayScenarios scenario = _context.BirthdayScenarios.Include(x => x.Message).FirstOrDefault(x => x.IdGroup == groupInfo.Key);
+            BirthdayScenarios scenario = _context.BirthdayScenarios.Include(x => x.Message).FirstOrDefault(x => x.IdGroup == groupInfo.Key && x.IsMale == model.IsMale);
 
             if (scenario == null)
             {
