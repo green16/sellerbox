@@ -117,38 +117,38 @@ namespace SellerBox.Controllers
                 var token = obj.Properties().FirstOrDefault(x => x.Name.StartsWith("access_token_"));
                 var idGroup = long.Parse(token.Name.Split('_').Last());
                 string tokenValue = token.Value.ToString();
-
-                string idUser = _userHelperService.GetUserId(User);
-
+                
                 var group = await _context.Groups.Where(x => x.IdVk == idGroup).FirstOrDefaultAsync();
                 if (group == null)
                 {
-                    using (var vkGroupApi = new VkNet.VkApi())
+                    group = new Groups()
                     {
-                        await vkGroupApi.AuthorizeAsync(new VkNet.Model.ApiAuthParams()
-                        {
-                            AccessToken = tokenValue,
-                            Settings = VkNet.Enums.Filters.Settings.Groups
-                        });
-                        var callbackConfirmationCode = await vkGroupApi.Groups.GetCallbackConfirmationCodeAsync((ulong)idGroup);
-
-                        var groups = await vkGroupApi.Groups.GetByIdAsync(null, idGroup.ToString(), VkNet.Enums.Filters.GroupsFields.Description);
-                        var groupInfo = groups.FirstOrDefault();
-
-                        group = new Groups()
-                        {
-                            IdVk = idGroup,
-                            AccessToken = tokenValue,
-                            CallbackConfirmationCode = callbackConfirmationCode,
-                            Name = groupInfo.Name,
-                            Photo = groupInfo.Photo50.ToString()
-                        };
-                        await _context.Groups.AddAsync(group);
-                    }
+                        IdVk = idGroup
+                    };
+                    await _context.Groups.AddAsync(group);
                 }
-                else
-                    group.AccessToken = tokenValue;
+
+                group.AccessToken = tokenValue;
+
+                using (var vkGroupApi = new VkNet.VkApi())
+                {
+                    await vkGroupApi.AuthorizeAsync(new VkNet.Model.ApiAuthParams()
+                    {
+                        AccessToken = tokenValue,
+                        Settings = VkNet.Enums.Filters.Settings.Groups
+                    });
+
+                    group.CallbackConfirmationCode = await vkGroupApi.Groups.GetCallbackConfirmationCodeAsync((ulong)idGroup);
+
+                    var groups = await vkGroupApi.Groups.GetByIdAsync(null, idGroup.ToString(), VkNet.Enums.Filters.GroupsFields.Description);
+                    var groupInfo = groups.FirstOrDefault();
+
+                    group.Name = groupInfo.Name;
+                    group.Photo = groupInfo.Photo50.ToString();
+                }
                 await _context.SaveChangesAsync();
+
+                var idUser = _userHelperService.GetUserId(User);
 
                 var groupAdmin = await _context.GroupAdmins.Where(x => x.IdUser == idUser && x.IdGroup == idGroup).FirstOrDefaultAsync();
                 if (groupAdmin == null)
