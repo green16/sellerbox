@@ -213,6 +213,7 @@ namespace SellerBox.Controllers
             return RedirectToAction(nameof(IndexConnected), "Groups");
         }
 
+        //TODO переписать нафиг
         [HttpPost]
         public async Task<IActionResult> Disconnect(int idGroup)
         {
