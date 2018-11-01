@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SellerBox.ViewModels.Statistics;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -49,6 +48,58 @@ namespace SellerBox.Common.Helpers
                     }
                 }
             };
+
+            return model;
+        }
+
+        public static async Task<ChartInfoViewModel> GenerateShortUrlsReport(DatabaseContext _context, long idGroup, DateTime dtStart, DateTime dtEnd)
+        {
+            var perDayItems = await _context.History_ShortUrlClicks
+                .Where(x => x.Subscriber.IdGroup == idGroup)
+                .Where(x => x.Dt <= dtEnd && x.Dt >= dtStart)
+                .GroupBy(x => x.Dt.Date)
+                .Select(x => new ShortUrlsInfoViewModel()
+                {
+                    Date = x.Key,
+                    ShortUrlsPerDay = x.GroupBy(z => z.ShortUrl.Name).Select(z => new ShortUrlsPerDayViewModel()
+                    {
+                        Name = z.Key,
+                        Count = z.LongCount()
+                    }).ToArray()
+                })
+                .ToArrayAsync();
+
+            var datasetsСount = perDayItems.Any() ? perDayItems.Max(x => x.ShortUrlsPerDay.Length) : 0;
+
+            var model = new ChartInfoViewModel()
+            {
+                Title = "Статистика по горячим ссылкам",
+                YLabels = perDayItems.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToArray(),
+                Dataset = new ChartInfoViewModel.ChartData[datasetsСount],
+                Legend = new ChartInfoViewModel.ChartLegend[]
+                {
+                    new ChartInfoViewModel.ChartLegend()
+                    {
+                        Color = "rgba(255, 255, 255, 0)",
+                        Text = "Всего",
+                        Value = perDayItems.Sum(x => x.ShortUrlsPerDay.Sum(z => z.Count))
+                    }
+                }
+            };
+
+            foreach (var item in perDayItems)
+            {
+                for (int idx = 0; idx < item.ShortUrlsPerDay.Length; idx++)
+                {
+                    model.Dataset[idx] = new ChartInfoViewModel.ChartData()
+                    {
+                        Label = item.ShortUrlsPerDay[idx].Name,
+                        Stack = item.ShortUrlsPerDay[idx].Name,
+                        BackgroundColor = string.Format("#{0:X6}", random.Next(0x1000000)),
+                        Data = perDayItems.Select(x => x.ShortUrlsPerDay[idx].Count).ToArray()
+                    };
+                }
+            }
 
             return model;
         }

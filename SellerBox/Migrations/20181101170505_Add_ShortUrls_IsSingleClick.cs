@@ -2,13 +2,13 @@
 
 namespace SellerBox.Migrations
 {
-    public partial class Add_IsProcessedFlag : Migration
+    public partial class Add_ShortUrls_IsSingleClick : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "IsProcessed",
-                table: "VkCallbackMessages",
+                name: "IsSingleClick",
+                table: "ShortUrls",
                 nullable: false,
                 defaultValue: false);
         }
@@ -16,8 +16,8 @@ namespace SellerBox.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsProcessed",
-                table: "VkCallbackMessages");
+                name: "IsSingleClick",
+                table: "ShortUrls");
         }
     }
 }

@@ -38,39 +38,38 @@
         }
     }
 }
-<div>
-    <h5 @{if (hasElements) { <text> hidden</text>}}>
-        Нет ни одной цепочки.
-        <a asp-action="Create">Добавьте первую</a>
-    </h5>
-    @if (hasElements)
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>
-                        №
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Name)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.IsEnabled)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.SubscribersInChain)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.TotalSubscribersInChain)
-                    </th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @{int idx = 0; }
-                @foreach (var item in Model)
-                {
-                    idx++;
+<h5 @{if (hasElements) { <text> hidden</text>}}>
+    Нет ни одной цепочки.
+    <a asp-action="Create">Добавьте первую</a>
+</h5>
+@if (hasElements)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    №
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsEnabled)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.SubscribersInChain)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TotalSubscribersInChain)
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{int idx = 0; }
+            @foreach (var item in Model)
+            {
+                idx++;
                 <tr data-idChain="@item.Id">
                     <td>
                         @idx
@@ -99,8 +98,7 @@
                         </a>
                     </td>
                 </tr>
-                }
-            </tbody>
-        </table>
-    }
-</div>
+            }
+        </tbody>
+    </table>
+}

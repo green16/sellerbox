@@ -39,10 +39,6 @@ $("form").on("submit", function (event) {
 		url: $this.attr('action'),
 		data: frmValues
 	}).done(function (e) {
-		if (isSelfSend) {
-			connection.invoke("Start", idGroup, e.idMessage, e.ids).catch(err => console.log(err.toString()));
-			return;
-		}
 		window.location = "/Messaging";
 	})
 });

@@ -10,12 +10,10 @@ namespace SellerBox.Controllers
     public class CallbackController : Controller
     {
         private readonly DatabaseContext _context;
-        //private readonly VkCallbackWorkerService _vkCallbackWorkerService;
 
         public CallbackController(System.Collections.Generic.IEnumerable<Microsoft.Extensions.Hosting.IHostedService> hostedServices, DatabaseContext context)
         {
             _context = context;
-            //   _vkCallbackWorkerService = hostedServices.OfType<VkCallbackWorkerService>().First();
         }
 
         [AllowAnonymous]
@@ -40,7 +38,8 @@ namespace SellerBox.Controllers
                 Dt = System.DateTime.UtcNow,
                 Type = message.Type,
                 IdGroup = message.IdGroup,
-                Object = message.ToJSON()
+                Object = message.ToJSON(),
+                IsProcessed = false
             };
             await _context.VkCallbackMessages.AddAsync(callbackMessage);
             await _context.SaveChangesAsync();

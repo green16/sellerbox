@@ -1,87 +1,87 @@
 ﻿@model SellerBox.ViewModels.Chains.EditMessageViewModel
 
 @{
-    ViewData["Title"] = "View";
+    ViewData["Title"] = "Edit";
 }
 @section scripts {
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
     <script type=text/javascript>
         var MaxRequestBodySize = @SellerBox.Controllers.MessagingController.MaxRequestBodySize;
     </script>
-    <script src="~/lib/site/Shared/MessagePart.js"></script>
 }
 
-    <form asp-action="SaveMessage" asp-controller="Chains" asp-antiforgery="true">
-        <div asp-validation-summary="All" class="text-danger"></div>
-        @if (Model.IdChainContent.HasValue)
-        {
-            <input type="hidden" asp-for="IdChainContent" value="@Model.IdChainContent" />
-        }
-        @if (Model.IdMessage.HasValue)
-        {
-            <input type="hidden" asp-for="IdMessage" value="@Model.IdMessage" />
-        }
-        <input type="hidden" asp-for="IdChain" value="@Model.IdChain" />
-        <label for="dtGroup">Отправить через: </label>
-        <div class="input-group" id="dtGroup">
+<form asp-action="SaveMessage" asp-controller="Chains" asp-antiforgery="true">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    @if (Model.IdChainContent.HasValue)
+    {
+        <input type="hidden" asp-for="IdChainContent" value="@Model.IdChainContent" />
+    }
+    @if (Model.IdMessage.HasValue)
+    {
+        <input type="hidden" asp-for="IdMessage" value="@Model.IdMessage" />
+    }
+    <input type="hidden" asp-for="IdChain" value="@Model.IdChain" />
+    <label for="dtGroup">Отправить через: </label>
+    <div class="input-group" id="dtGroup">
+        <div class="input-group-prepend">
+            <label asp-for="Hours" class="input-group-text"></label>
+        </div>
+        <input type="number" min="0" class="form-control" asp-for="Hours">
+        <div class="input-group-prepend">
+            <label asp-for="Minutes" class="input-group-text"></label>
+        </div>
+        <select class="custom-select" asp-for="Minutes">
+            <option value="0" selected>00</option>
+            @for (int m = 1; m < 60; m++)
+            {
+                <option value="@m">@m.ToString("00")</option>
+            }
+        </select>
+    </div>
+
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <label asp-for="IsOnlyDayTime" class="input-group-text"></label>
+        </div>
+        <select class="custom-select" asp-for="IsOnlyDayTime">
+            <option value="true" selected>Только днём (с 9:00 до 20:00 по МСК)</option>
+            <option value="false" selected>Круглосуточно</option>
+        </select>
+    </div>
+
+    <hr />
+
+    @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
+
+    <h5>Настройки</h5>
+    <div id="actionPreferences">
+        <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label asp-for="Hours" class="input-group-text"></label>
+                <label asp-for="IdGoToChain" class="input-group-text"></label>
             </div>
-            <input type="number" min="0" class="form-control" asp-for="Hours">
-            <div class="input-group-prepend">
-                <label asp-for="Minutes" class="input-group-text"></label>
-            </div>
-            <select class="custom-select" asp-for="Minutes">
-                <option value="0" selected>00</option>
-                @for (int m = 1; m < 60; m++)
+            <select class="custom-select" asp-for="IdGoToChain">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
                 {
-                    <option value="@m">@m.ToString("00")</option>
+                    <option value="@chain.Key">@chain.Value</option>
                 }
             </select>
         </div>
 
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label asp-for="IsOnlyDayTime" class="input-group-text"></label>
+                <label asp-for="IdExcludeFromChain" class="input-group-text"></label>
             </div>
-            <select class="custom-select" asp-for="IsOnlyDayTime">
-                <option value="true" selected>Только днём (с 9:00 до 20:00 по МСК)</option>
-                <option value="false" selected>Круглосуточно</option>
+            <select class="custom-select" asp-for="IdExcludeFromChain">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
             </select>
         </div>
-
         <hr />
+    </div>
 
-        @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
-
-        <h5>Настройки</h5>
-        <div id="actionPreferences">
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <label asp-for="IdGoToChain" class="input-group-text"></label>
-                </div>
-                <select class="custom-select" asp-for="IdGoToChain">
-                    <option value="@null" selected>Выберите цепочку...</option>
-                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
-                    {
-                        <option value="@chain.Key">@chain.Value</option>
-                    }
-                </select>
-            </div>
-
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <label asp-for="IdExcludeFromChain" class="input-group-text"></label>
-                </div>
-                <select class="custom-select" asp-for="IdExcludeFromChain">
-                    <option value="@null" selected>Выберите цепочку...</option>
-                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
-                    {
-                        <option value="@chain.Key">@chain.Value</option>
-                    }
-                </select>
-            </div>
-            <hr />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-    </form>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

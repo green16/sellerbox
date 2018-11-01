@@ -1,1 +1,36 @@
-﻿
+﻿@model SellerBox.ViewModels.ShortUrls.EditViewModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<form asp-action="Save" asp-controller="ShortUrls" asp-antiforgery="true">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    @if (Model.Id.HasValue)
+    {
+        <input type="hidden" asp-for="Id" value="@Model.Id" />
+    }
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="Name" class="input-group-text"></label>
+        </div>
+        <input asp-for="Name" type="text" class="form-control" aria-label="Название" placeholder="Название горячей ссылки">
+    </div>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <label asp-for="RedirectTo" class="input-group-text"></label>
+        </div>
+        <input asp-for="RedirectTo" type="text" class="form-control" aria-label="Направление" placeholder="Направление горячей ссылки">
+    </div>
+
+    <div class="form-group">
+        <div class="checkbox">
+            <input type="checkbox" asp-for="IsSingleClick" />
+            <label asp-for="IsSingleClick"></label>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

@@ -80,8 +80,7 @@ namespace SellerBox.Common
             modelBuilder.Entity<VkUsers>()
                 .Property(c => c.IdVk)
                 .ValueGeneratedNever();
-
-
+            
             modelBuilder.Entity<Groups>()
             .HasKey(c => c.IdVk);
 
@@ -89,6 +88,9 @@ namespace SellerBox.Common
                 .Property(c => c.IdVk)
                 .ValueGeneratedNever();
 
+            modelBuilder.Entity<VkCallbackMessages>()
+                .Property(b => b.IsProcessed)
+                .HasDefaultValue(true);
 
             modelBuilder.Entity<SubscriberReposts>()
                 .HasOne(x => x.Subscriber)
@@ -150,6 +152,11 @@ namespace SellerBox.Common
                 .WithMany(x => x.History_Scenarios)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<History_ShortUrlClicks>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.History_ShortUrlClicks)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<History_SubscribersInChainSteps>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.History_SubscribersInChainSteps)
@@ -164,9 +171,7 @@ namespace SellerBox.Common
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.History_WallPosts)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            //History_Messages
-
+            
             modelBuilder.Entity<CheckedSubscribersInRepostScenarios>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.CheckedSubscribersInRepostScenarios)

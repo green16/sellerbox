@@ -10,7 +10,6 @@ namespace SellerBox.Models.Database
 
         public string Name { get; set; }
         public string RedirectTo { get; set; }
-        public int Type { get; set; }
-        public string UrlKey { get; set; }
+        public bool IsSingleClick { get; set; }
     }
 }

@@ -3,13 +3,13 @@
     ViewData["Title"] = "View";
 }
 @section scripts {
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
     <script type=text/javascript>
         var MaxRequestBodySize = @SellerBox.Controllers.MessagingController.MaxRequestBodySize;
         var idGroup = @ViewBag.IdGroup;
     </script>
     <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
-    <script src="~/lib/site/Shared/MessagePart.js"></script>
     <script src="~/lib/site/Messaging/worker.js"></script>
 }
 @section Styles {
@@ -23,7 +23,7 @@
     @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
 
     <input asp-for="IdGroup" type="hidden" />
-    
+
     <hr />
 
     <div id="datetimepicker" class="input-group">

@@ -10,14 +10,14 @@ using SellerBox.Common;
 namespace SellerBox.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20181012110906_Add_IsProcessedFlag")]
-    partial class Add_IsProcessedFlag
+    [Migration("20181101170505_Add_ShortUrls_IsSingleClick")]
+    partial class Add_ShortUrls_IsSingleClick
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.0-preview2-35157")
+                .HasAnnotation("ProductVersion", "2.2.0-preview3-35497")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -498,15 +498,13 @@ namespace SellerBox.Migrations
 
                     b.Property<Guid>("IdShortUrl");
 
-                    b.Property<long>("IdSubscriber");
-
-                    b.Property<Guid?>("SubscriberId");
+                    b.Property<Guid>("IdSubscriber");
 
                     b.HasKey("Id");
 
                     b.HasIndex("IdShortUrl");
 
-                    b.HasIndex("SubscriberId");
+                    b.HasIndex("IdSubscriber");
 
                     b.ToTable("History_ShortUrlClicks");
                 });
@@ -807,13 +805,11 @@ namespace SellerBox.Migrations
 
                     b.Property<long>("IdGroup");
 
+                    b.Property<bool>("IsSingleClick");
+
                     b.Property<string>("Name");
 
                     b.Property<string>("RedirectTo");
-
-                    b.Property<int>("Type");
-
-                    b.Property<string>("UrlKey");
 
                     b.HasKey("Id");
 
@@ -1036,7 +1032,9 @@ namespace SellerBox.Migrations
 
                     b.Property<long>("IdGroup");
 
-                    b.Property<bool>("IsProcessed");
+                    b.Property<bool>("IsProcessed")
+                        .ValueGeneratedOnAdd()
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Object");
 
@@ -1334,8 +1332,9 @@ namespace SellerBox.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
-                        .WithMany()
-                        .HasForeignKey("SubscriberId");
+                        .WithMany("History_ShortUrlClicks")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.History_SubscribersInChainSteps", b =>

@@ -26,7 +26,8 @@ namespace SellerBox.Controllers
                 new Tuple<byte, string, StatisticsHelper.ReportGenerator>(1, "Чатбот", StatisticsHelper.GenerateChatScenariosReport),
                 new Tuple<byte, string, StatisticsHelper.ReportGenerator>(2, "Сценарии", StatisticsHelper.GenerateScenariosReport),
                 new Tuple<byte, string, StatisticsHelper.ReportGenerator>(3, "Цепочки", StatisticsHelper.GenerateChainsReport),
-                new Tuple<byte, string, StatisticsHelper.ReportGenerator>(4, "Действия в группе", StatisticsHelper.GenerateGroupActionReport)
+                new Tuple<byte, string, StatisticsHelper.ReportGenerator>(4, "Действия в группе", StatisticsHelper.GenerateGroupActionReport),
+                new Tuple<byte, string, StatisticsHelper.ReportGenerator>(5, "Горячие ссылки", StatisticsHelper.GenerateShortUrlsReport)
             };
 
             _context = context;

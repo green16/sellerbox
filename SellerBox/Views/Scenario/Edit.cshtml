@@ -1,15 +1,14 @@
-﻿@using System.Linq;
-@using SellerBox.Models.Database.Common;
+﻿@using SellerBox.Models.Database.Common;
 @model SellerBox.ViewModels.Scenarios.ScenarioViewModel
 
 @{
     ViewData["Title"] = "View";
 }
 @section scripts {
+    <script src="~/lib/site/Shared/MessagePart.js"></script>
     <script type=text/javascript>
         var MaxRequestBodySize = @SellerBox.Controllers.MessagingController.MaxRequestBodySize;
     </script>
-    <script src="~/lib/site/Shared/MessagePart.js"></script>
     <script src="~/lib/site/Scenario/site.js"></script>
 }
 

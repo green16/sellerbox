@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SellerBox.Common.Helpers
@@ -35,6 +36,11 @@ namespace SellerBox.Common.Helpers
                 { "%USERS%", "Фамилия Имя" }
             };
 
+        public static readonly List<string> AvailableRegexKeywords = new List<string>()
+        {
+            { @"%SHORTLINK:(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})%" }
+        };
+
         private readonly DatabaseContext _context;
 
         public event EventHandler<MessageSentEventArgs> MessageSent;
@@ -42,9 +48,16 @@ namespace SellerBox.Common.Helpers
 
         public int Stepping { get; set; } = 100;
 
-        private static bool HasKeywords(string text) => string.IsNullOrWhiteSpace(text) ? false : AvailableKeywords.Any(x => text.Contains(x.Key));
+        private static bool HasKeywords(string text)
+        {
+            var HasAvailableKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableKeywords.Any(x => text.Contains(x.Key));
+            var HasAvailableWallKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableWallKeywords.Any(x => text.Contains(x.Key));
+            var HasAvailableRegexKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableRegexKeywords.Any(x => Regex.IsMatch(text, x));
 
-        private static async Task<string> UpdateMessage(DatabaseContext _context, long idVkUser, string text)
+            return HasAvailableKeywords || HasAvailableWallKeywords || HasAvailableRegexKeywords;
+        }
+
+        private static async Task<string> UpdateMessage(DatabaseContext _context, long idGroup, long idVkUser, string text)
         {
             if (!HasKeywords(text))
                 return text;
@@ -53,9 +66,30 @@ namespace SellerBox.Common.Helpers
             if (vkUser == null)
                 return text;
 
-            return text.Replace("%USERNAME%", vkUser.FirstName)
+            text = text.Replace("%USERNAME%", vkUser.FirstName)
                        .Replace("%USERLASTNAME%", vkUser.LastName)
                        .Replace("%USERSECONDNAME%", vkUser.SecondName);
+
+            var matches = Regex.Matches(text, AvailableRegexKeywords[0]);
+            foreach (Match match in matches)
+                if (match.Success)
+                {
+                    var guidString = match.Groups[1].Value;
+                    if (Guid.TryParse(guidString, out Guid idShortUrl))
+                    {
+                        var shortUrl = await _context.ShortUrls.FindAsync(idShortUrl);
+                        if (shortUrl != null)
+                        {
+                            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
+                            if (subscriber != null)
+                            {
+                                string url = $"{Logins.SiteUrl}/sl={UrlShortenerHelper.Encode(shortUrl.Id)}&{UrlShortenerHelper.Encode(subscriber.Id)}";
+                                text = text.Replace(match.Value, url);
+                            }
+                        }
+                    }
+                }
+            return text;
         }
 
         public MessageHelper(DatabaseContext context)
@@ -119,7 +153,7 @@ namespace SellerBox.Common.Helpers
             {
                 for (int idx = 0; idx < vkUserIds.Length; idx++)
                 {
-                    string text = await UpdateMessage(_context, vkUserIds[idx], message.Text);
+                    string text = await UpdateMessage(_context, idGroup, vkUserIds[idx], message.Text);
 
                     await SendMessage(vkApi, message.IsImageFirst, text, images, keyboard, new long[] { vkUserIds[idx] });
 

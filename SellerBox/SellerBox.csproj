@@ -28,6 +28,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Migrations\20181012110906_Add_IsProcessedFlag.cs" />
+    <Compile Remove="Migrations\20181012110906_Add_IsProcessedFlag.Designer.cs" />
+    <Compile Remove="Migrations\20181101153421_Remove_History_ShortUrlClicks.cs" />
+    <Compile Remove="Migrations\20181101153421_Remove_History_ShortUrlClicks.Designer.cs" />
+    <Compile Remove="Migrations\20181101153508_Add_History_ShortUrlClicks.cs" />
+    <Compile Remove="Migrations\20181101153508_Add_History_ShortUrlClicks.Designer.cs" />
+    <Compile Remove="Migrations\20181101164022_Add_ShortUrls.cs" />
+    <Compile Remove="Migrations\20181101164022_Add_ShortUrls.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Views\Statistics\Chains.cshtml" />
     <Content Remove="Views\Statistics\ChatScenarios.cshtml" />
     <Content Remove="Views\Statistics\GroupActions.cshtml" />

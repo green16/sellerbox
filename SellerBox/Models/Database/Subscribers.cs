@@ -36,6 +36,7 @@ namespace SellerBox.Models.Database
         public virtual ICollection<History_Messages> History_Messages { get; set; }
         public virtual ICollection<History_Scenarios> History_Scenarios { get; set; }
         public virtual ICollection<History_SubscribersInChainSteps> History_SubscribersInChainSteps { get; set; }
+        public virtual ICollection<History_ShortUrlClicks> History_ShortUrlClicks { get; set; }
         public virtual ICollection<SubscribersInChatProgress> SubscribersInChatProgress { get; set; }
         public virtual ICollection<History_WallPosts> History_WallPosts { get; set; }
         public virtual ICollection<History_SubscribersInChatScenariosContents> History_SubscribersInChatScenariosContents { get; set; }

@@ -23,11 +23,34 @@
 	}
 }
 
-$("div.keywordButtons").on("click", "button", function () {
+$("div.userKeywordButtons").on("click", "a", function () {
 	var keyword = $(this).attr("data-keyword");
 	var textarea = $(this).closest("div.message-part").find("textarea");
 
 	insertAtCursor(textarea, keyword);
+});
+
+$("div.linksKeywordButtons").on("click", "a", function () {
+	var keyword = $(this).attr("data-keyword");
+	var textarea = $(this).closest("div.message-part").find("textarea");
+	var linkKeyword = "%SHORTLINK:" + keyword + "%"
+	insertAtCursor(textarea, linkKeyword);
+});
+
+$('#btnGroupLinks').on("click", function () {
+	var userKeywordButtons = $("div.linksKeywordButtons");
+	userKeywordButtons.empty();
+	$.ajax({
+		url: "/ShortUrls/GetList",
+		contentType: "application/json; charset=utf-8",
+		type: "POST",
+		success: function (data) {
+			for (var key in data) {
+				var newItem = $('<a class="dropdown-item" href="#" data-keyword="' + key + '">' + data[key] + '</a>');
+				userKeywordButtons.append(newItem);
+			}
+		}
+	});
 });
 
 $("div.uploadedFilesList").on("click", "button.close", function (evt) {

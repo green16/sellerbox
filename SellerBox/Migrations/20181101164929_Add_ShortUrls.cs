@@ -3,10 +3,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SellerBox.Migrations
 {
-    public partial class Add_ShortLinks : Migration
+    public partial class Add_ShortUrls : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<bool>(
+                name: "IsProcessed",
+                table: "VkCallbackMessages",
+                nullable: false,
+                defaultValue: true);
+
             migrationBuilder.CreateTable(
                 name: "ShortUrls",
                 columns: table => new
@@ -14,9 +20,7 @@ namespace SellerBox.Migrations
                     Id = table.Column<Guid>(nullable: false),
                     IdGroup = table.Column<long>(nullable: false),
                     Name = table.Column<string>(nullable: true),
-                    RedirectTo = table.Column<string>(nullable: true),
-                    Type = table.Column<int>(nullable: false),
-                    UrlKey = table.Column<string>(nullable: true)
+                    RedirectTo = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -36,8 +40,7 @@ namespace SellerBox.Migrations
                     Id = table.Column<Guid>(nullable: false),
                     Dt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IdShortUrl = table.Column<Guid>(nullable: false),
-                    IdSubscriber = table.Column<long>(nullable: false),
-                    SubscriberId = table.Column<Guid>(nullable: true)
+                    IdSubscriber = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -49,8 +52,8 @@ namespace SellerBox.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_History_ShortUrlClicks_Subscribers_SubscriberId",
-                        column: x => x.SubscriberId,
+                        name: "FK_History_ShortUrlClicks_Subscribers_IdSubscriber",
+                        column: x => x.IdSubscriber,
                         principalTable: "Subscribers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -62,9 +65,9 @@ namespace SellerBox.Migrations
                 column: "IdShortUrl");
 
             migrationBuilder.CreateIndex(
-                name: "IX_History_ShortUrlClicks_SubscriberId",
+                name: "IX_History_ShortUrlClicks_IdSubscriber",
                 table: "History_ShortUrlClicks",
-                column: "SubscriberId");
+                column: "IdSubscriber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ShortUrls_IdGroup",
@@ -79,6 +82,10 @@ namespace SellerBox.Migrations
 
             migrationBuilder.DropTable(
                 name: "ShortUrls");
+
+            migrationBuilder.DropColumn(
+                name: "IsProcessed",
+                table: "VkCallbackMessages");
         }
     }
 }

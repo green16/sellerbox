@@ -157,7 +157,7 @@ namespace SellerBox.Common.Services
                             await _context.SaveChangesAsync();
 
                             bool isCancelMessaging = innerMessage.Body?.ToLower() == "стоп";
-                            if (!isCancelMessaging && (subscriber.IsChatAllowed ?? false))
+                            if (!isCancelMessaging && (!subscriber.IsChatAllowed.HasValue || !subscriber.IsChatAllowed.Value))
                             {
                                 await _context.History_GroupActions.AddAsync(new History_GroupActions()
                                 {

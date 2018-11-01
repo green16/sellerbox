@@ -9,11 +9,24 @@
 
     <br />
 
-    <div class="btn-group keywordButtons" role="group">
-        @foreach (var availableKeyword in SellerBox.Common.Helpers.MessageHelper.AvailableKeywords)
-        {
-            <button type="button" class="btn btn-secondary" data-keyword="@availableKeyword.Key">@availableKeyword.Value</button>
-        }
+    <div class="btn-group" role="group">
+        <button id="btnGroupUsers" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Подписчики
+        </button>
+        <div class="dropdown-menu userKeywordButtons" aria-labelledby="btnGroupUsers">
+            @foreach (var availableKeyword in SellerBox.Common.Helpers.MessageHelper.AvailableKeywords)
+            {
+                <a class="dropdown-item" href="#" data-keyword="@availableKeyword.Key">@availableKeyword.Value</a>
+            }
+        </div>
+    </div>
+
+    <div class="btn-group" role="group">
+        <button id="btnGroupLinks" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Ссылки
+        </button>
+        <div class="dropdown-menu linksKeywordButtons" aria-labelledby="btnGroupLinks">
+        </div>
     </div>
 
     <br />

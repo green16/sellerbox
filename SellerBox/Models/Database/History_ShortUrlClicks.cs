@@ -9,8 +9,8 @@ namespace SellerBox.Models.Database
         public Guid IdShortUrl { get; set; }
         public virtual ShortUrls ShortUrl { get; set; }
 
-        [ForeignKey(nameof(Subscribers))]
-        public long IdSubscriber { get; set; }
+        [ForeignKey(nameof(Subscriber))]
+        public Guid IdSubscriber { get; set; }
         public virtual Subscribers Subscriber { get; set; }
     }
 }
