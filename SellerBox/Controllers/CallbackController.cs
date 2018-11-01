@@ -38,8 +38,7 @@ namespace SellerBox.Controllers
                 Dt = System.DateTime.UtcNow,
                 Type = message.Type,
                 IdGroup = message.IdGroup,
-                Object = message.ToJSON(),
-                IsProcessed = false
+                Object = message.ToJSON()
             };
             await _context.VkCallbackMessages.AddAsync(callbackMessage);
             await _context.SaveChangesAsync();

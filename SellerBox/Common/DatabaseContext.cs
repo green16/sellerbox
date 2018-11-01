@@ -88,10 +88,6 @@ namespace SellerBox.Common
                 .Property(c => c.IdVk)
                 .ValueGeneratedNever();
 
-            modelBuilder.Entity<VkCallbackMessages>()
-                .Property(b => b.IsProcessed)
-                .HasDefaultValue(true);
-
             modelBuilder.Entity<SubscriberReposts>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.SubscriberReposts)

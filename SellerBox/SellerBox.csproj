@@ -22,9 +22,13 @@
 
   <ItemGroup>
     <Compile Remove="wwwroot\files\**" />
+    <Compile Remove="wwwroot\lib\popper.js\packages\**" />
     <Content Remove="wwwroot\files\**" />
+    <Content Remove="wwwroot\lib\popper.js\packages\**" />
     <EmbeddedResource Remove="wwwroot\files\**" />
+    <EmbeddedResource Remove="wwwroot\lib\popper.js\packages\**" />
     <None Remove="wwwroot\files\**" />
+    <None Remove="wwwroot\lib\popper.js\packages\**" />
   </ItemGroup>
 
   <ItemGroup>

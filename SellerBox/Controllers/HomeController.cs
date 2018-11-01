@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SellerBox.Common;
 using SellerBox.Models;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
@@ -38,18 +39,15 @@ namespace SellerBox.Controllers
             if (shortUrl == null)
                 return NotFound();
 
-            if (!shortUrl.IsSingleClick)
+            if (!shortUrl.IsSingleClick || await _context.History_ShortUrlClicks.Where(x => x.Id == idShortUrl).AllAsync(x => x.IdSubscriber != idSubscriber))
             {
-                if (await _context.Subscribers.AnyAsync(x => x.Id == idSubscriber))
+                await _context.History_ShortUrlClicks.AddAsync(new Models.Database.History_ShortUrlClicks()
                 {
-                    await _context.History_ShortUrlClicks.AddAsync(new Models.Database.History_ShortUrlClicks()
-                    {
-                        Dt = System.DateTime.UtcNow,
-                        IdShortUrl = idShortUrl,
-                        IdSubscriber = idSubscriber
-                    });
-                    await _context.SaveChangesAsync();
-                }
+                    Dt = System.DateTime.UtcNow,
+                    IdShortUrl = idShortUrl,
+                    IdSubscriber = idSubscriber
+                });
+                await _context.SaveChangesAsync();
             }
 
             return Redirect(shortUrl.RedirectTo);
