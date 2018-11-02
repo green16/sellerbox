@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SellerBox.Common.Helpers
@@ -21,7 +20,7 @@ namespace SellerBox.Common.Helpers
         public static BigInteger Convert(Guid guid)
         {
             var guidBytes = string.Format("0{0:N}", guid);
-            return BigInteger.Parse(guidBytes, System.Globalization.NumberStyles.HexNumber);
+            return BigInteger.Parse(guidBytes, NumberStyles.HexNumber);
         }
 
         public static Guid Convert(BigInteger bigInteger)

@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SellerBox.Models.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using SellerBox.Models.Database;
 
 namespace SellerBox.Common.Services
 {
@@ -56,7 +56,7 @@ namespace SellerBox.Common.Services
         public bool HasSelectedGroup(ClaimsPrincipal user)
         {
             string idUser = _userManager.GetUserId(user);
-            return _context.Users.First(x => x.Id == idUser).IdCurrentGroup != 0;
+            return _context.Users.Where(x => x.Id == idUser).Any(x => x.IdCurrentGroup != 0);
         }
         public bool HasConnectedGroups(ClaimsPrincipal user)
         {

@@ -68,7 +68,7 @@ namespace SellerBox.Controllers
                 !DateTime.TryParseExact(indexViewModel.DtEnd, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dtEnd))
                 return null;
             dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Local).ToUniversalTime();
-            dtEnd = DateTime.SpecifyKind(dtEnd, DateTimeKind.Local).ToUniversalTime();
+            dtEnd = DateTime.SpecifyKind(dtEnd, DateTimeKind.Local).ToUniversalTime().AddMinutes(1);
 
             var function = statisticTypes.FirstOrDefault(x => x.Item1 == indexViewModel.StatisticType);
             if (function == null)
