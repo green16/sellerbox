@@ -39,7 +39,7 @@ namespace SellerBox.Controllers
             if (shortUrl == null)
                 return NotFound();
 
-            if (!shortUrl.IsSingleClick || await _context.History_ShortUrlClicks.Where(x => x.Id == idShortUrl).AllAsync(x => x.IdSubscriber != idSubscriber))
+            if (!shortUrl.IsSingleClick || await _context.History_ShortUrlClicks.Where(x => x.IdShortUrl == idShortUrl).AllAsync(x => x.IdSubscriber != idSubscriber))
             {
                 await _context.History_ShortUrlClicks.AddAsync(new Models.Database.History_ShortUrlClicks()
                 {

@@ -118,7 +118,7 @@ namespace SellerBox.Common.Schedulers
                 {
                     var repost = await dbContext.SubscriberReposts
                         .Where(x => !x.IsProcessed)//Ещё не обработаны
-                        .Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
+                        //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
                         .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
                         .Where(x => repostScenario.CheckAllPosts ||//Проверять все посты
                             (repostScenario.CheckLastPosts && dbContext.WallPosts
