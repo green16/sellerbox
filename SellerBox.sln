@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReflectionIT.Mvc.Paging", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNet.Security.OAuth.Vkontakte", "AspNet.Security.OAuth.Vkontakte\AspNet.Security.OAuth.Vkontakte.csproj", "{6F9F5219-8ECD-4923-AA90-43A63C52A669}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VkNet", "..\vknet\vk\VkNet\VkNet.csproj", "{633D71D5-CD72-4845-9544-92566B0F1414}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,18 +55,6 @@ Global
 		{6F9F5219-8ECD-4923-AA90-43A63C52A669}.Release|x64.Build.0 = Release|Any CPU
 		{6F9F5219-8ECD-4923-AA90-43A63C52A669}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F9F5219-8ECD-4923-AA90-43A63C52A669}.Release|x86.Build.0 = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|x64.Build.0 = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Debug|x86.Build.0 = Debug|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|Any CPU.Build.0 = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|x64.ActiveCfg = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|x64.Build.0 = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|x86.ActiveCfg = Release|Any CPU
-		{633D71D5-CD72-4845-9544-92566B0F1414}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
