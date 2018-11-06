@@ -60,6 +60,8 @@ namespace SellerBox.Common
 
         public DbSet<ShortUrls> ShortUrls { get; set; }
 
+        public DbSet<Auction> Auctions { get; set; }
+
         public DatabaseContext()
         {
             Database.SetCommandTimeout(int.MaxValue);

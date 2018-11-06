@@ -1,0 +1,42 @@
+﻿@model IEnumerable<SellerBox.Models.Database.Auction>
+@{
+    ViewBag.Title = "Аукцион";
+    Layout = "_Layout";
+}
+@if (!Model.Any())
+{
+    <h5>В данный момент аукционов нету</h5>
+    
+    <a asp-action="Create">Создать аукцион</a>
+}
+
+<table class="table-bordered">
+    <tr>
+        <td>Наименование аукциона</td>
+        <td>Описание аукциона</td>
+        <td>Дата и время начала</td>
+        <td>Начальная цена</td>
+        <td>Шаг цены</td>
+        <td>Максимальная цена</td>
+        <td>Дата окончания аукциона</td>
+        <td>Максимальное количество коментов</td>
+        <td colspan="2">Действия</td>
+
+    </tr>
+@foreach (var auction in Model)
+{
+    <tr>
+        <td>@auction.Name</td>
+        <td>@auction.Description</td>
+        <td>@auction.StartDate</td>
+        <td>@auction.StartPrice</td>
+        <td>@auction.PriceStep</td>
+        <td>@auction.MaxPrice</td>
+        <td>@auction.EndDate</td>
+        <td>@auction.MaxCommentsCount</td>
+        <td><a asp-action="Edit" asp-route-id="@auction.Id">Изменить аукцион</a></td>
+        <td><a asp-action="Delete" asp-route-id="@auction.Id">Удалить аукцион</a></td>
+
+    </tr>
+}
+</table>
