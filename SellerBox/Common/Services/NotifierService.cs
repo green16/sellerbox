@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -78,6 +79,7 @@ namespace SellerBox.Common.Services
         {
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
+            var _configuration = serviceProvider.GetService<IConfiguration>();
 
             while (NotifyEvents.TryDequeue(out NotifyEvent message))
             {
@@ -111,7 +113,10 @@ namespace SellerBox.Common.Services
                                 continue;
                             try
                             {
-                                await Helpers.EmailHelper.SendEmail(notification.NotifyTo, messageText);
+                                var smtpUser = _configuration.GetSection("Email").GetValue<string>("SmtpUser");
+                                var smtpPassword = _configuration.GetSection("Email").GetValue<string>("SmtpPassword");
+                                var smtpFrom = _configuration.GetSection("Email").GetValue<string>("SmtpFrom");
+                                await Helpers.EmailHelper.SendEmail(smtpUser, smtpPassword, smtpFrom, notification.NotifyTo, messageText);
                             }
                             catch { }
                             break;

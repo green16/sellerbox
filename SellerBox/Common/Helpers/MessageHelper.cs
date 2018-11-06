@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,16 +32,17 @@ namespace SellerBox.Common.Helpers
                 { "%USERSECONDNAME%", "Отчество (ник)" },
             };
 
-        public static readonly Dictionary<string, string> AvailableWallKeywords = new Dictionary<string, string>()
+        private readonly Dictionary<string, string> AvailableWallKeywords = new Dictionary<string, string>()
             {
                 { "%USERS%", "Фамилия Имя" }
             };
 
-        public static readonly List<string> AvailableRegexKeywords = new List<string>()
+        private readonly List<string> AvailableRegexKeywords = new List<string>()
         {
             { @"%SHORTLINK:(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})%" }
         };
 
+        private readonly IConfiguration _configuration;
         private readonly DatabaseContext _context;
 
         public event EventHandler<MessageSentEventArgs> MessageSent;
@@ -48,30 +50,35 @@ namespace SellerBox.Common.Helpers
 
         public int Stepping { get; set; } = 100;
 
-        private static bool HasKeywords(string text)
+        public MessageHelper(IConfiguration configuration, DatabaseContext context)
         {
-            var HasAvailableKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableKeywords.Any(x => text.Contains(x.Key));
-            var HasAvailableWallKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableWallKeywords.Any(x => text.Contains(x.Key));
-            var HasAvailableRegexKeywords = string.IsNullOrWhiteSpace(text) ? false : AvailableRegexKeywords.Any(x => Regex.IsMatch(text, x));
-
-            return HasAvailableKeywords || HasAvailableWallKeywords || HasAvailableRegexKeywords;
+            _configuration = configuration;
+            _context = context;
         }
 
-        private static async Task<string> UpdateMessage(DatabaseContext _context, long idGroup, long idVkUser, string text)
+        private bool HasAnyKeywords(string text) => !string.IsNullOrWhiteSpace(text) && (
+            AvailableKeywords.Any(x => text.Contains(x.Key)) ||
+            AvailableWallKeywords.Any(x => text.Contains(x.Key)) ||
+            AvailableRegexKeywords.Any(x => Regex.IsMatch(text, x)));
+
+        public string UpdateMessageByVkUser(Models.Database.VkUsers vkUser, string message)
         {
-            if (!HasKeywords(text))
-                return text;
-
-            var vkUser = await _context.VkUsers.FirstOrDefaultAsync(x => x.IdVk == idVkUser);
             if (vkUser == null)
-                return text;
+                return message;
 
-            text = text.Replace("%USERNAME%", vkUser.FirstName)
-                       .Replace("%USERLASTNAME%", vkUser.LastName)
-                       .Replace("%USERSECONDNAME%", vkUser.SecondName);
+            return message.Replace("%USERNAME%", vkUser.FirstName)
+                .Replace("%USERLASTNAME%", vkUser.LastName)
+                .Replace("%USERSECONDNAME%", vkUser.SecondName);
+        }
 
-            var matches = Regex.Matches(text, AvailableRegexKeywords[0]);
+        public async Task<string> UpdateMessageByShortUrls(DatabaseContext _context, string siteUrl, Models.Database.Subscribers subscriber, string message)
+        {
+            if (subscriber == null)
+                return message;
+
+            var matches = Regex.Matches(message, AvailableRegexKeywords[0]);
             foreach (Match match in matches)
+            {
                 if (match.Success)
                 {
                     var guidString = match.Groups[1].Value;
@@ -80,21 +87,13 @@ namespace SellerBox.Common.Helpers
                         var shortUrl = await _context.ShortUrls.FindAsync(idShortUrl);
                         if (shortUrl != null)
                         {
-                            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
-                            if (subscriber != null)
-                            {
-                                string url = $"{Logins.SiteUrl}/sl={UrlShortenerHelper.Encode(shortUrl.Id)}&{UrlShortenerHelper.Encode(subscriber.Id)}";
-                                text = text.Replace(match.Value, url);
-                            }
+                            string url = $"{siteUrl}/sl={UrlShortenerHelper.Encode(shortUrl.Id)}&{UrlShortenerHelper.Encode(subscriber.Id)}";
+                            message = message.Replace(match.Value, url);
                         }
                     }
                 }
-            return text;
-        }
-
-        public MessageHelper(DatabaseContext context)
-        {
-            _context = context;
+            }
+            return message;
         }
 
         private async Task SendMessage(VkNet.VkApi vkApi, bool isImageFirst, string text, IEnumerable<VkNet.Model.Attachments.MediaAttachment> attachments, VkNet.Model.Keyboard.MessageKeyboard keyboard, long[] ids)
@@ -149,11 +148,22 @@ namespace SellerBox.Common.Helpers
 
             var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
 
-            if (HasKeywords(message.Text))
+            if (HasAnyKeywords(message.Text))
             {
+                string siteUrl = _configuration.GetValue<string>("SiteUrl");
                 for (int idx = 0; idx < vkUserIds.Length; idx++)
                 {
-                    string text = await UpdateMessage(_context, idGroup, vkUserIds[idx], message.Text);
+                    string text = message.Text;
+
+                    var subscriber = await _context.Subscribers
+                        .Include(nameof(Models.Database.Subscribers.VkUser))
+                        .FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == vkUserIds[idx]);
+
+                    if (subscriber != null)
+                    {
+                        text = UpdateMessageByVkUser(subscriber.VkUser, text);
+                        text = await UpdateMessageByShortUrls(_context, siteUrl, subscriber, text);
+                    }
 
                     await SendMessage(vkApi, message.IsImageFirst, text, images, keyboard, new long[] { vkUserIds[idx] });
 

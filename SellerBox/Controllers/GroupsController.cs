@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SellerBox.Common;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
@@ -16,12 +17,14 @@ namespace SellerBox.Controllers
     [Authorize]
     public class GroupsController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly UserHelperService _userHelperService;
         private readonly DatabaseContext _context;
         private readonly VkPoolService _vkPoolService;
 
-        public GroupsController(UserHelperService userManager, DatabaseContext context, VkPoolService vkPoolService)
+        public GroupsController(IConfiguration configuration, UserHelperService userManager, DatabaseContext context, VkPoolService vkPoolService)
         {
+            _configuration = configuration;
             _userHelperService = userManager;
             _context = context;
             _vkPoolService = vkPoolService;
@@ -88,8 +91,8 @@ namespace SellerBox.Controllers
         public IActionResult Connect(int idGroup)
         {
             string url = $"https://oauth.vk.com/authorize?" +
-                $"client_id={Logins.VkApplicationId}" +
-                $"&redirect_uri={$"{Logins.SiteUrl}/Groups/ConnectCallback"}" +
+                $"client_id={_configuration.GetValue<long>("VkApplicationId")}" +
+                $"&redirect_uri={$"{_configuration.GetValue<string>("SiteUrl")}/Groups/ConnectCallback"}" +
                 $"&group_ids={idGroup}" +
                 "&response_type=code" +
                 $"&scope={"messages,manage,photos,docs"}" +
@@ -101,9 +104,9 @@ namespace SellerBox.Controllers
         public async Task<IActionResult> ConnectCallback(string code)
         {
             string url = $"https://oauth.vk.com/access_token?" +
-                $"client_id={Logins.VkApplicationId}" +
-                $"&client_secret={Logins.VkApplicationPassword}" +
-                $"&redirect_uri={$"{Logins.SiteUrl}/Groups/ConnectCallback"}" +
+                $"client_id={_configuration.GetValue<long>("VkApplicationId")}" +
+                $"&client_secret={_configuration.GetValue<string>("VkApplicationPassword")}" +
+                $"&redirect_uri={$"{_configuration.GetValue<string>("SiteUrl")}/Groups/ConnectCallback"}" +
                 $"&code={code}";
 
             string result = null;
@@ -175,14 +178,15 @@ namespace SellerBox.Controllers
                 var callbackServers = new VkResponse(result).ToVkCollectionOf<VkNet.Model.CallbackServerItem>(x => x);
 
                 long idServer = -1;
-                var callbackServerInfo = callbackServers.FirstOrDefault(x => x.Url == Logins.CallbackServerUrl);
+                var callbackServerUrl = _configuration.GetValue<string>("CallbackServerUrl");
+                var callbackServerInfo = callbackServers.FirstOrDefault(x => x.Url == callbackServerUrl);
                 if (callbackServerInfo == null)
                 {
                     url = $"https://api.vk.com/method/groups.addCallbackServer?" +
                         $"access_token={tokenValue}" +
                         $"&group_id={idGroup}" +
-                        $"&url={Logins.CallbackServerUrl}" +
-                        $"&title={Logins.CallbackServerName}" +
+                        $"&url={callbackServerUrl}" +
+                        $"&title={_configuration.GetValue<string>("CallbackServerName")}" +
                         $"&v={AspNet.Security.OAuth.Vkontakte.VkontakteAuthenticationDefaults.ApiVersion}";
                     response = await client.PostAsync(url, null);
                     result = await response.Content.ReadAsStringAsync();

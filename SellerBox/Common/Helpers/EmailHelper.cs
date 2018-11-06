@@ -6,22 +6,22 @@ namespace SellerBox.Common.Helpers
 {
     public static class EmailHelper
     {
-        public static Task SendEmail(string address, string text)
+        public static Task SendEmail(string smtpUser, string smtpPassword, string fromAddress, string toAddress, string text)
         {
             SmtpClient client = new SmtpClient("smtp.yandex.ru")
             {
                 Port = 587,
                 EnableSsl = true,
-                Credentials = new NetworkCredential(Logins.EmailAddress, Logins.EmailPassword)
+                Credentials = new NetworkCredential(smtpUser, smtpPassword)
             };
 
             MailMessage mailMessage = new MailMessage
             {
-                From = new MailAddress(Logins.EmailAddress),
+                From = new MailAddress(fromAddress),
                 Body = text,
                 Subject = "Уведомление о событии"
             };
-            mailMessage.To.Add(address);
+            mailMessage.To.Add(toAddress);
             
             return client.SendMailAsync(mailMessage);
         }

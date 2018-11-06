@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SellerBox.Common.Helpers;
@@ -91,6 +92,7 @@ namespace SellerBox.Common.Schedulers
 
         private async Task BirthdayScenarios(IServiceProvider serviceProvider)
         {
+            var _configuration = serviceProvider.GetService<IConfiguration>();
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
@@ -128,7 +130,7 @@ namespace SellerBox.Common.Schedulers
                 if (vkApi == null)
                     continue;
 
-                var messageHelper = new MessageHelper(_context);
+                var messageHelper = new MessageHelper(_configuration, _context);
                 var tasks = new Task[]
                 {
                     messageHelper.SendMessages(vkApi, idGroup.Value, birthdayScenario.IdMessage, subscribers.Select(x => x.IdVkUser).ToArray()),

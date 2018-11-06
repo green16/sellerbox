@@ -37,17 +37,14 @@ namespace SellerBox
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-#if DEBUG
-            string dbConnectionString = "Data Source=192.168.46.1\\SQLEXPRESS;Initial Catalog=VkDb;User=vk;Password=vk12345";
-#else
-            string dbConnectionString = "Data Source=192.168.46.1\\SQLEXPRESS;Initial Catalog=Sellerbox;User=vk;Password=vk12345";
-#endif
             services.AddOptions();
+
+            System.Console.WriteLine("ConnectionString = " + Configuration.GetConnectionString("default"));
 
             services.AddSingleton(Configuration);
 
             services.AddEntityFrameworkSqlServer()
-                    .AddDbContext<DatabaseContext>(options => options.UseSqlServer(dbConnectionString), ServiceLifetime.Transient);
+                    .AddDbContext<DatabaseContext>(options => options.UseSqlServer(Configuration.GetConnectionString("default")), ServiceLifetime.Transient);
 
             services.AddAntiforgery(o => o.HeaderName = "XSRF-TOKEN");
 
@@ -56,8 +53,8 @@ namespace SellerBox
             services.AddAuthentication()
             .AddVkontakte(options =>
             {
-                options.ClientId = Logins.VkApplicationId.ToString();
-                options.ClientSecret = Logins.VkApplicationPassword;
+                options.ClientId = Configuration.GetValue<string>("VkApplicationId");
+                options.ClientSecret = Configuration.GetValue<string>("VkApplicationPassword");
                 options.SaveTokens = true;
 
                 // Request for permissions https://vk.com/dev/permissions?f=1.%20Access%20Permissions%20for%20User%20Token

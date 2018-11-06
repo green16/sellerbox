@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SellerBox.Common.Helpers;
@@ -113,6 +114,7 @@ namespace SellerBox.Common.Services
 
         private static async Task DoWork(IServiceProvider serviceProvider)
         {
+            var _configuration = serviceProvider.GetService<IConfiguration>();
             var _context = serviceProvider.GetService<DatabaseContext>();
             var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
@@ -216,7 +218,7 @@ namespace SellerBox.Common.Services
 
                             if (replyToMessageResult.Item1.HasValue)
                             {
-                                MessageHelper messageHelper = new MessageHelper(_context);
+                                MessageHelper messageHelper = new MessageHelper(_configuration, _context);
                                 await messageHelper.SendMessages(vkApi, message.IdGroup, replyToMessageResult.Item1.Value, innerMessage.UserId.Value);
                                 await _context.History_Messages.AddAsync(new History_Messages()
                                 {

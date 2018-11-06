@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,13 +8,15 @@ namespace SellerBox.Common.Services
 {
     public class VkPoolService
     {
+        private readonly IConfiguration _configuration;
         private readonly DatabaseContext _context;
 
         private static Dictionary<long, VkNet.VkApi> GroupsVkApis { get; } = new Dictionary<long, VkNet.VkApi>();
         private static Dictionary<long, VkNet.VkApi> UsersVkApis { get; } = new Dictionary<long, VkNet.VkApi>();
 
-        public VkPoolService(DatabaseContext dbContext)
+        public VkPoolService(IConfiguration configuration, DatabaseContext dbContext)
         {
+            _configuration = configuration;
             _context = dbContext;
         }
 
@@ -34,7 +37,7 @@ namespace SellerBox.Common.Services
             await groupVkApi.AuthorizeAsync(new VkNet.Model.ApiAuthParams()
             {
                 AccessToken = groupAccessToken,
-                ApplicationId = Logins.VkApplicationId,
+                ApplicationId = _configuration.GetValue<ulong>("VkApplicationId"),
                 Settings = VkNet.Enums.Filters.Settings.All
             });
 
@@ -69,7 +72,7 @@ namespace SellerBox.Common.Services
                 await userVkApi.AuthorizeAsync(new VkNet.Model.ApiAuthParams()
                 {
                     AccessToken = userAccessToken,
-                    ApplicationId = Logins.VkApplicationId,
+                    ApplicationId = _configuration.GetValue<ulong>("VkApplicationId"),
                     Settings = VkNet.Enums.Filters.Settings.All
                 });
             }

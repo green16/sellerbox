@@ -7,19 +7,22 @@ using System.Threading.Tasks;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Hubs.Common;
 using SellerBox.Common.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace SellerBox.Common.Hubs
 {
     public class MessagingHub : Hub
     {
+        private readonly IConfiguration _configuration;
         private readonly DatabaseContext _context;
         private readonly VkPoolService _vkPoolService;
 
         private static readonly List<Pair<long, string>> connectedToGroups = new List<Pair<long, string>>();
         private static readonly List<Pair<long, SendingState>> sendingStates = new List<Pair<long, SendingState>>();
 
-        public MessagingHub(DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
+        public MessagingHub(IConfiguration configuration, DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
         {
+            _configuration = configuration;
             _context = context;
             _vkPoolService = vkPoolService;
         }
@@ -89,7 +92,7 @@ namespace SellerBox.Common.Hubs
 
         private async Task DoWork(long idGroup, Guid idMessaging)
         {
-            MessageHelper messageHelper = new MessageHelper(_context);
+            MessageHelper messageHelper = new MessageHelper(_configuration, _context);
             messageHelper.MessageSent += async (sender, e) => await Progress(e.IdGroup, new SendingState(e.Total, e.Process, idMessaging));
 
             var messaging = await _context.Scheduler_Messaging.FirstOrDefaultAsync(x => x.Id == idMessaging);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -120,6 +121,7 @@ namespace SellerBox.Common.Schedulers
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var _context = scope.ServiceProvider.GetService<DatabaseContext>();
+                var _configuration = scope.ServiceProvider.GetService<IConfiguration>();
 
                 var messaging = await _context.Scheduler_Messaging.FirstOrDefaultAsync(x => x.Id == idSchedulerMessaging);
                 if (messaging == null)
@@ -127,25 +129,21 @@ namespace SellerBox.Common.Schedulers
 
                 var idGroup = await _context.Scheduler_Messaging.Where(x => x.Id == idSchedulerMessaging).Select(x => x.Message.IdGroup).FirstOrDefaultAsync();
 
-                try
-                {
-                    //var connection = new HubConnectionBuilder().WithUrl("http://localhost:9854/messaginghub").Build();
-                    var connection = new HubConnectionBuilder().WithUrl(Logins.SiteUrl + "/messaginghub").Build();
-                    await connection.StartAsync();
+                //var connection = new HubConnectionBuilder().WithUrl("http://localhost:9854/messaginghub").Build();
+                var connection = new HubConnectionBuilder().WithUrl(_configuration.GetValue<string>("SiteUrl") + "/messaginghub").Build();
+                await connection.StartAsync();
 
-                    connection.On("ProgressFinished", new Type[] { typeof(Guid) }, (idMessaging) => Task.Run(() => waitHandler.Set()));
+                connection.On("ProgressFinished", new Type[] { typeof(Guid) }, (idMessaging) => Task.Run(() => waitHandler.Set()));
 
-                    await connection.InvokeAsync("Subscribe", idGroup);
-                    await connection.InvokeAsync("Start", idGroup, idSchedulerMessaging);
+                await connection.InvokeAsync("Subscribe", idGroup);
+                await connection.InvokeAsync("Start", idGroup, idSchedulerMessaging);
 
-                    waitHandler.WaitOne();
+                waitHandler.WaitOne();
 
-                    await connection.StopAsync();
+                await connection.StopAsync();
 
-                    messaging.Status = Models.Database.Common.MessagingStatus.Finished;
-                    await _context.SaveChangesAsync();
-                }
-                catch { }
+                messaging.Status = Models.Database.Common.MessagingStatus.Finished;
+                await _context.SaveChangesAsync();
 
                 return idSchedulerMessaging;
             }
