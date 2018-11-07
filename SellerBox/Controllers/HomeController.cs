@@ -50,6 +50,16 @@ namespace SellerBox.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            if (shortUrl.IdChain.HasValue)
+            {
+                var isSubscriberInChain = await _context.SubscribersInChains
+                    .Where(x => x.IdSubscriber == idSubscriber)
+                    .Include(x => x.ChainStep)
+                    .AnyAsync(x => x.ChainStep.IdChain == shortUrl.IdChain.Value);
+                if (!isSubscriberInChain)
+                    await Common.Helpers.SubscriberHelper.AddSubscriberToChain(_context, shortUrl.IdGroup, idSubscriber, shortUrl.IdChain.Value);
+            }
+
             return Redirect(shortUrl.RedirectTo);
         }
 

@@ -41,46 +41,7 @@ namespace SellerBox.Common.Helpers
 
             return new Tuple<Guid?, bool>(null, false);
         }
-
-        private static async Task AddSubscriberToChain(DatabaseContext dbContext, long idGroup, Guid idSubscriber, Guid idChain)
-        {
-            var firstChainStepId = await dbContext.ChainContents.Where(x => x.IdChain == idChain).OrderBy(x => x.Index).Select(x => x.Id).FirstOrDefaultAsync();
-            if (firstChainStepId == default(Guid))
-                return;
-
-            await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
-            {
-                IdSubscriber = idSubscriber,
-                IdChainStep = firstChainStepId,
-                DtAdd = DateTime.UtcNow
-            });
-
-            await dbContext.History_SubscribersInChainSteps.AddAsync(new History_SubscribersInChainSteps()
-            {
-                IdChainStep = firstChainStepId,
-                IdSubscriber = idSubscriber,
-                Dt = DateTime.UtcNow
-            });
-
-            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
-            {
-                Dt = DateTime.UtcNow,
-                IdGroup = idGroup,
-                IdElement = idChain,
-                IdSubscriber = idSubscriber,
-                SourceType = 1
-            });
-            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
-            {
-                Dt = DateTime.UtcNow,
-                IdGroup = idGroup,
-                IdElement = firstChainStepId,
-                IdSubscriber = idSubscriber,
-                SourceType = 2
-            });
-            await dbContext.SaveChangesAsync();
-        }
-
+        
         private static async Task<Guid?> ScenarioReply(DatabaseContext dbContext, long idGroup, Guid idSubscriber, Scenarios scenario)
         {
             await dbContext.History_Scenarios.AddAsync(new History_Scenarios()
@@ -120,7 +81,7 @@ namespace SellerBox.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
+                        await SubscriberHelper.AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
                         break;
                     }
                 case ScenarioActions.ChangeChain:
@@ -137,7 +98,7 @@ namespace SellerBox.Common.Helpers
                         if (isSubscriberInChain)
                             return scenario.IdErrorMessage;
 
-                        await AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
+                        await SubscriberHelper.AddSubscriberToChain(dbContext, idGroup, idSubscriber, scenario.IdChain.Value);
                         break;
                     }
                 case ScenarioActions.RemoveFromChain:

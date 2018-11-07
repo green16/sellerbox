@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
@@ -7,6 +8,10 @@ namespace SellerBox.Models.Database
         [ForeignKey(nameof(Group))]
         public long IdGroup { get; set; }
         public virtual Groups Group { get; set; }
+
+        [ForeignKey(nameof(Chain))]
+        public Guid? IdChain { get; set; }
+        public virtual Chains Chain { get; set; }
 
         public string Name { get; set; }
         public string RedirectTo { get; set; }
