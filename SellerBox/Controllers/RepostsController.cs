@@ -33,11 +33,7 @@ namespace SellerBox.Controllers
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
 
             var model = await _context.RepostScenarios
-                .Include(x => x.WallPost)
                 .Where(x => x.WallPost.IdGroup == selectedGroup.Key)
-                .Include(x => x.CheckingChainContent)
-                .Include(x => x.CheckingChainContent.Chain)
-                .Include(x => x.CheckingChainContent.Message)
                 .Select(x => new IndexRepostScenarioViewModel()
                 {
                     Id = x.Id,
@@ -134,7 +130,7 @@ namespace SellerBox.Controllers
                 {
                     Id = x.Id,
                     Name = x.Name,
-                    CheckAfterHours = x.CheckAfter.Hours,
+                    CheckAfterHours = x.CheckAfter.Hours + x.CheckAfter.Days * 24,
                     CheckAfterMinutes = (byte)x.CheckAfter.Minutes,
                     CheckAllPosts = x.CheckAllPosts,
                     CheckLastPosts = x.CheckLastPosts,
