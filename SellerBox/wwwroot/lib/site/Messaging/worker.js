@@ -18,7 +18,7 @@
 		minute = '0' + minute;
 	}
 	$('#datetimepicker').flatpickr({
-		minDate: year + '-' + month,
+		minDate: year + '-' + month + '-' + day,
 		minTime: hour + ':' + minute,
 		locale: "ru",
 		time_24hr: true,
