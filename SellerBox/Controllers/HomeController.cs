@@ -28,7 +28,27 @@ namespace SellerBox.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> ShortLink(string key, string id)
+        public async Task<IActionResult> ShortLinkWithoutSubscriber(string key)
+        {
+            var bi_idShortUrl = Common.Helpers.UrlShortenerHelper.Decode(key);
+            var idShortUrl = Common.Helpers.UrlShortenerHelper.Convert(bi_idShortUrl);
+
+            var shortUrl = await _context.ShortUrls.FindAsync(idShortUrl);
+            if (shortUrl == null)
+                return NotFound();
+
+            await _context.History_ShortUrlClicks.AddAsync(new Models.Database.History_ShortUrlClicks()
+            {
+                Dt = System.DateTime.UtcNow,
+                IdShortUrl = idShortUrl
+            });
+            await _context.SaveChangesAsync();
+
+            return Redirect(shortUrl.RedirectTo);
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> ShortLinkWithSubscriber(string key, string id)
         {
             var bi_idShortUrl = Common.Helpers.UrlShortenerHelper.Decode(key);
             var bi_idSubscriber = Common.Helpers.UrlShortenerHelper.Decode(id);

@@ -130,9 +130,13 @@ namespace SellerBox
                     name: "default",
                     template: "{controller=Home}/{action=Index}");
                 routes.MapRoute(
-                    name: "shortLinks",
+                    name: "shortLinksWithSubscriber",
                     template: Common.Helpers.UrlShortenerHelper.RoutePrefix + "={key}&{id}",
-                    defaults: new { controller = "Home", action = "ShortLink" });
+                    defaults: new { controller = "Home", action = "ShortLinkWithSubscriber" });
+                routes.MapRoute(
+                    name: "shortLinksWithoutSubscriber",
+                    template: Common.Helpers.UrlShortenerHelper.RoutePrefix + "={key}",
+                    defaults: new { controller = "Home", action = "ShortLinkWithoutSubscriber" });
             });
         }
     }

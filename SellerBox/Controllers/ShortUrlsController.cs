@@ -73,6 +73,7 @@ namespace SellerBox.Controllers
             {
                 Id = shortUrl.Id,
                 IsSingleClick = shortUrl.IsSingleClick,
+                IsSubscriberRequired = shortUrl.IsSubscriberRequired,
                 Name = shortUrl.Name,
                 RedirectTo = shortUrl.RedirectTo,
                 AddToChain = shortUrl.IdChain.HasValue,
@@ -143,10 +144,11 @@ namespace SellerBox.Controllers
             else
                 shortUrl = await _context.ShortUrls.FindAsync(model.Id.Value);
 
-            shortUrl.IsSingleClick = model.IsSingleClick;
             shortUrl.Name = model.Name;
             shortUrl.RedirectTo = model.RedirectTo;
-            shortUrl.IdChain = model.AddToChain ? model.IdChain : null;
+            shortUrl.IsSubscriberRequired = model.IsSubscriberRequired;
+            shortUrl.IsSingleClick = model.IsSingleClick;
+            shortUrl.IdChain = (model.AddToChain && model.IsSubscriberRequired) ? model.IdChain : null;
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

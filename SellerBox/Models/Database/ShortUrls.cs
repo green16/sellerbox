@@ -16,5 +16,6 @@ namespace SellerBox.Models.Database
         public string Name { get; set; }
         public string RedirectTo { get; set; }
         public bool IsSingleClick { get; set; }
+        public bool IsSubscriberRequired { get; set; }
     }
 }

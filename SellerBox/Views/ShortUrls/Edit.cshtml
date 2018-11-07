@@ -30,29 +30,40 @@
     </div>
 
     <div class="input-group">
-        <div class="input-group-prepend">
-            <div class="input-group-text">
-                <div class="checkbox">
-                    <input type="checkbox" asp-for="AddToChain" />
-                    <label asp-for="AddToChain" class="form-check-label"></label>
-                </div>
-            </div>
-        </div>
-        <select asp-for="IdChain" class="form-control custom-select" disabled="@(!Model.AddToChain)">
-            <option value="@null" selected>Выберите цепочку...</option>
-            @foreach (var chain in ViewBag.Chains)
-            {
-                <option value="@chain.Key">@chain.Value</option>
-            }
-        </select>
-    </div>
-
-    <div class="form-group">
         <div class="checkbox">
             <input type="checkbox" asp-for="IsSingleClick" />
             <label asp-for="IsSingleClick"></label>
         </div>
     </div>
 
+    <div class="input-group">
+        <div class="checkbox">
+            <input type="checkbox" asp-for="IsSubscriberRequired" />
+            <label asp-for="IsSubscriberRequired"></label>
+        </div>
+    </div>
+
+    <div id="SubscriberRequiredRegion" @{if (!Model.IsSubscriberRequired) { <text> hidden</text>} }>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <div class="input-group-text">
+                    <div class="checkbox">
+                        <input type="checkbox" asp-for="AddToChain" />
+                        <label asp-for="AddToChain" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+            <select asp-for="IdChain" class="form-control custom-select" disabled="@(!Model.AddToChain)">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (var chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <br />
+    </div>
+    
     <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
