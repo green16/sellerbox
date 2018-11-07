@@ -58,6 +58,30 @@ namespace SellerBox.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> History()
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var model = await _context.Scheduler_Messaging
+                .Where(x => x.Message.IdGroup == groupInfo.Key)
+                .Where(x => x.Status == Models.Database.Common.MessagingStatus.Finished && x.DtEnd.HasValue)
+                .Select(x => new MessagingHistoryViewModel()
+                {
+                    DtAdd = x.DtAdd,
+                    DtStart = x.DtStart,
+                    DtEnd = x.DtEnd.Value,
+                    HasImages = x.Message.Files.Any(),
+                    Message = x.Message.Text,
+                    Name = x.Name,
+                    HasKeyboard = !string.IsNullOrEmpty(x.Message.Keyboard),
+                    IdMessaging = x.Id,
+                    RecipientsCount = x.RecipientsCount,
+                }).ToArrayAsync();
+
+            ViewBag.IdGroup = groupInfo.Key;
+            return View(nameof(History), model);
+        }
+
+        [HttpGet]
         public IActionResult Create()
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
