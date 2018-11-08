@@ -40,6 +40,7 @@ namespace SellerBox.Controllers
                     Name = x.Name,
                     IdCheckingChain = x.CheckingChainContent.IdChain,
                     CheckingChainName = x.CheckingChainContent.Chain.Name,
+                    CheckIsSubscriber = x.CheckIsSubscriber,
                     HasGoToChain = x.IdGoToChain.HasValue,
                     HasGoToChain2 = x.IdGoToChain2.HasValue,
                     GoToChainName = x.GoToChain != null ? x.GoToChain.Name : string.Empty,
@@ -130,6 +131,7 @@ namespace SellerBox.Controllers
                 {
                     Id = x.Id,
                     Name = x.Name,
+                    CheckIsSubscriber = x.CheckIsSubscriber,
                     CheckAfterHours = x.CheckAfter.Hours + x.CheckAfter.Days * 24,
                     CheckAfterMinutes = (byte)x.CheckAfter.Minutes,
                     CheckAllPosts = x.CheckAllPosts,
@@ -196,6 +198,7 @@ namespace SellerBox.Controllers
                 newRepostScenario.LastPostsCount = model.CheckAllPosts ? null : model.LastPostsCount;
                 newRepostScenario.IdPost = null;
             }
+            newRepostScenario.CheckIsSubscriber = model.CheckIsSubscriber;
             newRepostScenario.IdCheckingChainContent = model.IdCheckingChainContent.Value;
             newRepostScenario.IdGoToChain = model.IdGoToChain;
             newRepostScenario.IdGoToChain2 = model.IdGoToChain2;

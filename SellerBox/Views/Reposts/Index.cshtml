@@ -49,6 +49,11 @@
                 <p style="font-weight: bold; color: lightgreen">@item.Name</p>
             </div>
             <div style="float: right">
+                @if (item.CheckIsSubscriber)
+                {
+                    <span style="color: blue">Проверять участие в группе</span>
+                    <br />
+                }
                 <span>Проверять в цепочке:</span>
                 <a asp-action="EditById" asp-controller="Chains" asp-route-idChain="@item.IdCheckingChain"><span style="color: blue">@item.CheckingChainName</span></a>
             </div>

@@ -22,6 +22,8 @@ namespace SellerBox.Models.Database
         public int? LastPostsCount { get; set; }
         public bool CheckAllPosts { get; set; }
 
+        public bool CheckIsSubscriber { get; set; }
+
         [ForeignKey(nameof(CheckingChainContent))]
         public Guid IdCheckingChainContent { get; set; }
         public virtual ChainContents CheckingChainContent { get; set; }

@@ -116,7 +116,7 @@ namespace SellerBox.Common.Schedulers
                     .ToArrayAsync(); // Все подписчики в проверяемой цепочке
                 foreach (var subscriberInChain in subscribersInChain)
                 {
-                    var repost = await dbContext.SubscriberReposts
+                    var subscriberRepost = await dbContext.SubscriberReposts
                         .Where(x => !x.IsProcessed)//Ещё не обработаны
                         //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
                         .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
@@ -128,7 +128,8 @@ namespace SellerBox.Common.Schedulers
                                                                     .IndexOf(x.Id) <= repostScenario.LastPostsCount.Value) || // или последние N
                             (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value))//или конкретный пост
                         .FirstOrDefaultAsync();
-                    if (repost == null) //если нет репоста
+                                            
+                    if (subscriberRepost == null || (repostScenario.CheckIsSubscriber && await dbContext.Subscribers.AllAsync(x => x.Id != subscriberInChain.IdSubscriber))) //если нет репоста или не выполнено условие участия в группе
                     {
                         if (repostScenario.IdGoToChain2.HasValue)
                         {
@@ -178,7 +179,7 @@ namespace SellerBox.Common.Schedulers
                             }
                         }
 
-                        repost.IsProcessed = true;
+                        subscriberRepost.IsProcessed = true;
                     }
 
                     await dbContext.CheckedSubscribersInRepostScenarios.AddAsync(new CheckedSubscribersInRepostScenarios()
