@@ -27,9 +27,8 @@ namespace SellerBox.Common.Services
             }
         }
 
+        public const int PeriodSeconds = 60;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private Task _executingTask;
-        private static readonly AutoResetEvent waitHandler = new AutoResetEvent(false);
         private static ConcurrentQueue<NotifyEvent> NotifyEvents = new ConcurrentQueue<NotifyEvent>();
 
         public NotifierService(IServiceScopeFactory serviceScopeFactory) : base()
@@ -37,32 +36,27 @@ namespace SellerBox.Common.Services
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _executingTask = Task.Run(async () =>
+            do
             {
-                while (!stoppingToken.IsCancellationRequested)
+                try
                 {
-                    try
+                    using (var scope = _serviceScopeFactory.CreateScope())
                     {
-                        waitHandler.WaitOne();
-
-                        if (!NotifyEvents.Any())
-                        {
-                            waitHandler.Reset();
-                            continue;
-                        }
-
-                        using (var scope = _serviceScopeFactory.CreateScope())
-                        {
-                            await DoWork(scope.ServiceProvider);
-                        }
+#if DEBUG
+                        Console.WriteLine($"NotifierService started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
+                        await DoWork(scope.ServiceProvider);
+#if DEBUG
+                        Console.WriteLine($"NotifierService finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif                  
                     }
-                    catch { }
-                }
-            }, stoppingToken);
 
-            return _executingTask;
+                    await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
+                }
+                catch { }
+            } while (!stoppingToken.IsCancellationRequested);
         }
 
         public static void AddNotifyEvent(NotifyEvent notifyEvent)
@@ -72,7 +66,6 @@ namespace SellerBox.Common.Services
             if (NotifyEvents == null)
                 NotifyEvents = new ConcurrentQueue<NotifyEvent>();
             NotifyEvents.Enqueue((NotifyEvent)notifyEvent.Clone());
-            waitHandler.Set();
         }
 
         private async Task DoWork(IServiceProvider serviceProvider)

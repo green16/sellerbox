@@ -2,90 +2,42 @@
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Models.Database;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SellerBox.Models.Database;
 
 namespace SellerBox.Common.Schedulers
 {
-    public class RepostScheduler : IHostedService
+    public class RepostScheduler : BackgroundService
     {
         public const int PeriodSeconds = 60;
-        private Task _executingTask;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         public RepostScheduler(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public virtual Task StartAsync(CancellationToken cancellationToken)
-        {
-            // Store the task we're executing
-            _executingTask = ExecuteAsync(_stoppingCts.Token);
-
-            // If the task is completed then return it,
-            // this will bubble cancellation and failure to the caller
-            if (_executingTask.IsCompleted)
-            {
-                return _executingTask;
-            }
-
-            // Otherwise it's running
-            return Task.CompletedTask;
-        }
-
-        public virtual async Task StopAsync(CancellationToken cancellationToken)
-        {
-            // Stop called without start
-            if (_executingTask == null)
-            {
-                return;
-            }
-
-            try
-            {
-                // Signal cancellation to the executing method
-                _stoppingCts.Cancel();
-            }
-            finally
-            {
-                // Wait until the task completes or the stop token triggers
-                await Task.WhenAny(_executingTask, Task.Delay(Timeout.Infinite, cancellationToken));
-            }
-        }
-
-        protected virtual async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             do
             {
-                await Process();
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+#if DEBUG
+                    Console.WriteLine($"RepostScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
+                    await RepostScenarios(scope.ServiceProvider);
+#if DEBUG
+                    Console.WriteLine($"RepostScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif              
+                }
 
                 await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
             }
             while (!stoppingToken.IsCancellationRequested);
-        }
-
-        protected async Task Process()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                await ProcessInScope(scope.ServiceProvider);
-            }
-        }
-
-        public async Task ProcessInScope(IServiceProvider serviceProvider)
-        {
-#if DEBUG
-            Console.WriteLine($"RepostScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
-            await RepostScenarios(serviceProvider);
-#if DEBUG
-            Console.WriteLine($"RepostScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
         }
 
         private async Task RepostScenarios(IServiceProvider serviceProvider)
@@ -118,7 +70,7 @@ namespace SellerBox.Common.Schedulers
                 {
                     var subscriberRepost = await dbContext.SubscriberReposts
                         .Where(x => !x.IsProcessed)//Ещё не обработаны
-                        //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
+                                                   //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
                         .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
                         .Where(x => repostScenario.CheckAllPosts ||//Проверять все посты
                             (repostScenario.CheckLastPosts && dbContext.WallPosts
@@ -128,7 +80,7 @@ namespace SellerBox.Common.Schedulers
                                                                     .IndexOf(x.Id) <= repostScenario.LastPostsCount.Value) || // или последние N
                             (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value))//или конкретный пост
                         .FirstOrDefaultAsync();
-                                            
+
                     if (subscriberRepost == null || (repostScenario.CheckIsSubscriber && await dbContext.Subscribers.AllAsync(x => x.Id != subscriberInChain.IdSubscriber))) //если нет репоста или не выполнено условие участия в группе
                     {
                         if (repostScenario.IdGoToChain2.HasValue)
