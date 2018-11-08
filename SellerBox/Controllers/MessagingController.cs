@@ -78,7 +78,7 @@ namespace SellerBox.Controllers
                     RecipientsCount = x.RecipientsCount,
                 });
 
-            var model = await PagingList.CreateAsync(items, nameof(History), "Messaging", 5, page, sortExpression, nameof(MessagingHistoryViewModel.DtAdd));
+            var model = await PagingList.CreateAsync(items, nameof(History), "Messaging", 20, page, sortExpression, nameof(MessagingHistoryViewModel.DtAdd));
 
             ViewBag.IdGroup = groupInfo.Key;
             return View(nameof(History), model);
