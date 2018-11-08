@@ -29,7 +29,7 @@ namespace SellerBox.Common.Helpers
                 Dt = dt
             });
 
-            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            Schedulers.NotifyScheduler.AddNotifyEvent(new Schedulers.NotifyScheduler.NotifyEvent()
             {
                 Dt = dt,
                 IdGroup = idGroup,
@@ -37,7 +37,7 @@ namespace SellerBox.Common.Helpers
                 IdSubscriber = idSubscriber,
                 SourceType = 1
             });
-            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            Schedulers.NotifyScheduler.AddNotifyEvent(new Schedulers.NotifyScheduler.NotifyEvent()
             {
                 Dt = dt,
                 IdGroup = idGroup,

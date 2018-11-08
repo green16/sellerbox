@@ -2,15 +2,16 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Common.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SellerBox.Common.Services
+namespace SellerBox.Common.Schedulers
 {
-    public class NotifierService : BackgroundService
+    public class NotifyScheduler : BackgroundService
     {
         public class NotifyEvent : ICloneable
         {
@@ -31,7 +32,7 @@ namespace SellerBox.Common.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private static ConcurrentQueue<NotifyEvent> NotifyEvents = new ConcurrentQueue<NotifyEvent>();
 
-        public NotifierService(IServiceScopeFactory serviceScopeFactory) : base()
+        public NotifyScheduler(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }

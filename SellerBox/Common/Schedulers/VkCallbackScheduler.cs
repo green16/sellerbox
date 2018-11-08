@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SellerBox.Common.Helpers;
+using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.Models.Vk;
 using System;
@@ -10,14 +11,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SellerBox.Common.Services
+namespace SellerBox.Common.Schedulers
 {
-    public class VkCallbackWorkerService : BackgroundService
+    public class VkCallbackScheduler : BackgroundService
     {
         public const int PeriodSeconds = 5;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public VkCallbackWorkerService(IServiceScopeFactory serviceScopeFactory) : base()
+        public VkCallbackScheduler(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }

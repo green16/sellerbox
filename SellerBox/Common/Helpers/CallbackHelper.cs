@@ -52,7 +52,7 @@ namespace SellerBox.Common.Helpers
             });
             await dbContext.SaveChangesAsync();
 
-            Services.NotifierService.AddNotifyEvent(new Services.NotifierService.NotifyEvent()
+            Schedulers.NotifyScheduler.AddNotifyEvent(new Schedulers.NotifyScheduler.NotifyEvent()
             {
                 Dt = DateTime.UtcNow,
                 IdGroup = idGroup,

@@ -115,7 +115,7 @@ namespace SellerBox.Common.Schedulers
                         IdSubscriber = subscriberInChain.IdSubscriber,
                         Dt = dt
                     });
-                    NotifierService.AddNotifyEvent(new NotifierService.NotifyEvent()
+                    NotifyScheduler.AddNotifyEvent(new NotifyScheduler.NotifyEvent()
                     {
                         Dt = DateTime.UtcNow,
                         IdGroup = subscriberInChain.ChainStep.Chain.IdGroup,
