@@ -20,6 +20,11 @@
 {
     <div asp-validation-summary="All" class="text-danger"></div>
 
+    <div class="input-group-prepend">
+        <label asp-for="Name" class="input-group-text"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
     @await Html.PartialAsync("~/Views/Shared/MessagePart.cshtml", Model)
 
     <input asp-for="IdGroup" type="hidden" />

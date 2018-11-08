@@ -2,18 +2,19 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+using ReflectionIT.Mvc.Paging;
 using SellerBox.Common;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.ViewModels.Messaging;
 using SellerBox.ViewModels.Shared;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -58,24 +59,26 @@ namespace SellerBox.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History(int page = 1, string sortExpression = nameof(MessagingHistoryViewModel.DtAdd))
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
-            var model = await _context.Scheduler_Messaging
+            var items = _context.Scheduler_Messaging
                 .Where(x => x.Message.IdGroup == groupInfo.Key)
-                .Where(x => x.Status == Models.Database.Common.MessagingStatus.Finished && x.DtEnd.HasValue)
+                .Where(x => x.Status == Models.Database.Common.MessagingStatus.Finished)
                 .Select(x => new MessagingHistoryViewModel()
                 {
                     DtAdd = x.DtAdd,
                     DtStart = x.DtStart,
-                    DtEnd = x.DtEnd.Value,
+                    DtEnd = x.DtEnd ?? DateTime.MinValue,
                     HasImages = x.Message.Files.Any(),
                     Message = x.Message.Text,
+                    CropMessage = x.Message.TextPart,
                     Name = x.Name,
                     HasKeyboard = !string.IsNullOrEmpty(x.Message.Keyboard),
-                    IdMessaging = x.Id,
                     RecipientsCount = x.RecipientsCount,
-                }).ToArrayAsync();
+                });
+
+            var model = await PagingList.CreateAsync(items, nameof(History), "Messaging", 5, page, sortExpression, nameof(MessagingHistoryViewModel.DtAdd));
 
             ViewBag.IdGroup = groupInfo.Key;
             return View(nameof(History), model);
@@ -99,7 +102,7 @@ namespace SellerBox.Controllers
         {
             if (!idMessaging.HasValue)
                 return RedirectToAction(nameof(Index));
-            
+
             var messaging = await _context.Scheduler_Messaging
                 .FirstOrDefaultAsync(x => x.Id == idMessaging);
             if (messaging == null)

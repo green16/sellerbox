@@ -1,2 +1,115 @@
-﻿@model SellerBox.ViewModels.Messaging.MessagingHistoryViewModel
+﻿@using ReflectionIT.Mvc.Paging
+@model PagingList<SellerBox.ViewModels.Messaging.MessagingHistoryViewModel>
 
+@section Styles {
+    <link href="~/lib/sass-bootstrap-glyphicons/css/bootstrap-glyphicons.css" rel="stylesheet" type="text/css" />
+}
+
+<h3 class="text-center">Оконченные рассылки</h3>
+@{
+    bool hasElements = Model?.Any() ?? false;
+}
+@if (!hasElements)
+{
+    <h5>
+        <text>Оконченных рассылок нет.</text>
+    </h5>
+}
+
+@if (hasElements)
+{
+    @await Html.PartialAsync("Pager", Model)
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    №
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Name)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.DtAdd)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.DtStart)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.DtEnd)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Message)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.HasImages)
+                </th>
+                <th>
+                    @Html.SortableHeaderFor(model => model.HasKeyboard)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.RecipientsCount)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @{int idx = 0; }
+            @foreach (var item in Model)
+            {
+                idx++;
+                <tr>
+                    <td>
+                        @idx
+                    </td>
+                    <td>
+                        @item.Name
+                    </td>
+                    <td>
+                        @item.DtAdd.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                    </td>
+                    <td>
+                        @item.DtStart.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                    </td>
+                    <td>
+                        @if (item.DtEnd == DateTime.MinValue)
+                        {
+                            <text>Неизвестно</text>
+                        }
+                        else
+                        {
+                            <text>item.DtEnd.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</text>
+                        }
+                    </td>
+                    <td>
+                        <span title="@item.Message">@item.CropMessage</span>
+                    </td>
+                    <td>
+                        @if (item.HasImages)
+                        {
+                            <text>есть</text>
+                        }
+                        else
+                        {
+                            <text>нет</text>
+                        }
+                    </td>
+                    <td>
+                        @if (item.HasKeyboard)
+                        {
+                            <text>есть</text>
+                        }
+                        else
+                        {
+                            <text>нет</text>
+                        }
+                    </td>
+                    <td>
+                        @item.RecipientsCount
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @await Html.PartialAsync("Pager", Model)
+}

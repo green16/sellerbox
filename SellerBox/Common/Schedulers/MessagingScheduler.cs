@@ -143,6 +143,7 @@ namespace SellerBox.Common.Schedulers
                 await connection.StopAsync();
 
                 messaging.Status = Models.Database.Common.MessagingStatus.Finished;
+                messaging.DtEnd = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 return idSchedulerMessaging;
