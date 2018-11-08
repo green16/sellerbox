@@ -63,11 +63,6 @@
     }
 
     <span style="align-items: center">
-        (@startFrom
-        @if (startFrom != endBy)
-        {
-            <text>-@endBy</text>
-        }
-        из @Model.TotalRecordCount)
+        @($"{startFrom}{(startFrom != endBy ? $"-{endBy}" : "")} из {Model.TotalRecordCount}")
     </span>
 }
