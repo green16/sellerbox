@@ -78,60 +78,80 @@ namespace SellerBox.Common.Schedulers
                                                                     .Select(y => y.Id)
                                                                     .ToArray()
                                                                     .IndexOf(x.Id) <= repostScenario.LastPostsCount.Value) || // или последние N
-                            (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value))//или конкретный пост
+                            (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value)) //или конкретный пост
                         .FirstOrDefaultAsync();
 
-                    if (subscriberRepost == null || (repostScenario.CheckIsSubscriber && await dbContext.Subscribers.AllAsync(x => x.Id != subscriberInChain.IdSubscriber))) //если нет репоста или не выполнено условие участия в группе
-                    {
-                        if (repostScenario.IdGoToChain2.HasValue)
-                        {
-                            bool isSubscriberNotInChain = await dbContext.SubscribersInChains
-                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
-                                .Include(x => x.ChainStep)
-                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToChain2.Value);
+                    bool isSubscriber = await dbContext.Subscribers.AnyAsync(x => x.Id == subscriberInChain.IdSubscriber);
 
-                            if (isSubscriberNotInChain)
-                            {
-                                await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
-                                {
-                                    IdSubscriber = subscriberInChain.IdSubscriber,
-                                    DtAdd = dt,
-                                    IdChainStep = await dbContext.ChainContents
-                                        .Where(x => x.IdChain == repostScenario.IdGoToChain2.Value)
-                                        .OrderBy(x => x.Index)
-                                        .Select(x => x.Id)
-                                        .FirstOrDefaultAsync()
-                                });
-                                await dbContext.SaveChangesAsync();
-                            }
-                        }
-                        else continue;
-                    }
-                    else
+                    Guid? IdChainStep = null;
+
+                    if (subscriberRepost != null) // Если есть репост
                     {
-                        if (repostScenario.IdGoToChain.HasValue)
+                        if (!repostScenario.CheckIsSubscriber || isSubscriber) // Если есть нет проверки на вступление группу или человек подписан на группу
                         {
-                            bool isSubscriberNotInChain = await dbContext.SubscribersInChains
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
                                 .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
                                 .Include(x => x.ChainStep)
                                 .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToChain.Value);
-
-                            if (isSubscriberNotInChain)
-                            {
-                                await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
-                                {
-                                    IdSubscriber = subscriberInChain.IdSubscriber,
-                                    DtAdd = DateTime.UtcNow,
-                                    IdChainStep = await dbContext.ChainContents
-                                        .Where(x => x.IdChain == repostScenario.IdGoToChain.Value)
-                                        .OrderBy(x => x.Index)
-                                        .Select(x => x.Id)
-                                        .FirstOrDefaultAsync()
-                                });
-                            }
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToChain.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
                         }
+                        else if (repostScenario.CheckIsSubscriber && !isSubscriber && repostScenario.IdGoToErrorChain3.HasValue) // Если есть проверка на вступление в группу и человек не подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                .Include(x => x.ChainStep)
+                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain3.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain3.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                    }
+                    else // Если нет репоста
+                    {
+                        if ((!repostScenario.CheckIsSubscriber || !isSubscriber) && repostScenario.IdGoToErrorChain1.HasValue) // Если нет проверки на вступление группу или человек не подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                        .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                        .Include(x => x.ChainStep)
+                                        .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain1.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain1.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                        else if (repostScenario.CheckIsSubscriber && isSubscriber && repostScenario.IdGoToErrorChain2.HasValue) // Если есть проверка на вступление в группу и человек подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                .Include(x => x.ChainStep)
+                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain2.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain2.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                    }
 
-                        subscriberRepost.IsProcessed = true;
+                    if (IdChainStep.HasValue)
+                    {
+                        await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
+                        {
+                            IdSubscriber = subscriberInChain.IdSubscriber,
+                            DtAdd = dt,
+                            IdChainStep = IdChainStep.Value
+                        });
                     }
 
                     await dbContext.CheckedSubscribersInRepostScenarios.AddAsync(new CheckedSubscribersInRepostScenarios()

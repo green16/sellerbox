@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SellerBox.Common;
 
 namespace SellerBox.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20181109073732_RepostScenario_ReanameField")]
+    partial class RepostScenario_ReanameField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -687,10 +689,6 @@ namespace SellerBox.Migrations
 
                     b.Property<Guid?>("IdGoToErrorChain1");
 
-                    b.Property<Guid?>("IdGoToErrorChain2");
-
-                    b.Property<Guid?>("IdGoToErrorChain3");
-
                     b.Property<Guid?>("IdPost");
 
                     b.Property<bool>("IsEnabled");
@@ -706,10 +704,6 @@ namespace SellerBox.Migrations
                     b.HasIndex("IdGoToChain");
 
                     b.HasIndex("IdGoToErrorChain1");
-
-                    b.HasIndex("IdGoToErrorChain2");
-
-                    b.HasIndex("IdGoToErrorChain3");
 
                     b.HasIndex("IdPost");
 
@@ -1426,14 +1420,6 @@ namespace SellerBox.Migrations
                     b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain1")
                         .WithMany()
                         .HasForeignKey("IdGoToErrorChain1");
-
-                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain2")
-                        .WithMany()
-                        .HasForeignKey("IdGoToErrorChain2");
-
-                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain3")
-                        .WithMany()
-                        .HasForeignKey("IdGoToErrorChain3");
 
                     b.HasOne("SellerBox.Models.Database.WallPosts", "WallPost")
                         .WithMany()

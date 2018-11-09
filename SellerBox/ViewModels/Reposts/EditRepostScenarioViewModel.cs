@@ -35,11 +35,15 @@ namespace SellerBox.ViewModels.Reposts
         public Guid? IdCheckingChainContent { get; set; }
 
         [Required]
-        [Display(Name = "Условия выполнены")]
+        [Display(Name = "Репост есть + вступил")]
         public Guid? IdGoToChain { get; set; }
-        [Display(Name = "Условия не выполнены")]
-        public Guid? IdGoToChain2 { get; set; }
-
+        [Display(Name = "Нет репоста + не вступил")]
+        public Guid? IdGoToErrorChain1 { get; set; }
+        [Display(Name = "Нет репоста + вступил")]
+        public Guid? IdGoToErrorChain2 { get; set; }
+        [Display(Name = "Репост есть + не вступил")]
+        public Guid? IdGoToErrorChain3 { get; set; }
+        
         [Display(Name = "Проверять участие в группе")]
         public bool CheckIsSubscriber { get; set; }
     }

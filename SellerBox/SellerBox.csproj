@@ -45,6 +45,8 @@
     <Compile Remove="Migrations\20181101153508_Add_History_ShortUrlClicks.Designer.cs" />
     <Compile Remove="Migrations\20181101164022_Add_ShortUrls.cs" />
     <Compile Remove="Migrations\20181101164022_Add_ShortUrls.Designer.cs" />
+    <Compile Remove="Migrations\20181109073525_RepostScenario_ReanameField.cs" />
+    <Compile Remove="Migrations\20181109073525_RepostScenario_ReanameField.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

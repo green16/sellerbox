@@ -124,7 +124,9 @@
         <legend>Добавить в цепочку</legend>
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label asp-for="IdGoToChain" class="input-group-text"></label>
+                <label class="input-group-text" for="IdGoToChain">
+                    @($"Репост есть{(Model.CheckIsSubscriber ? " + вступил" : "")}")
+                </label>
             </div>
             <select asp-for="IdGoToChain" class="custom-select">
                 <option value="@null" selected>Выберите цепочку...</option>
@@ -137,9 +139,37 @@
 
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label asp-for="IdGoToChain2" class="input-group-text"></label>
+                <label class="input-group-text" for="IdGoToChain">
+                    @($"Нет репоста{(Model.CheckIsSubscriber ? " + не вступил" : "")}")
+                </label>
             </div>
-            <select asp-for="IdGoToChain2" class="custom-select">
+            <select asp-for="IdGoToErrorChain1" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdGoToErrorChain2" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdGoToErrorChain2" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdGoToErrorChain3" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdGoToErrorChain3" class="custom-select">
                 <option value="@null" selected>Выберите цепочку...</option>
                 @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
                 {
