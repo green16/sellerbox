@@ -59,6 +59,8 @@ namespace SellerBox.Common
         public DbSet<Notifications> Notifications { get; set; }
 
         public DbSet<ShortUrls> ShortUrls { get; set; }
+        public DbSet<ShortUrlsScenarios> ShortUrlsScenarios { get; set; }
+        public DbSet<ShortUrlsPassedClicks> ShortUrlsPassedClicks { get; set; }
 
         public DatabaseContext()
         {
@@ -80,7 +82,7 @@ namespace SellerBox.Common
             modelBuilder.Entity<VkUsers>()
                 .Property(c => c.IdVk)
                 .ValueGeneratedNever();
-            
+
             modelBuilder.Entity<Groups>()
             .HasKey(c => c.IdVk);
 
@@ -167,10 +169,15 @@ namespace SellerBox.Common
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.History_WallPosts)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             modelBuilder.Entity<CheckedSubscribersInRepostScenarios>()
                 .HasOne(x => x.Subscriber)
                 .WithMany(x => x.CheckedSubscribersInRepostScenarios)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShortUrlsPassedClicks>()
+                .HasOne(x => x.Subscriber)
+                .WithMany(x => x.ShortUrlsPassedClicks)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

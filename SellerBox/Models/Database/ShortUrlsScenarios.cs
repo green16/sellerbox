@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class RepostScenarios : BaseEntity
+    public class ShortUrlsScenarios : BaseEntity
     {
         public string Name { get; set; }
         public bool IsEnabled { get; set; }
@@ -11,13 +11,9 @@ namespace SellerBox.Models.Database
         [NotMapped]
         public TimeSpan CheckAfter => TimeSpan.FromSeconds(CheckAfterSeconds);
 
-        [ForeignKey(nameof(WallPost))]
-        public Guid? IdPost { get; set; }
-        public virtual WallPosts WallPost { get; set; }
-
-        public bool CheckLastPosts { get; set; }
-        public int? LastPostsCount { get; set; }
-        public bool CheckAllPosts { get; set; }
+        [ForeignKey(nameof(ShortUrl))]
+        public Guid? IdShortUrl { get; set; }
+        public virtual ShortUrls ShortUrl { get; set; }
 
         public bool CheckIsSubscriber { get; set; }
 

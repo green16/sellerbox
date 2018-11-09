@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SellerBox.Common;
 
 namespace SellerBox.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20181109130317_Add_ShortUlsScenarios")]
+    partial class Add_ShortUlsScenarios
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -832,27 +834,6 @@ namespace SellerBox.Migrations
                     b.ToTable("ShortUrls");
                 });
 
-            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsPassedClicks", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime>("Dt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("IdShortUrlsScenario");
-
-                    b.Property<Guid>("IdSubscriber");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdShortUrlsScenario");
-
-                    b.HasIndex("IdSubscriber");
-
-                    b.ToTable("ShortUrlsPassedClicks");
-                });
-
             modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsScenarios", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1553,19 +1534,6 @@ namespace SellerBox.Migrations
                         .WithMany()
                         .HasForeignKey("IdGroup")
                         .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsPassedClicks", b =>
-                {
-                    b.HasOne("SellerBox.Models.Database.ShortUrlsScenarios", "ShortUrlsScenario")
-                        .WithMany()
-                        .HasForeignKey("IdShortUrlsScenario")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
-                        .WithMany("ShortUrlsPassedClicks")
-                        .HasForeignKey("IdSubscriber")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsScenarios", b =>
