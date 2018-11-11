@@ -185,7 +185,7 @@ namespace SellerBox.Controllers
                     url = $"https://api.vk.com/method/groups.addCallbackServer?" +
                         $"access_token={tokenValue}" +
                         $"&group_id={idGroup}" +
-                        $"&url={callbackServerUrl}" +
+                        $"&url={_configuration.GetValue<string>("SiteUrl")}{callbackServerUrl}" +
                         $"&title={_configuration.GetValue<string>("CallbackServerName")}" +
                         $"&v={AspNet.Security.OAuth.Vkontakte.VkontakteAuthenticationDefaults.ApiVersion}";
                     response = await client.PostAsync(url, null);
