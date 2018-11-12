@@ -89,7 +89,7 @@ else
                         <td>
                             @if (item.Sex.HasValue)
                             {
-                                @if (item.Sex.Value)
+                                if (item.Sex.Value)
                                 {
                                     <img src="~/images/IconFemale.png" />
                                 }
@@ -108,7 +108,7 @@ else
                         <td>
                             @if (item.Birthday.HasValue)
                             {
-                                @if (item.Birthday.Value.Year == DateTime.MinValue.Year)
+                                if (item.Birthday.Value.Year == DateTime.MinValue.Year)
                                 {
                                     @item.Birthday.Value.ToString("dd MMMM")
                                 }

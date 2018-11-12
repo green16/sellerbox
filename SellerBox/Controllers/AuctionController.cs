@@ -5,7 +5,9 @@ using SellerBox.Common;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using VkNet;
 using VkNet.Enums.Filters;
 using VkNet.Model;
@@ -37,7 +39,7 @@ namespace SellerBox.Controllers
         public IActionResult Create()
         {
             ViewBag.AppId = _configuration.GetValue<ulong>("VkApplicationId");
-            ViewBag.OwnerId = -_userHelperService.GetSelectedGroup(User).Key;
+            ViewBag.OwnerId = _userHelperService.GetSelectedGroup(User).Key * -1;
             return View();
         }
 
@@ -45,68 +47,7 @@ namespace SellerBox.Controllers
         public async Task<IActionResult> Create(Auction auction)
         {
             await _context.Auctions.AddAsync(auction);
-            var idVkUser = await _userHelperService.GetUserIdVk(User);
-            var groupId = _userHelperService.GetSelectedGroup(User).Key;
-            var vkAppId = _configuration.GetValue<ulong>("VkApplicationId");
-            var token = await _userHelperService.GeVktUserAccessToken(User);
-            Console.WriteLine($"id user = {idVkUser}");
-            Console.WriteLine($"id user = {groupId}");
-
-            try
-            {
-                var vkApi = new VkApi();
-                vkApi.Authorize(new ApiAuthParams
-                {
-                    ApplicationId = vkAppId,
-                    UserId = idVkUser,
-                    AccessToken = token
-                });
-                var post = vkApi.Wall.Post(new WallPostParams
-                {
-                    OwnerId = -groupId,
-                    Message = auction.Name + "\r\n" + auction.Description + "\r\n" +
-                              $"начальна€ цена - {auction.StartPrice}, минимальный шаг - {auction.PriceStep}, врем€ на повышение ставок - {auction.EndDate} \r\n" +
-                              "ѕредлагайте свою цену в комментари€х \r\n",
-                    FromGroup = true
-                });
-                _context.SaveChanges();
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception);
-                throw;
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        public async Task<IActionResult> Create2(Auction auction)
-        {
-            await _context.Auctions.AddAsync(auction);
-            var vkappId = _configuration.GetValue<ulong>("VkApplicationId");
-            var groupId = _userHelperService.GetSelectedGroup(User).Key;
-            string email = "";
-            string password = "";
-            Settings settings = Settings.All;
-
-            var api = new VkApi();
-            api.Authorize(new ApiAuthParams
-            {
-                ApplicationId = vkappId,
-                Login = email,
-                Password = password,
-                Settings = settings
-            });
-            var groups = api.Groups.Get(new GroupsGetParams
-            {
-                UserId = api.UserId,
-                Filter = GroupsFilters.Administrator
-            });
-            var post = api.Wall.Post(new WallPostParams
-            {
-                OwnerId = -groupId,
-                FromGroup = true,
-                Message = "test"
-            });
+            _context.SaveChanges();
             return RedirectToAction(nameof(Index));
         }
 
@@ -116,7 +57,7 @@ namespace SellerBox.Controllers
             if (!id.HasValue)
                 return NotFound();
 
-            var auction = await _context.Auctions.FindAsync(id);
+            var auction = await _context.Auctions.FirstOrDefaultAsync(x => x.Id == id);
             if (auction == null)
                 return RedirectToAction(nameof(Index));
 
@@ -144,7 +85,7 @@ namespace SellerBox.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var auction = await _context.Auctions.FindAsync(id);
+            var auction = await _context.Auctions.FirstOrDefaultAsync(x => x.Id == id);
             if (auction == null)
                 return NotFound();
 
@@ -155,11 +96,17 @@ namespace SellerBox.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var auction = await _context.Auctions.FindAsync(id);
-            _context.Auctions.Remove(auction);
-            await _context.SaveChangesAsync();
+            var auction = await _context.Auctions.FirstOrDefaultAsync(x => x.Id == id);
+            if (auction != null)
+            {
 
-            return RedirectToAction(nameof(Index));
+                _context.Auctions.Remove(auction);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            return BadRequest();
+
         }
 
     }

@@ -60,7 +60,7 @@
             <div>
                 @if (Model.Birthday.HasValue)
                 {
-                    @if (Model.Birthday.Value.Year == DateTime.MinValue.Year)
+                    if (Model.Birthday.Value.Year == DateTime.MinValue.Year)
                     {
                         @Model.Birthday.Value.ToLocalTime().ToString("dd MMMM")
                     }

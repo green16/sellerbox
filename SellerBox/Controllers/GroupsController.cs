@@ -95,7 +95,7 @@ namespace SellerBox.Controllers
                 $"&redirect_uri={$"{_configuration.GetValue<string>("SiteUrl")}/Groups/ConnectCallback"}" +
                 $"&group_ids={idGroup}" +
                 "&response_type=code" +
-                $"&scope={"messages,manage,photos,docs"}" +
+                $"&scope={"messages,manage,photos,docs, wall"}" +
                 $"&v={AspNet.Security.OAuth.Vkontakte.VkontakteAuthenticationDefaults.ApiVersion}";
             return Redirect(url);
         }

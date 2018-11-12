@@ -16,7 +16,7 @@
 }
 
 <h2>Создание аукциона</h2>
-<form asp-antiforgery="true" asp-action="Create" method="post">
+<form id="auction" asp-antiforgery="true" asp-action="Create" method="post">
     <div asp-validation-summary="All" class="text-danger"></div>
     <div class="input-group-prepend">
         <label asp-for="Name" class="input-group-text"></label>
@@ -24,39 +24,65 @@
     </div>
     <div class="input-group-prepend">
         <label asp-for="Description" class="input-group-text"></label>
-        <input asp-for="Description" class="form-control" />
+        <input id="description" asp-for="Description" class="form-control" />
     </div>
     <div class="input-group-prepend">
         <label asp-for="StartDate" class="input-group-text"></label>
-        <input asp-for="StartDate" class="form-control" value="@DateTime.Now" />
+        <input asp-for="StartDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now">
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                <img src="~/images/Calendar.png" />
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                <img src="~/images/Close.png" />
+            </button>
+        </div>
     </div>
     <div class="input-group-prepend">
         <label asp-for="EndDate" class="input-group-text"></label>
-        <input asp-for="EndDate" class="form-control" value="@DateTime.Now.AddDays(1)" />
+        <input asp-for="EndDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now.AddDays(1)" >
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                <img src="~/images/Calendar.png" />
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                <img src="~/images/Close.png" />
+            </button>
+        </div>
     </div>
     <div class="input-group-prepend">
         <label asp-for="StartPrice" class="input-group-text"></label>
-        <input asp-for="StartPrice" class="form-control" />
+        <input id="startprice" asp-for="StartPrice" class="form-control" />
     </div>
     <div class="input-group-prepend">
         <label asp-for="PriceStep" class="input-group-text"></label>
-        <input asp-for="PriceStep" class="form-control" />
+        <input id="pricestep" asp-for="PriceStep" class="form-control" />
     </div>
     <div class="input-group-prepend">
         <label asp-for="MaxPrice" class="input-group-text"></label>
-        <input asp-for="MaxPrice" class="form-control" />
+        <input id="maxprice" asp-for="MaxPrice" class="form-control" />
     </div>
     <div class="input-group-prepend">
         <label asp-for="MaxCommentsCount" class="input-group-text"></label>
         <input asp-for="MaxCommentsCount" class="form-control" />
     </div>
-    <input id="btntest" type="button" value="Сохранить" class="btn btn-primary" onclick="auth()" />
+    <!--
+    <div class="input-group-prepend">
+        <label class="input-group-text">Опубликовать от имени группы</label>
+        <div class="checkbox">
+            <input type="checkbox" checked="checked"/>
+        </div>
+    </div>
+    -->
+    <input id="btnpost" type="button" value="Опубликовать" class="btn btn-primary" onclick="auth()" />
+    <input type="submit" value="Сохранить" class="btn btn-success" />
 </form>
 <script type="text/javascript">
     function auth() {
-        VK.Auth.login(authInfo, VK.access.WALL);
+        VK.Auth.login(authInfo, '8192');
     }
-    //Тест авторизации
     function authInfo(response) {
         if (response.session) {
             Wall();
@@ -64,10 +90,30 @@
     }
 
     function Wall() {
-        VK.Api.call('wall.post', { ownerId: @ViewBag.OwnerId, message: "test message from js", from_group: 1, v: "5.87" }), function(r) {
-            if (r.response) {
-                alert(r.response[0]);
-            }
-        }
+        //var fromgroup = $(document).getElementById("IsAdmin").checked ? 1 : 0;
+        var title = document.getElementById("name").value;
+        console.log("title ", title);
+        var description = document.getElementById("description").value;
+        console.log("description ", description);
+        var startprice = document.getElementById("startprice").value;
+        var pricestep = document.getElementById("pricestep").value;
+        var maxprice = document.getElementById("maxprice").value;
+        VK.Api.call('wall.post',
+            {
+                owner_id: @ViewBag.OwnerId,
+                friends_only: 0,
+                from_group: 1,
+                message: title.toString() + "\r\n" + description.toString() +
+                    "\r\n" + "начальная цена: " + startprice.toString() 
+                    + " шаг цены: " + pricestep + " максимальная цена: " + maxprice,
+                signed: 0,
+                mark_as_ads: 0,
+                close_comment: 0,
+                v: "5.87"
+            },
+            function(r) {
+                if (r.response) {
+                }
+            });
     }
 </script>

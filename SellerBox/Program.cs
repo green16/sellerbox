@@ -16,13 +16,13 @@ namespace SellerBox
             WebHost.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
-#if DEBUG
+/*#if DEBUG
                     config.AddJsonFile("appsettings.Debug.json", false, true);
 #elif RELEASE
-                    config.AddJsonFile("appsettings.Release.json", false, true);
-#else
+                    config.AddJsonFile("appsettings.Release.json", false, true);*/
+//#else
                     config.AddJsonFile("appsettings.Development.json", false, true);
-#endif
+//#endif
                     config.AddEnvironmentVariables();
                 })
                 .UseStartup<Startup>()

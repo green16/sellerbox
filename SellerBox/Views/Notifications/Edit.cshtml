@@ -42,9 +42,9 @@
             <option value="@null">Выберите ...</option>
             @if (elementsExists)
             {
-                @foreach (var element in ViewBag.Elements)
+                foreach (var element in ViewBag.Elements)
                 {
-                    @if (element.Key.ToString() == Model.IdElement)
+                    if (element.Key.ToString() == Model.IdElement)
                     {
                         <option value="@element.Key" selected>@element.Value</option>
                     }

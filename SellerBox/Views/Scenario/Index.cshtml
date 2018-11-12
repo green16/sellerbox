@@ -32,7 +32,7 @@
     bool hasElements = Model != null && Model.Any();
     if (hasElements)
     {
-        @using (Html.BeginForm("Create", "Scenario", FormMethod.Get))
+        using (Html.BeginForm("Create", "Scenario", FormMethod.Get))
         {
             <button class="btn btn-primary">Добавить сценарий</button>
         }

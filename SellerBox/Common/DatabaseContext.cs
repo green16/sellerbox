@@ -64,11 +64,13 @@ namespace SellerBox.Common
 
         public DatabaseContext()
         {
+            Database.EnsureCreated();
             Database.SetCommandTimeout(int.MaxValue);
         }
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
         {
+            Database.EnsureCreated();
             Database.SetCommandTimeout(int.MaxValue);
         }
 
