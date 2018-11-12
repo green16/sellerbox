@@ -6,6 +6,8 @@ namespace SellerBox.Models.Database
     public class RepostScenarios : BaseEntity
     {
         public string Name { get; set; }
+        [Column(TypeName = "datetime2")]
+        public DateTime DtCreate { get; set; }
         public bool IsEnabled { get; set; }
         public int CheckAfterSeconds { get; set; }
         [NotMapped]

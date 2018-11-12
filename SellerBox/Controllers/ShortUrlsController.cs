@@ -137,7 +137,8 @@ namespace SellerBox.Controllers
             {
                 shortUrl = new ShortUrls()
                 {
-                    IdGroup = groupInfo.Key
+                    IdGroup = groupInfo.Key,
+                    DtAdd = DateTime.UtcNow
                 };
                 await _context.ShortUrls.AddAsync(shortUrl);
             }

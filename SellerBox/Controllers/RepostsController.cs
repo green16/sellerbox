@@ -71,7 +71,7 @@ namespace SellerBox.Controllers
                 .OrderByDescending(x => x.DtAdd)
                 .ToDictionaryAsync(x => x.Id, x => $"{x.DtAdd:dd.MM.yyyy HH.mm}: {x.TextPart}");
 
-            return View("Edit", model);
+            return View(nameof(Edit), model);
         }
 
         [HttpPost]
@@ -179,7 +179,8 @@ namespace SellerBox.Controllers
             {
                 newRepostScenario = new RepostScenarios()
                 {
-                    IsEnabled = true
+                    IsEnabled = true,
+                    DtCreate = DateTime.UtcNow
                 };
                 await _context.RepostScenarios.AddAsync(newRepostScenario);
             }

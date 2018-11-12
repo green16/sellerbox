@@ -76,6 +76,7 @@ namespace SellerBox
             services.AddHostedService<MessagingScheduler>();
             services.AddHostedService<BirthdayScenariosScheduler>();
             services.AddHostedService<RepostScheduler>();
+            services.AddHostedService<ShortUrlsScheduler>();
             services.AddHostedService<NotifyScheduler>();
         }
 

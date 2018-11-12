@@ -49,8 +49,6 @@ namespace SellerBox.Common.Schedulers
             var repostScenarios = await dbContext.RepostScenarios
                 .Where(x => x.IsEnabled)
                 .Include(x => x.WallPost)
-                .Include(x => x.WallPost.Group)
-                .Include(x => x.WallPost.Group.GroupAdmins)
                 .Where(x => x.WallPost.Group.GroupAdmins.Any())
                 .Where(x => dbContext.SubscribersInChains
                     .Any(y => y.IdChainStep == x.IdCheckingChainContent))
