@@ -19,7 +19,6 @@ namespace SellerBox.ViewModels.Reposts
         [Range(0, 60, ErrorMessage = "Введите число от 0 до 59")]
         public byte CheckAfterMinutes { get; set; }
 
-        [Required]
         [Display(Name = "Пост")]
         public Guid? IdPost { get; set; }
 
@@ -36,9 +35,16 @@ namespace SellerBox.ViewModels.Reposts
         public Guid? IdCheckingChainContent { get; set; }
 
         [Required]
-        [Display(Name = "Добавить в цепочку")]
+        [Display(Name = "Репост есть + вступил")]
         public Guid? IdGoToChain { get; set; }
-        [Display(Name = "Добавить в цепочку (нет репоста)")]
-        public Guid? IdGoToChain2 { get; set; }
+        [Display(Name = "Нет репоста + не вступил")]
+        public Guid? IdGoToErrorChain1 { get; set; }
+        [Display(Name = "Нет репоста + вступил")]
+        public Guid? IdGoToErrorChain2 { get; set; }
+        [Display(Name = "Репост есть + не вступил")]
+        public Guid? IdGoToErrorChain3 { get; set; }
+        
+        [Display(Name = "Проверять участие в группе")]
+        public bool CheckIsSubscriber { get; set; }
     }
 }

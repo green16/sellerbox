@@ -45,39 +45,42 @@ namespace SellerBox.Common.Helpers
         public static async Task<ChartInfoViewModel> GenerateShortUrlsReport(DatabaseContext _context, long idGroup, DateTime dtStart, DateTime dtEnd)
         {
             var perDayItems = await _context.History_ShortUrlClicks
-                .Where(x => x.Subscriber.IdGroup == idGroup)
+                .Where(x => x.ShortUrl.IdGroup == idGroup)
                 .Where(x => x.Dt < dtEnd && x.Dt >= dtStart)
                 .GroupBy(x => x.Dt.Date)
                 .Select(x => new ShortUrlsInfoViewModel()
                 {
                     Date = x.Key,
-                    ShortUrlsPerDay = x.GroupBy(z => z.ShortUrl.Name).Select(z => new ShortUrlsPerDayViewModel()
+                    ShortUrlsPerDay = x.GroupBy(z => new { z.IdShortUrl, z.ShortUrl.Name }).Select(z => new ShortUrlsPerDayViewModel()
                     {
-                        Name = z.Key,
+                        IdShortUrl = z.Key.IdShortUrl,
+                        Name = z.Key.Name,
                         Count = z.Count()
                     }).ToArray()
                 })
                 .ToArrayAsync();
 
-            var datasetsСount = perDayItems.Any() ? perDayItems.Max(x => x.ShortUrlsPerDay.Length) : 0;
+            var differentShortUrl = perDayItems
+                .SelectMany(x => x.ShortUrlsPerDay)
+                .Distinct()
+                .Select(x => new
+                {
+                    x.IdShortUrl,
+                    x.Name,
+                    color = string.Format("#{0:X6}", random.Next(0x1000000))
+                })
+                .ToArray();
 
             var model = new ChartInfoViewModel()
             {
                 Title = "Статистика по горячим ссылкам",
                 YLabels = perDayItems.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToArray(),
-                Dataset = perDayItems.SelectMany(x =>
-                {
-                    int shortUrlsPerDayIdx = 0;
-                    return x.ShortUrlsPerDay.Select(y =>
-                    {
-                        var result = new ChartInfoViewModel.ChartData(
-                            x.ShortUrlsPerDay[shortUrlsPerDayIdx].Name,
-                            string.Format("#{0:X6}", random.Next(0x1000000)),
-                            perDayItems.Select(z => z.ShortUrlsPerDay[shortUrlsPerDayIdx].Count).ToArray());
-                        shortUrlsPerDayIdx++;
-                        return result;
-                    });
-                }).ToArray(),
+                Dataset = differentShortUrl
+                    .Select(x => new ChartInfoViewModel.ChartData(x.Name, x.color, perDayItems
+                        .Select(y => y.ShortUrlsPerDay
+                            .Any(z => z.IdShortUrl == x.IdShortUrl) ? y.ShortUrlsPerDay.First(z => z.IdShortUrl == x.IdShortUrl).Count : 0)
+                        .ToArray()))
+                .ToArray(),
                 Legend = new ChartInfoViewModel.ChartLegend[]
                 {
                     new ChartInfoViewModel.ChartLegend("Всего", "rgba(255, 255, 255, 0)", perDayItems.Sum(x => x.ShortUrlsPerDay.Sum(z => z.Count)))
@@ -157,31 +160,36 @@ namespace SellerBox.Common.Helpers
                 .Select(x => new ChainInfoViewModel()
                 {
                     Date = x.Key,
-                    MessagesPerDay = x.GroupBy(z => z.ChainStep.Chain.Name).Select(z => new ChainMessagesPerDayViewModel()
+                    MessagesPerDay = x.GroupBy(z => new { z.ChainStep.IdChain, z.ChainStep.Chain.Name }).Select(z => new ChainMessagesPerDayViewModel()
                     {
-                        Name = z.Key,
+                        IdChain = z.Key.IdChain,
+                        Name = z.Key.Name,
                         Count = z.Count()
                     }).ToArray()
                 })
                 .ToArrayAsync();
 
+            var differentChains = perDayItems
+                .SelectMany(x => x.MessagesPerDay)
+                .Distinct()
+                .Select(x => new
+                {
+                    x.IdChain,
+                    x.Name,
+                    color = string.Format("#{0:X6}", random.Next(0x1000000))
+                })
+                .ToArray();
+
             var model = new ChartInfoViewModel()
             {
                 Title = "Статистика по цепочкам",
                 YLabels = perDayItems.Select(x => x.Date.ToString("dd MMMM yyyyг.")).ToArray(),
-                Dataset = perDayItems.SelectMany(x =>
-                {
-                    int messagePerDayIdx = 0;
-                    return x.MessagesPerDay.Select(y =>
-                    {
-                        var result = new ChartInfoViewModel.ChartData(
-                            x.MessagesPerDay[messagePerDayIdx].Name, 
-                            string.Format("#{0:X6}", random.Next(0x1000000)), 
-                            perDayItems.Select(z => z.MessagesPerDay[messagePerDayIdx].Count).ToArray());
-                        messagePerDayIdx++;
-                        return result;
-                    });
-                }).ToArray(),
+                Dataset = differentChains
+                    .Select(x => new ChartInfoViewModel.ChartData(x.Name, x.color, perDayItems
+                        .Select(y => y.MessagesPerDay
+                            .Any(z => z.IdChain == x.IdChain) ? y.MessagesPerDay.First(z => z.IdChain == x.IdChain).Count : 0)
+                        .ToArray()))
+                .ToArray(),
                 Legend = new ChartInfoViewModel.ChartLegend[]
                 {
                     new ChartInfoViewModel.ChartLegend("Всего", "rgba(255, 255, 255, 0)", perDayItems.Sum(x => x.MessagesPerDay.Sum(z => z.Count)))

@@ -15,5 +15,6 @@ namespace SellerBox.ViewModels.Reposts
         public bool HasGoToChain2 { get; set; }
         public string GoToChainName { get; set; }
         public string GoToChain2Name { get; set; }
+        public bool CheckIsSubscriber { get; set; }
     }
 }

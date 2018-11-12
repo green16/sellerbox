@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using SellerBox.Common;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.ViewModels.Reposts;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -33,21 +33,18 @@ namespace SellerBox.Controllers
             var selectedGroup = _userHelperService.GetSelectedGroup(User);
 
             var model = await _context.RepostScenarios
-                .Include(x => x.WallPost)
                 .Where(x => x.WallPost.IdGroup == selectedGroup.Key)
-                .Include(x => x.CheckingChainContent)
-                .Include(x => x.CheckingChainContent.Chain)
-                .Include(x => x.CheckingChainContent.Message)
                 .Select(x => new IndexRepostScenarioViewModel()
                 {
                     Id = x.Id,
                     Name = x.Name,
                     IdCheckingChain = x.CheckingChainContent.IdChain,
                     CheckingChainName = x.CheckingChainContent.Chain.Name,
+                    CheckIsSubscriber = x.CheckIsSubscriber,
                     HasGoToChain = x.IdGoToChain.HasValue,
-                    HasGoToChain2 = x.IdGoToChain2.HasValue,
+                    HasGoToChain2 = x.IdGoToErrorChain1.HasValue,
                     GoToChainName = x.GoToChain != null ? x.GoToChain.Name : string.Empty,
-                    GoToChain2Name = x.GoToChain2 != null ? x.GoToChain2.Name : string.Empty,
+                    GoToChain2Name = x.GoToErrorChain1 != null ? x.GoToErrorChain1.Name : string.Empty,
                     MessageIndex = x.CheckingChainContent.Index,
                     MessageTextPart = x.CheckingChainContent.Message.TextPart,
                     PostLink = new Uri($"https://vk.com/wall-{selectedGroup.Key}_{x.WallPost.IdVk}")
@@ -74,7 +71,7 @@ namespace SellerBox.Controllers
                 .OrderByDescending(x => x.DtAdd)
                 .ToDictionaryAsync(x => x.Id, x => $"{x.DtAdd:dd.MM.yyyy HH.mm}: {x.TextPart}");
 
-            return View("Edit", model);
+            return View(nameof(Edit), model);
         }
 
         [HttpPost]
@@ -134,7 +131,8 @@ namespace SellerBox.Controllers
                 {
                     Id = x.Id,
                     Name = x.Name,
-                    CheckAfterHours = x.CheckAfter.Hours,
+                    CheckIsSubscriber = x.CheckIsSubscriber,
+                    CheckAfterHours = x.CheckAfter.Hours + x.CheckAfter.Days * 24,
                     CheckAfterMinutes = (byte)x.CheckAfter.Minutes,
                     CheckAllPosts = x.CheckAllPosts,
                     CheckLastPosts = x.CheckLastPosts,
@@ -142,7 +140,9 @@ namespace SellerBox.Controllers
                     IdCheckingChain = x.CheckingChainContent.IdChain,
                     IdCheckingChainContent = x.IdCheckingChainContent,
                     IdGoToChain = x.IdGoToChain,
-                    IdGoToChain2 = x.IdGoToChain2,
+                    IdGoToErrorChain1 = x.IdGoToErrorChain1,
+                    IdGoToErrorChain2 = x.IdGoToErrorChain2,
+                    IdGoToErrorChain3 = x.IdGoToErrorChain3,
                     IdPost = x.IdPost
                 }).FirstOrDefaultAsync();
 
@@ -179,30 +179,27 @@ namespace SellerBox.Controllers
             {
                 newRepostScenario = new RepostScenarios()
                 {
-                    IsEnabled = true
+                    IsEnabled = true,
+                    DtCreate = DateTime.UtcNow
                 };
                 await _context.RepostScenarios.AddAsync(newRepostScenario);
             }
 
             newRepostScenario.Name = model.Name;
             newRepostScenario.CheckAfterSeconds = model.CheckAfterHours * 60 * 60 + model.CheckAfterMinutes * 60;
-            if (!model.CheckLastPosts)
-            {
-                newRepostScenario.CheckLastPosts = false;
-                newRepostScenario.CheckAllPosts = false;
-                newRepostScenario.LastPostsCount = null;
-                newRepostScenario.IdPost = model.IdPost;
-            }
-            else
-            {
-                newRepostScenario.CheckLastPosts = true;
-                newRepostScenario.CheckAllPosts = model.CheckAllPosts;
-                newRepostScenario.LastPostsCount = model.CheckAllPosts ? null : model.LastPostsCount;
-                newRepostScenario.IdPost = null;
-            }
+
+            newRepostScenario.IdPost = model.CheckLastPosts ? null : model.IdPost;
+            newRepostScenario.CheckAllPosts = model.CheckLastPosts ? model.CheckAllPosts : false;
+            newRepostScenario.CheckLastPosts = model.CheckLastPosts;
+            newRepostScenario.LastPostsCount = model.CheckLastPosts ? (model.CheckAllPosts ? null : model.LastPostsCount) : null;
+
             newRepostScenario.IdCheckingChainContent = model.IdCheckingChainContent.Value;
             newRepostScenario.IdGoToChain = model.IdGoToChain;
-            newRepostScenario.IdGoToChain2 = model.IdGoToChain2;
+            newRepostScenario.IdGoToErrorChain1 = model.IdGoToErrorChain1;
+
+            newRepostScenario.CheckIsSubscriber = model.CheckIsSubscriber;
+            newRepostScenario.IdGoToErrorChain2 = model.CheckIsSubscriber ? model.IdGoToErrorChain2 : null;
+            newRepostScenario.IdGoToErrorChain3 = model.CheckIsSubscriber ? model.IdGoToErrorChain3 : null;
 
             await _context.SaveChangesAsync();
 

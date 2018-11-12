@@ -2,90 +2,42 @@
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerBox.Models.Database;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SellerBox.Models.Database;
 
 namespace SellerBox.Common.Schedulers
 {
-    public class RepostScheduler : IHostedService
+    public class RepostScheduler : BackgroundService
     {
         public const int PeriodSeconds = 60;
-        private Task _executingTask;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         public RepostScheduler(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public virtual Task StartAsync(CancellationToken cancellationToken)
-        {
-            // Store the task we're executing
-            _executingTask = ExecuteAsync(_stoppingCts.Token);
-
-            // If the task is completed then return it,
-            // this will bubble cancellation and failure to the caller
-            if (_executingTask.IsCompleted)
-            {
-                return _executingTask;
-            }
-
-            // Otherwise it's running
-            return Task.CompletedTask;
-        }
-
-        public virtual async Task StopAsync(CancellationToken cancellationToken)
-        {
-            // Stop called without start
-            if (_executingTask == null)
-            {
-                return;
-            }
-
-            try
-            {
-                // Signal cancellation to the executing method
-                _stoppingCts.Cancel();
-            }
-            finally
-            {
-                // Wait until the task completes or the stop token triggers
-                await Task.WhenAny(_executingTask, Task.Delay(Timeout.Infinite, cancellationToken));
-            }
-        }
-
-        protected virtual async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             do
             {
-                await Process();
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+#if DEBUG
+                    Console.WriteLine($"RepostScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
+                    await RepostScenarios(scope.ServiceProvider);
+#if DEBUG
+                    Console.WriteLine($"RepostScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif              
+                }
 
                 await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
             }
             while (!stoppingToken.IsCancellationRequested);
-        }
-
-        protected async Task Process()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                await ProcessInScope(scope.ServiceProvider);
-            }
-        }
-
-        public async Task ProcessInScope(IServiceProvider serviceProvider)
-        {
-#if DEBUG
-            Console.WriteLine($"RepostScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
-            await RepostScenarios(serviceProvider);
-#if DEBUG
-            Console.WriteLine($"RepostScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
         }
 
         private async Task RepostScenarios(IServiceProvider serviceProvider)
@@ -97,8 +49,6 @@ namespace SellerBox.Common.Schedulers
             var repostScenarios = await dbContext.RepostScenarios
                 .Where(x => x.IsEnabled)
                 .Include(x => x.WallPost)
-                .Include(x => x.WallPost.Group)
-                .Include(x => x.WallPost.Group.GroupAdmins)
                 .Where(x => x.WallPost.Group.GroupAdmins.Any())
                 .Where(x => dbContext.SubscribersInChains
                     .Any(y => y.IdChainStep == x.IdCheckingChainContent))
@@ -116,9 +66,9 @@ namespace SellerBox.Common.Schedulers
                     .ToArrayAsync(); // Все подписчики в проверяемой цепочке
                 foreach (var subscriberInChain in subscribersInChain)
                 {
-                    var repost = await dbContext.SubscriberReposts
+                    var subscriberRepost = await dbContext.SubscriberReposts
                         .Where(x => !x.IsProcessed)//Ещё не обработаны
-                        //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
+                                                   //.Where(x => x.DtRepost >= subscriberInChain.DtAdd) //Репосты после добавления в ChainContent
                         .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
                         .Where(x => repostScenario.CheckAllPosts ||//Проверять все посты
                             (repostScenario.CheckLastPosts && dbContext.WallPosts
@@ -126,59 +76,80 @@ namespace SellerBox.Common.Schedulers
                                                                     .Select(y => y.Id)
                                                                     .ToArray()
                                                                     .IndexOf(x.Id) <= repostScenario.LastPostsCount.Value) || // или последние N
-                            (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value))//или конкретный пост
+                            (!repostScenario.CheckLastPosts && x.IdPost == repostScenario.IdPost.Value)) //или конкретный пост
                         .FirstOrDefaultAsync();
-                    if (repost == null) //если нет репоста
-                    {
-                        if (repostScenario.IdGoToChain2.HasValue)
-                        {
-                            bool isSubscriberNotInChain = await dbContext.SubscribersInChains
-                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
-                                .Include(x => x.ChainStep)
-                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToChain2.Value);
 
-                            if (isSubscriberNotInChain)
-                            {
-                                await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
-                                {
-                                    IdSubscriber = subscriberInChain.IdSubscriber,
-                                    DtAdd = dt,
-                                    IdChainStep = await dbContext.ChainContents
-                                        .Where(x => x.IdChain == repostScenario.IdGoToChain2.Value)
-                                        .OrderBy(x => x.Index)
-                                        .Select(x => x.Id)
-                                        .FirstOrDefaultAsync()
-                                });
-                                await dbContext.SaveChangesAsync();
-                            }
-                        }
-                        else continue;
-                    }
-                    else
+                    bool isSubscriber = await dbContext.Subscribers.AnyAsync(x => x.Id == subscriberInChain.IdSubscriber);
+
+                    Guid? IdChainStep = null;
+
+                    if (subscriberRepost != null) // Если есть репост
                     {
-                        if (repostScenario.IdGoToChain.HasValue)
+                        if (!repostScenario.CheckIsSubscriber || isSubscriber) // Если есть нет проверки на вступление группу или человек подписан на группу
                         {
-                            bool isSubscriberNotInChain = await dbContext.SubscribersInChains
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
                                 .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
                                 .Include(x => x.ChainStep)
                                 .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToChain.Value);
-
-                            if (isSubscriberNotInChain)
-                            {
-                                await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
-                                {
-                                    IdSubscriber = subscriberInChain.IdSubscriber,
-                                    DtAdd = DateTime.UtcNow,
-                                    IdChainStep = await dbContext.ChainContents
-                                        .Where(x => x.IdChain == repostScenario.IdGoToChain.Value)
-                                        .OrderBy(x => x.Index)
-                                        .Select(x => x.Id)
-                                        .FirstOrDefaultAsync()
-                                });
-                            }
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToChain.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
                         }
+                        else if (repostScenario.IdGoToErrorChain3.HasValue) // Если есть проверка на вступление в группу и человек не подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                .Include(x => x.ChainStep)
+                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain3.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain3.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                    }
+                    else // Если нет репоста
+                    {
+                        if ((!repostScenario.CheckIsSubscriber || !isSubscriber) && repostScenario.IdGoToErrorChain1.HasValue) // Если нет проверки на вступление группу или человек не подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                        .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                        .Include(x => x.ChainStep)
+                                        .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain1.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain1.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                        else if (repostScenario.CheckIsSubscriber && isSubscriber && repostScenario.IdGoToErrorChain2.HasValue) // Если есть проверка на вступление в группу и человек подписался
+                        {
+                            var isSubscriberNotInChain = await dbContext.SubscribersInChains
+                                .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)
+                                .Include(x => x.ChainStep)
+                                .AllAsync(x => x.ChainStep.IdChain != repostScenario.IdGoToErrorChain2.Value);
+                            if (!isSubscriberNotInChain)
+                                IdChainStep = await dbContext.ChainContents
+                                    .Where(x => x.IdChain == repostScenario.IdGoToErrorChain2.Value)
+                                    .OrderBy(x => x.Index)
+                                    .Select(x => x.Id)
+                                    .FirstOrDefaultAsync();
+                        }
+                    }
 
-                        repost.IsProcessed = true;
+                    if (IdChainStep.HasValue)
+                    {
+                        await dbContext.SubscribersInChains.AddAsync(new SubscribersInChains()
+                        {
+                            IdSubscriber = subscriberInChain.IdSubscriber,
+                            DtAdd = dt,
+                            IdChainStep = IdChainStep.Value
+                        });
                     }
 
                     await dbContext.CheckedSubscribersInRepostScenarios.AddAsync(new CheckedSubscribersInRepostScenarios()

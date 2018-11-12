@@ -47,9 +47,17 @@ namespace SellerBox.Controllers
             return View(model);
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
             var model = new EditViewModel();
+
+            ViewBag.Chains = await _context.Chains
+                .Where(x => x.IdGroup == groupInfo.Key)
+                .Select(x => new { x.Id, x.Name })
+                .ToDictionaryAsync(x => x.Id, x => x.Name);
+
             return View(nameof(Edit), model);
         }
 
@@ -65,18 +73,36 @@ namespace SellerBox.Controllers
             {
                 Id = shortUrl.Id,
                 IsSingleClick = shortUrl.IsSingleClick,
+                IsSubscriberRequired = shortUrl.IsSubscriberRequired,
                 Name = shortUrl.Name,
-                RedirectTo = shortUrl.RedirectTo
+                RedirectTo = shortUrl.RedirectTo,
+                AddToChain = shortUrl.IdChain.HasValue,
+                IdChain = shortUrl.IdChain
             };
+
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            ViewBag.Chains = await _context.Chains
+                .Where(x => x.IdGroup == groupInfo.Key)
+                .Select(x => new { x.Id, x.Name })
+                .ToDictionaryAsync(x => x.Id, x => x.Name);
+
             return View(nameof(Edit), model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(EditViewModel model)
+        public async Task<IActionResult> Edit(EditViewModel model)
         {
             if (!_userHelperService.HasSelectedGroup(User))
                 return RedirectToAction(nameof(GroupsController.Index), "Groups");
+
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+
+            ViewBag.Chains = await _context.Chains
+                .Where(x => x.IdGroup == groupInfo.Key)
+                .Select(x => new { x.Id, x.Name })
+                .ToDictionaryAsync(x => x.Id, x => x.Name);
 
             return View(nameof(Edit), model);
         }
@@ -102,7 +128,7 @@ namespace SellerBox.Controllers
         public async Task<IActionResult> Save(EditViewModel model)
         {
             if (!ModelState.IsValid)
-                return Edit(model);
+                return await Edit(model);
 
             var groupInfo = _userHelperService.GetSelectedGroup(User);
 
@@ -111,16 +137,19 @@ namespace SellerBox.Controllers
             {
                 shortUrl = new ShortUrls()
                 {
-                    IdGroup = groupInfo.Key
+                    IdGroup = groupInfo.Key,
+                    DtAdd = DateTime.UtcNow
                 };
                 await _context.ShortUrls.AddAsync(shortUrl);
             }
             else
                 shortUrl = await _context.ShortUrls.FindAsync(model.Id.Value);
 
-            shortUrl.IsSingleClick = model.IsSingleClick;
             shortUrl.Name = model.Name;
             shortUrl.RedirectTo = model.RedirectTo;
+            shortUrl.IsSubscriberRequired = model.IsSubscriberRequired;
+            shortUrl.IsSingleClick = model.IsSingleClick;
+            shortUrl.IdChain = (model.AddToChain && model.IsSubscriberRequired) ? model.IdChain : null;
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

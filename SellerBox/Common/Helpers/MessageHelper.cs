@@ -87,7 +87,9 @@ namespace SellerBox.Common.Helpers
                         var shortUrl = await _context.ShortUrls.FindAsync(idShortUrl);
                         if (shortUrl != null)
                         {
-                            string url = $"{siteUrl}/sl={UrlShortenerHelper.Encode(shortUrl.Id)}&{UrlShortenerHelper.Encode(subscriber.Id)}";
+                            string url = $"{siteUrl}/sl={UrlShortenerHelper.Encode(shortUrl.Id)}";
+                            if (shortUrl.IsSubscriberRequired)
+                                url += $"&{UrlShortenerHelper.Encode(subscriber.Id)}";
                             message = message.Replace(match.Value, url);
                         }
                     }
@@ -107,7 +109,7 @@ namespace SellerBox.Common.Helpers
                 {
                     UserIds = ids,
                     Message = nbspString,
-                    Attachments = (!attachments?.Any() ?? false) ? null : attachments
+                    Attachments = attachments.Any() ? attachments : null
                 });
                 if (!string.IsNullOrEmpty(text) || keyboard != null)
                     await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()

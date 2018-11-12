@@ -19,7 +19,7 @@
 	}
 
 	$('#DtStart').parent().flatpickr({
-		maxDate: year + '-' + month,
+		maxDate: year + '-' + month + '-' + day,
 		maxTime: hour + ':' + minute,
 		locale: "ru",
 		time_24hr: true,
@@ -29,7 +29,7 @@
 	});
 
 	$('#DtEnd').parent().flatpickr({
-		maxDate: year + '-' + month,
+		maxDate: year + '-' + month + '-' + day,
 		maxTime: hour + ':' + minute,
 		locale: "ru",
 		time_24hr: true,

@@ -40,5 +40,6 @@ namespace SellerBox.Models.Database
         public virtual ICollection<SubscribersInChatProgress> SubscribersInChatProgress { get; set; }
         public virtual ICollection<History_WallPosts> History_WallPosts { get; set; }
         public virtual ICollection<History_SubscribersInChatScenariosContents> History_SubscribersInChatScenariosContents { get; set; }
+        public virtual ICollection<ShortUrlsPassedClicks> ShortUrlsPassedClicks { get; set; }
     }
 }

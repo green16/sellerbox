@@ -20,7 +20,7 @@ namespace SellerBox.Common.Hubs
         private static readonly List<Pair<long, string>> connectedToGroups = new List<Pair<long, string>>();
         private static readonly List<Pair<long, SendingState>> sendingStates = new List<Pair<long, SendingState>>();
 
-        public MessagingHub(IConfiguration configuration, DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
+        public MessagingHub(IConfiguration configuration, DatabaseContext context, VkPoolService vkPoolService)
         {
             _configuration = configuration;
             _context = context;

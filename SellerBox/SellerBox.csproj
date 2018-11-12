@@ -44,6 +44,10 @@
     <Compile Remove="Migrations\20181101153508_Add_History_ShortUrlClicks.Designer.cs" />
     <Compile Remove="Migrations\20181101164022_Add_ShortUrls.cs" />
     <Compile Remove="Migrations\20181101164022_Add_ShortUrls.Designer.cs" />
+    <Compile Remove="Migrations\20181109073525_RepostScenario_ReanameField.cs" />
+    <Compile Remove="Migrations\20181109073525_RepostScenario_ReanameField.Designer.cs" />
+    <Compile Remove="Migrations\20181109131328_Add_ShortUrlsPassedClicks.cs" />
+    <Compile Remove="Migrations\20181109131328_Add_ShortUrlsPassedClicks.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="Views\Statistics\Chains.cshtml" />

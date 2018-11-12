@@ -36,6 +36,15 @@ $("#postsRange input").change(function () {
 	}
 });
 
+$("#CheckIsSubscriber").change(function () {
+	var checkIsSubscriber = this.checked;
+	$("#IdGoToErrorChain2").parent().prop("hidden", !checkIsSubscriber);
+	$("#IdGoToErrorChain3").parent().prop("hidden", !checkIsSubscriber);
+
+	$("#IdGoToChain").parent().find("div label").text("Репост есть" + (checkIsSubscriber ? " + вступил" : ""));
+	$("#IdGoToErrorChain1").parent().find("div label").text("Нет репоста" + (checkIsSubscriber ? " + не вступил" : ""));
+});
+
 $("#IdCheckingChain").change(function () {
 	var idChain = $("#IdCheckingChain").val();
 	$("#IdCheckingChainContent").prop("disabled", idChain == "");

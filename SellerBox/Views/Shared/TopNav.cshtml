@@ -41,7 +41,15 @@
                             <a class="dropdown-item nav-item nav-link" asp-area="" asp-controller="Subscribers" asp-action="Unsubscribed">Отписчики группы</a>
                         </div>
                     </div>
-                    <a class="nav-item nav-link" asp-area="" asp-controller="Messaging" asp-action="Index">Рассылка</a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="messagingDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Рассылки
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="messagingDropdown">
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Messaging" asp-action="Index">Назначенные</a>
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Messaging" asp-action="History">Оконченные</a>
+                        </div>
+                    </div>
                     <a class="nav-item nav-link" asp-area="" asp-controller="Chains" asp-action="Index">Цепочки</a>
                     <div class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="scenariosDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -51,6 +59,7 @@
                             <a class="nav-item nav-link" asp-area="" asp-controller="StaticScenarios" asp-action="Index">Статические</a>
                             <a class="nav-item nav-link" asp-area="" asp-controller="Scenario" asp-action="Index">Текст</a>
                             <a class="nav-item nav-link" asp-area="" asp-controller="Reposts" asp-action="Index">Репосты</a>
+                            <a class="nav-item nav-link" asp-area="" asp-controller="ShortUrlsScenarios" asp-action="Index">Ссылки</a>
                         </div>
                     </div>
                     <div class="nav-item dropdown">

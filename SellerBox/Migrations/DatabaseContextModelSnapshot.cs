@@ -522,7 +522,7 @@ namespace SellerBox.Migrations
 
                     b.Property<Guid>("IdShortUrl");
 
-                    b.Property<Guid>("IdSubscriber");
+                    b.Property<Guid?>("IdSubscriber");
 
                     b.HasKey("Id");
 
@@ -703,13 +703,22 @@ namespace SellerBox.Migrations
 
                     b.Property<bool>("CheckAllPosts");
 
+                    b.Property<bool>("CheckIsSubscriber");
+
                     b.Property<bool>("CheckLastPosts");
+
+                    b.Property<DateTime>("DtCreate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("IdCheckingChainContent");
 
                     b.Property<Guid?>("IdGoToChain");
 
-                    b.Property<Guid?>("IdGoToChain2");
+                    b.Property<Guid?>("IdGoToErrorChain1");
+
+                    b.Property<Guid?>("IdGoToErrorChain2");
+
+                    b.Property<Guid?>("IdGoToErrorChain3");
 
                     b.Property<Guid?>("IdPost");
 
@@ -725,7 +734,11 @@ namespace SellerBox.Migrations
 
                     b.HasIndex("IdGoToChain");
 
-                    b.HasIndex("IdGoToChain2");
+                    b.HasIndex("IdGoToErrorChain1");
+
+                    b.HasIndex("IdGoToErrorChain2");
+
+                    b.HasIndex("IdGoToErrorChain3");
 
                     b.HasIndex("IdPost");
 
@@ -827,9 +840,16 @@ namespace SellerBox.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<DateTime>("DtAdd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("IdChain");
+
                     b.Property<long>("IdGroup");
 
                     b.Property<bool>("IsSingleClick");
+
+                    b.Property<bool>("IsSubscriberRequired");
 
                     b.Property<string>("Name");
 
@@ -837,9 +857,77 @@ namespace SellerBox.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdChain");
+
                     b.HasIndex("IdGroup");
 
                     b.ToTable("ShortUrls");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsPassedClicks", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("Dt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdShortUrlsScenario");
+
+                    b.Property<Guid>("IdSubscriber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdShortUrlsScenario");
+
+                    b.HasIndex("IdSubscriber");
+
+                    b.ToTable("ShortUrlsPassedClicks");
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsScenarios", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("CheckAfterSeconds");
+
+                    b.Property<bool>("CheckIsSubscriber");
+
+                    b.Property<DateTime>("DtCreate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IdCheckingChainContent");
+
+                    b.Property<Guid?>("IdGoToChain");
+
+                    b.Property<Guid?>("IdGoToErrorChain1");
+
+                    b.Property<Guid?>("IdGoToErrorChain2");
+
+                    b.Property<Guid?>("IdGoToErrorChain3");
+
+                    b.Property<Guid?>("IdShortUrl");
+
+                    b.Property<bool>("IsEnabled");
+
+                    b.Property<string>("Name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdCheckingChainContent");
+
+                    b.HasIndex("IdGoToChain");
+
+                    b.HasIndex("IdGoToErrorChain1");
+
+                    b.HasIndex("IdGoToErrorChain2");
+
+                    b.HasIndex("IdGoToErrorChain3");
+
+                    b.HasIndex("IdShortUrl");
+
+                    b.ToTable("ShortUrlsScenarios");
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.SubscriberChatReplies", b =>
@@ -1433,9 +1521,17 @@ namespace SellerBox.Migrations
                         .WithMany()
                         .HasForeignKey("IdGoToChain");
 
-                    b.HasOne("SellerBox.Models.Database.Chains", "GoToChain2")
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain1")
                         .WithMany()
-                        .HasForeignKey("IdGoToChain2");
+                        .HasForeignKey("IdGoToErrorChain1");
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain2")
+                        .WithMany()
+                        .HasForeignKey("IdGoToErrorChain2");
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain3")
+                        .WithMany()
+                        .HasForeignKey("IdGoToErrorChain3");
 
                     b.HasOne("SellerBox.Models.Database.WallPosts", "WallPost")
                         .WithMany()
@@ -1484,10 +1580,55 @@ namespace SellerBox.Migrations
 
             modelBuilder.Entity("SellerBox.Models.Database.ShortUrls", b =>
                 {
+                    b.HasOne("SellerBox.Models.Database.Chains", "Chain")
+                        .WithMany()
+                        .HasForeignKey("IdChain");
+
                     b.HasOne("SellerBox.Models.Database.Groups", "Group")
                         .WithMany()
                         .HasForeignKey("IdGroup")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsPassedClicks", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ShortUrlsScenarios", "ShortUrlsScenario")
+                        .WithMany()
+                        .HasForeignKey("IdShortUrlsScenario")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SellerBox.Models.Database.Subscribers", "Subscriber")
+                        .WithMany("ShortUrlsPassedClicks")
+                        .HasForeignKey("IdSubscriber")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("SellerBox.Models.Database.ShortUrlsScenarios", b =>
+                {
+                    b.HasOne("SellerBox.Models.Database.ChainContents", "CheckingChainContent")
+                        .WithMany()
+                        .HasForeignKey("IdCheckingChainContent")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToChain")
+                        .WithMany()
+                        .HasForeignKey("IdGoToChain");
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain1")
+                        .WithMany()
+                        .HasForeignKey("IdGoToErrorChain1");
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain2")
+                        .WithMany()
+                        .HasForeignKey("IdGoToErrorChain2");
+
+                    b.HasOne("SellerBox.Models.Database.Chains", "GoToErrorChain3")
+                        .WithMany()
+                        .HasForeignKey("IdGoToErrorChain3");
+
+                    b.HasOne("SellerBox.Models.Database.ShortUrls", "ShortUrl")
+                        .WithMany()
+                        .HasForeignKey("IdShortUrl");
                 });
 
             modelBuilder.Entity("SellerBox.Models.Database.SubscriberChatReplies", b =>

@@ -1,0 +1,154 @@
+﻿@model SellerBox.ViewModels.ShortUrlsScenarios.EditViewModel
+
+@{
+    ViewData["Title"] = "View";
+}
+@section scripts {
+    <script src="~/lib/site/ShortUrlScenarios/edit.js"></script>
+}
+
+@section styles{
+    <link rel="stylesheet" href="~/css/Fieldset.css" />
+}
+
+    <form asp-action="Save" asp-controller="ShortUrlsScenarios" asp-antiforgery="true">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if (Model.Id.HasValue)
+        {
+            <input asp-for="Id" type="hidden" value="@Model.Id" />
+        }
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <label asp-for="Name" class="input-group-text"></label>
+            </div>
+            <input asp-for="Name" type="text" class="form-control" aria-label="Сообщение" placeholder="Название сценария">
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label asp-for="IdShortUrl" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdShortUrl" class="custom-select">
+                <option value="@null" selected>Выберите горячую ссылку...</option>
+                @foreach (var shortUrl in ViewBag.ShortUrls)
+                {
+                    <option value="@shortUrl.Key">@shortUrl.Value</option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label asp-for="IdCheckingChain" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdCheckingChain" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label asp-for="IdCheckingChainContent" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdCheckingChainContent" class="custom-select" disabled="@(!Model.IdCheckingChain.HasValue)">
+                <option value="@null" selected>Выберите сообщение в цепочке...</option>
+                @if (ViewBag.ChainContents != null)
+                {
+                    foreach (KeyValuePair<Guid, string> chainContent in ViewBag.ChainContents)
+                    {
+                        <option value="@chainContent.Key">@chainContent.Value</option>
+                    }
+                }
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <div class="checkbox">
+                <input type="checkbox" asp-for="CheckIsSubscriber" />
+                <label asp-for="CheckIsSubscriber"></label>
+            </div>
+        </div>
+        
+        <label for="dtGroup">Проверять через: </label>
+        <div class="input-group" id="dtGroup">
+            <div class="input-group-prepend">
+                <label asp-for="CheckAfterHours" class="input-group-text"></label>
+            </div>
+            <input type="number" min="0" class="form-control" asp-for="CheckAfterHours">
+            <div class="input-group-prepend">
+                <label asp-for="CheckAfterMinutes" class="input-group-text"></label>
+            </div>
+            <select class="custom-select" asp-for="CheckAfterMinutes">
+                <option value="0" selected>00</option>
+                @for (int m = 1; m < 60; m++)
+                {
+                    <option value="@m">@m.ToString("00")</option>
+                }
+            </select>
+        </div>
+
+        <br />
+        <fieldset class="form-group">
+            <legend>Добавить в цепочку</legend>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="IdGoToChain">
+                        @($"Переход есть{(Model.CheckIsSubscriber ? " + вступил" : "")}")
+                    </label>
+                </div>
+                <select asp-for="IdGoToChain" class="custom-select">
+                    <option value="@null" selected>Выберите цепочку...</option>
+                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                    {
+                        <option value="@chain.Key">@chain.Value</option>
+                    }
+                </select>
+            </div>
+
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="IdGoToChain">
+                        @($"Нет перехода{(Model.CheckIsSubscriber ? " + не вступил" : "")}")
+                    </label>
+                </div>
+                <select asp-for="IdGoToErrorChain1" class="custom-select">
+                    <option value="@null" selected>Выберите цепочку...</option>
+                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                    {
+                        <option value="@chain.Key">@chain.Value</option>
+                    }
+                </select>
+            </div>
+
+            <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+                <div class="input-group-prepend">
+                    <label asp-for="IdGoToErrorChain2" class="input-group-text"></label>
+                </div>
+                <select asp-for="IdGoToErrorChain2" class="custom-select">
+                    <option value="@null" selected>Выберите цепочку...</option>
+                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                    {
+                        <option value="@chain.Key">@chain.Value</option>
+                    }
+                </select>
+            </div>
+
+            <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+                <div class="input-group-prepend">
+                    <label asp-for="IdGoToErrorChain3" class="input-group-text"></label>
+                </div>
+                <select asp-for="IdGoToErrorChain3" class="custom-select">
+                    <option value="@null" selected>Выберите цепочку...</option>
+                    @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                    {
+                        <option value="@chain.Key">@chain.Value</option>
+                    }
+                </select>
+            </div>
+        </fieldset>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>

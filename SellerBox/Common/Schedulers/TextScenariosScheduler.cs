@@ -13,82 +13,34 @@ using System.Threading.Tasks;
 
 namespace SellerBox.Common.Schedulers
 {
-    public class TextScenariosScheduler : IHostedService
+    public class TextScenariosScheduler : BackgroundService
     {
         public const int PeriodSeconds = 60;
-        private Task _executingTask;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         public TextScenariosScheduler(IServiceScopeFactory serviceScopeFactory) : base()
         {
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public virtual Task StartAsync(CancellationToken cancellationToken)
-        {
-            // Store the task we're executing
-            _executingTask = ExecuteAsync(_stoppingCts.Token);
-
-            // If the task is completed then return it,
-            // this will bubble cancellation and failure to the caller
-            if (_executingTask.IsCompleted)
-            {
-                return _executingTask;
-            }
-
-            // Otherwise it's running
-            return Task.CompletedTask;
-        }
-
-        public virtual async Task StopAsync(CancellationToken cancellationToken)
-        {
-            // Stop called without start
-            if (_executingTask == null)
-            {
-                return;
-            }
-
-            try
-            {
-                // Signal cancellation to the executing method
-                _stoppingCts.Cancel();
-            }
-            finally
-            {
-                // Wait until the task completes or the stop token triggers
-                await Task.WhenAny(_executingTask, Task.Delay(Timeout.Infinite, cancellationToken));
-            }
-        }
-
-        protected virtual async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             do
             {
-                await Process();
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+#if DEBUG
+                    Console.WriteLine($"TextScenariosScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif
+                    await TextScenarios(scope.ServiceProvider);
+#if DEBUG
+                    Console.WriteLine($"TextScenariosScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+#endif              
+                }
 
                 await Task.Delay(TimeSpan.FromSeconds(PeriodSeconds), stoppingToken); //5 seconds delay
             }
             while (!stoppingToken.IsCancellationRequested);
-        }
-
-        protected async Task Process()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                await ProcessInScope(scope.ServiceProvider);
-            }
-        }
-
-        public async Task ProcessInScope(IServiceProvider serviceProvider)
-        {
-#if DEBUG
-            Console.WriteLine($"TextScenariosScheduler started at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
-            await TextScenarios(serviceProvider);
-#if DEBUG
-            Console.WriteLine($"TextScenariosScheduler finished at {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-#endif
         }
 
         private async Task TextScenarios(IServiceProvider serviceProvider)
@@ -163,7 +115,7 @@ namespace SellerBox.Common.Schedulers
                         IdSubscriber = subscriberInChain.IdSubscriber,
                         Dt = dt
                     });
-                    NotifierService.AddNotifyEvent(new NotifierService.NotifyEvent()
+                    NotifyScheduler.AddNotifyEvent(new NotifyScheduler.NotifyEvent()
                     {
                         Dt = DateTime.UtcNow,
                         IdGroup = subscriberInChain.ChainStep.Chain.IdGroup,

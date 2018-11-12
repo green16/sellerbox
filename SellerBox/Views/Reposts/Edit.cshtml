@@ -6,6 +6,10 @@
     <script src="~/lib/site/Reposts/edit.js"></script>
 }
 
+@section styles{
+    <link rel="stylesheet" href="~/css/Fieldset.css" />
+}
+
 <form asp-action="Save" asp-controller="Reposts" asp-antiforgery="true">
     <div asp-validation-summary="All" class="text-danger"></div>
     @if (Model.Id.HasValue)
@@ -90,6 +94,13 @@
         </select>
     </div>
 
+    <div class="input-group">
+        <div class="checkbox">
+            <input type="checkbox" asp-for="CheckIsSubscriber" />
+            <label asp-for="CheckIsSubscriber"></label>
+        </div>
+    </div>
+
     <label for="dtGroup">Проверять через: </label>
     <div class="input-group" id="dtGroup">
         <div class="input-group-prepend">
@@ -109,32 +120,63 @@
     </div>
 
     <br />
-
-    <div class="input-group mb-3">
-        <div class="input-group-prepend">
-            <label asp-for="IdGoToChain" class="input-group-text"></label>
+    <fieldset class="form-group">
+        <legend>Добавить в цепочку</legend>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="IdGoToChain">
+                    @($"Репост есть{(Model.CheckIsSubscriber ? " + вступил" : "")}")
+                </label>
+            </div>
+            <select asp-for="IdGoToChain" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
         </div>
-        <select asp-for="IdGoToChain" class="custom-select">
-            <option value="@null" selected>Выберите цепочку...</option>
-            @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
-            {
-                <option value="@chain.Key">@chain.Value</option>
-            }
-        </select>
-    </div>
 
-    <div class="input-group mb-3">
-        <div class="input-group-prepend">
-            <label asp-for="IdGoToChain2" class="input-group-text"></label>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="IdGoToChain">
+                    @($"Нет репоста{(Model.CheckIsSubscriber ? " + не вступил" : "")}")
+                </label>
+            </div>
+            <select asp-for="IdGoToErrorChain1" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
         </div>
-        <select asp-for="IdGoToChain2" class="custom-select">
-            <option value="@null" selected>Выберите цепочку...</option>
-            @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
-            {
-                <option value="@chain.Key">@chain.Value</option>
-            }
-        </select>
-    </div>
 
+        <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdGoToErrorChain2" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdGoToErrorChain2" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group mb-3" @{ if (!Model.CheckIsSubscriber) { <text> hidden</text>} }>
+            <div class="input-group-prepend">
+                <label asp-for="IdGoToErrorChain3" class="input-group-text"></label>
+            </div>
+            <select asp-for="IdGoToErrorChain3" class="custom-select">
+                <option value="@null" selected>Выберите цепочку...</option>
+                @foreach (KeyValuePair<Guid, string> chain in ViewBag.Chains)
+                {
+                    <option value="@chain.Key">@chain.Value</option>
+                }
+            </select>
+        </div>
+    </fieldset>
     <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>

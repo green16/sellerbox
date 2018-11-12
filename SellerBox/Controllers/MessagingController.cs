@@ -2,18 +2,19 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+using ReflectionIT.Mvc.Paging;
 using SellerBox.Common;
 using SellerBox.Common.Helpers;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using SellerBox.ViewModels.Messaging;
 using SellerBox.ViewModels.Shared;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace SellerBox.Controllers
 {
@@ -58,6 +59,32 @@ namespace SellerBox.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> History(int page = 1, string sortExpression = nameof(MessagingHistoryViewModel.DtAdd))
+        {
+            var groupInfo = _userHelperService.GetSelectedGroup(User);
+            var items = _context.Scheduler_Messaging
+                .Where(x => x.Message.IdGroup == groupInfo.Key)
+                .Where(x => x.Status == Models.Database.Common.MessagingStatus.Finished)
+                .Select(x => new MessagingHistoryViewModel()
+                {
+                    DtAdd = x.DtAdd,
+                    DtStart = x.DtStart,
+                    DtEnd = x.DtEnd ?? DateTime.MinValue,
+                    HasImages = x.Message.Files.Any(),
+                    Message = x.Message.Text,
+                    CropMessage = x.Message.TextPart,
+                    Name = x.Name,
+                    HasKeyboard = !string.IsNullOrEmpty(x.Message.Keyboard),
+                    RecipientsCount = x.RecipientsCount,
+                });
+
+            var model = await PagingList.CreateAsync(items, nameof(History), "Messaging", 20, page, sortExpression, nameof(MessagingHistoryViewModel.DtAdd));
+
+            ViewBag.IdGroup = groupInfo.Key;
+            return View(nameof(History), model);
+        }
+
+        [HttpGet]
         public IActionResult Create()
         {
             var groupInfo = _userHelperService.GetSelectedGroup(User);
@@ -75,7 +102,7 @@ namespace SellerBox.Controllers
         {
             if (!idMessaging.HasValue)
                 return RedirectToAction(nameof(Index));
-            
+
             var messaging = await _context.Scheduler_Messaging
                 .FirstOrDefaultAsync(x => x.Id == idMessaging);
             if (messaging == null)
@@ -91,42 +118,38 @@ namespace SellerBox.Controllers
                 IdGroup = groupInfo.Key
             };
 
-            if (model != null && model.IdMessage.HasValue)
+            var message = await _context.Messages
+                .Include(x => x.Files)
+                .FirstOrDefaultAsync(x => x.Id == messaging.IdMessage);
+            uint idx = 0;
+
+            model.Message = message.Text;
+            model.IsImageFirst = message.IsImageFirst;
+            model.Files = message.Files.Select(x => new FileModel()
             {
-                Messages message = await _context.Messages
-                    .Include(x => x.Files)
-                    .FirstOrDefaultAsync(x => x.Id == model.IdMessage);
-                uint idx = 0;
+                Id = x.IdFile,
+                Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
+                Index = idx++
+            }).ToList();
 
-                model.Message = message.Text;
-                model.IsImageFirst = message.IsImageFirst;
-                model.Files = message.Files.Select(x => new FileModel()
+            var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
+            if (keyboard != null)
+            {
+                model.Keyboard = new List<List<MessageButton>>();
+                byte currentRowIdx = 0;
+                foreach (var currentRow in keyboard.Buttons)
                 {
-                    Id = x.IdFile,
-                    Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
-                    Index = idx++
-                }).ToList();
-
-                var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
-                if (keyboard != null)
-                {
-                    model.Keyboard = new List<List<MessageButton>>();
-                    byte currentRowIdx = 0;
-                    foreach (var currentRow in keyboard.Buttons)
+                    byte colIdx = 0;
+                    model.Keyboard.Add(currentRow.Select(x => new MessageButton()
                     {
-                        byte colIdx = 0;
-                        model.Keyboard.Add(currentRow.Select(x => new MessageButton()
-                        {
-                            ButtonColor = x.Color.ToString(),
-                            Column = colIdx++,
-                            CanDelete = colIdx == currentRow.Count(),
-                            Row = currentRowIdx,
-                            Text = x.Action.Label
-                        }).ToList());
-                        currentRowIdx++;
-                    }
+                        ButtonColor = x.Color.ToString(),
+                        Column = colIdx++,
+                        CanDelete = colIdx == currentRow.Count(),
+                        Row = currentRowIdx,
+                        Text = x.Action.Label
+                    }).ToList());
+                    currentRowIdx++;
                 }
-
             }
 
             ViewBag.IdGroup = groupInfo.Key;

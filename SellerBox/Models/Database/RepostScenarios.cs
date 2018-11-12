@@ -1,14 +1,13 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SellerBox.Models.Database
 {
-    public class RepostScenarios
+    public class RepostScenarios : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
         public string Name { get; set; }
+        [Column(TypeName = "datetime2")]
+        public DateTime DtCreate { get; set; }
         public bool IsEnabled { get; set; }
         public int CheckAfterSeconds { get; set; }
         [NotMapped]
@@ -22,6 +21,8 @@ namespace SellerBox.Models.Database
         public int? LastPostsCount { get; set; }
         public bool CheckAllPosts { get; set; }
 
+        public bool CheckIsSubscriber { get; set; }
+
         [ForeignKey(nameof(CheckingChainContent))]
         public Guid IdCheckingChainContent { get; set; }
         public virtual ChainContents CheckingChainContent { get; set; }
@@ -30,8 +31,16 @@ namespace SellerBox.Models.Database
         public Guid? IdGoToChain { get; set; }
         public virtual Chains GoToChain { get; set; }
 
-        [ForeignKey(nameof(GoToChain2))]
-        public Guid? IdGoToChain2 { get; set; }
-        public virtual Chains GoToChain2 { get; set; }
+        [ForeignKey(nameof(GoToErrorChain1))]
+        public Guid? IdGoToErrorChain1 { get; set; }
+        public virtual Chains GoToErrorChain1 { get; set; }
+
+        [ForeignKey(nameof(GoToErrorChain2))]
+        public Guid? IdGoToErrorChain2 { get; set; }
+        public virtual Chains GoToErrorChain2 { get; set; }
+
+        [ForeignKey(nameof(GoToErrorChain3))]
+        public Guid? IdGoToErrorChain3 { get; set; }
+        public virtual Chains GoToErrorChain3 { get; set; }
     }
 }

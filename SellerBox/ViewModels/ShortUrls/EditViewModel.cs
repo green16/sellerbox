@@ -14,5 +14,10 @@ namespace SellerBox.ViewModels.ShortUrls
         public string RedirectTo { get; set; }
         [Display(Name = "Считать единственный переход")]
         public bool IsSingleClick { get; set; }
+        [Display(Name = "Отслеживать подписчиков")]
+        public bool IsSubscriberRequired { get; set; }
+        [Display(Name = "Добавлять в цепочку")]
+        public bool AddToChain { get; set; }
+        public Guid? IdChain { get; set; }
     }
 }
