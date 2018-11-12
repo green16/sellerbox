@@ -118,42 +118,38 @@ namespace SellerBox.Controllers
                 IdGroup = groupInfo.Key
             };
 
-            if (model != null && model.IdMessage.HasValue)
+            var message = await _context.Messages
+                .Include(x => x.Files)
+                .FirstOrDefaultAsync(x => x.Id == messaging.IdMessage);
+            uint idx = 0;
+
+            model.Message = message.Text;
+            model.IsImageFirst = message.IsImageFirst;
+            model.Files = message.Files.Select(x => new FileModel()
             {
-                Messages message = await _context.Messages
-                    .Include(x => x.Files)
-                    .FirstOrDefaultAsync(x => x.Id == model.IdMessage);
-                uint idx = 0;
+                Id = x.IdFile,
+                Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
+                Index = idx++
+            }).ToList();
 
-                model.Message = message.Text;
-                model.IsImageFirst = message.IsImageFirst;
-                model.Files = message.Files.Select(x => new FileModel()
+            var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
+            if (keyboard != null)
+            {
+                model.Keyboard = new List<List<MessageButton>>();
+                byte currentRowIdx = 0;
+                foreach (var currentRow in keyboard.Buttons)
                 {
-                    Id = x.IdFile,
-                    Name = _context.Files.Where(y => y.Id == x.IdFile).Select(y => y.Name).FirstOrDefault(),
-                    Index = idx++
-                }).ToList();
-
-                var keyboard = string.IsNullOrWhiteSpace(message.Keyboard) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<VkNet.Model.Keyboard.MessageKeyboard>(message.Keyboard);
-                if (keyboard != null)
-                {
-                    model.Keyboard = new List<List<MessageButton>>();
-                    byte currentRowIdx = 0;
-                    foreach (var currentRow in keyboard.Buttons)
+                    byte colIdx = 0;
+                    model.Keyboard.Add(currentRow.Select(x => new MessageButton()
                     {
-                        byte colIdx = 0;
-                        model.Keyboard.Add(currentRow.Select(x => new MessageButton()
-                        {
-                            ButtonColor = x.Color.ToString(),
-                            Column = colIdx++,
-                            CanDelete = colIdx == currentRow.Count(),
-                            Row = currentRowIdx,
-                            Text = x.Action.Label
-                        }).ToList());
-                        currentRowIdx++;
-                    }
+                        ButtonColor = x.Color.ToString(),
+                        Column = colIdx++,
+                        CanDelete = colIdx == currentRow.Count(),
+                        Row = currentRowIdx,
+                        Text = x.Action.Label
+                    }).ToList());
+                    currentRowIdx++;
                 }
-
             }
 
             ViewBag.IdGroup = groupInfo.Key;

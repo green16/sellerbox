@@ -11,7 +11,7 @@ namespace SellerBox.Controllers
     {
         private readonly DatabaseContext _context;
 
-        public CallbackController(System.Collections.Generic.IEnumerable<Microsoft.Extensions.Hosting.IHostedService> hostedServices, DatabaseContext context)
+        public CallbackController(DatabaseContext context)
         {
             _context = context;
         }

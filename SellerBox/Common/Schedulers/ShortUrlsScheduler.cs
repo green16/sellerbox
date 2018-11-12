@@ -88,7 +88,7 @@ namespace SellerBox.Common.Schedulers
                                     .Select(x => x.Id)
                                     .FirstOrDefaultAsync();
                         }
-                        else if (shortUrlScenario.CheckIsSubscriber && !isSubscriber && shortUrlScenario.IdGoToErrorChain3.HasValue) // Если есть проверка на вступление в группу и человек не подписался
+                        else if (shortUrlScenario.IdGoToErrorChain3.HasValue) // Если есть проверка на вступление в группу и человек не подписался
                         {
                             var isSubscriberNotInChain = await dbContext.SubscribersInChains
                                 .Where(x => x.IdSubscriber == subscriberInChain.IdSubscriber)

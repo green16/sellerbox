@@ -227,7 +227,7 @@ namespace SellerBox.Common.Schedulers
                             if (subscriber == null)
                                 break;
 
-                            if (!subscriber.IsChatAllowed.HasValue || (subscriber.IsChatAllowed.HasValue && subscriber.IsChatAllowed.Value))
+                            if (!subscriber.IsChatAllowed.HasValue || subscriber.IsChatAllowed.Value)
                                 subscriber.IsChatAllowed = false;
 
                             await _context.History_GroupActions.AddAsync(new History_GroupActions()
