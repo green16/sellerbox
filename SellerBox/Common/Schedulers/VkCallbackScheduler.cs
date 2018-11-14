@@ -414,9 +414,7 @@ namespace SellerBox.Common.Schedulers
 
         private static async Task DoWork(IServiceProvider serviceProvider)
         {
-            var _configuration = serviceProvider.GetService<IConfiguration>();
             var _context = serviceProvider.GetService<DatabaseContext>();
-            var _vkPoolService = serviceProvider.GetService<VkPoolService>();
 
             var callbackMessages = await _context.VkCallbackMessages
                 .Where(x => !x.IsProcessed)
@@ -454,7 +452,5 @@ namespace SellerBox.Common.Schedulers
                 await _context.SaveChangesAsync();
             }
         }
-
-
     }
 }
