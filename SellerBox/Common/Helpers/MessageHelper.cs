@@ -172,9 +172,18 @@ namespace SellerBox.Common.Helpers
                         text = await UpdateMessageByShortUrls(_context, siteUrl, subscriber, text);
                     }
 
-                    await SendMessage(vkApi, message.IsImageFirst, text, images, keyboard, new long[] { vkUserIds[idx] });
-
-                    OnMessageSent(idGroup, vkUserIds.Length, idx + 1);
+                    bool hasError = false;
+                    try
+                    {
+                        await SendMessage(vkApi, message.IsImageFirst, text, images, keyboard, new long[] { vkUserIds[idx] });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"MessageHelper.SendMessages (vkUserId={vkUserIds[idx]}) exception: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                        hasError = true;
+                    }
+                    if (!hasError)
+                        OnMessageSent(idGroup, vkUserIds.Length, idx + 1);
                 }
             }
             else
@@ -183,13 +192,22 @@ namespace SellerBox.Common.Helpers
                 do
                 {
                     var currentUserIds = (Stepping > vkUserIds.Length - offset ? vkUserIds.Skip(offset) : vkUserIds.Skip(offset).Take(Stepping)).ToArray();
-                    await SendMessage(vkApi, message.IsImageFirst, message.Text, images, keyboard, currentUserIds);
+                    bool hasError = false;
+                    try
+                    {
+                        await SendMessage(vkApi, message.IsImageFirst, message.Text, images, keyboard, currentUserIds);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"MessageHelper.SendMessages exception: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                        hasError = true;
+                    }
 
                     offset += currentUserIds.Length;
                     if (offset >= vkUserIds.Length)
                         break;
-
-                    OnMessageSent(idGroup, vkUserIds.Length, offset);
+                    if (!hasError)
+                        OnMessageSent(idGroup, vkUserIds.Length, offset);
                 } while (offset < vkUserIds.Length);
             }
         }
