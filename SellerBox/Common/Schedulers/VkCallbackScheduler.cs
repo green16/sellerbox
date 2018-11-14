@@ -96,7 +96,7 @@ namespace SellerBox.Common.Schedulers
                             if (!innerMessage.UserId.HasValue || innerMessage.UserId.Value <= 0)
                                 break;
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -201,7 +201,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -223,7 +223,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.UserId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -332,7 +332,7 @@ namespace SellerBox.Common.Schedulers
                             await _context.WallPosts.AddAsync(newWallPost);
                             await _context.SaveChangesAsync();
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, newPost.FromId.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, newPost.FromId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -356,7 +356,7 @@ namespace SellerBox.Common.Schedulers
                             if (!repost.FromId.HasValue || repost.FromId.Value <= 0)
                                 break;
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, repost.FromId.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, repost.FromId.Value);
                             if (subscriber == null)
                                 break;
 
@@ -480,7 +480,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             var innerMessage = message.Object.ToObject<GroupLeave>();
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
                             if (subscriber == null)
                                 break;
 
@@ -505,7 +505,7 @@ namespace SellerBox.Common.Schedulers
                             if (!innerMessage.IdUser.HasValue || innerMessage.IdUser.Value <= 0)
                                 break;
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser.Value);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser.Value);
                             if (subscriber == null)
                                 break;
 
@@ -527,7 +527,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             var innerMessage = message.Object.ToObject<UserBlock>();
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
                             if (subscriber == null)
                                 break;
 
@@ -548,7 +548,7 @@ namespace SellerBox.Common.Schedulers
                         {
                             var innerMessage = message.Object.ToObject<UserUnblock>();
 
-                            var subscriber = await CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
+                            var subscriber = await VkHelper.CreateSubscriber(_context, _vkPoolService, message.IdGroup, innerMessage.IdUser);
                             if (subscriber == null)
                                 break;
 
@@ -600,48 +600,6 @@ namespace SellerBox.Common.Schedulers
             }
         }
 
-        private static async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long idVkUser)
-        {
-            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
-            if (subscriber != null)
-                return subscriber;
 
-            var vkUser = await _context.VkUsers.FirstOrDefaultAsync(x => x.IdVk == idVkUser);
-            if (vkUser == null)
-            {
-                var vkApi = await _vkPoolService.GetGroupVkApi(idGroup);
-                if (vkApi == null)
-                    return null;
-
-                var user = (await vkApi.Users.GetAsync(new long[] { idVkUser }, VkNet.Enums.Filters.ProfileFields.BirthDate |
-                    VkNet.Enums.Filters.ProfileFields.City |
-                    VkNet.Enums.Filters.ProfileFields.Country |
-                    VkNet.Enums.Filters.ProfileFields.FirstName |
-                    VkNet.Enums.Filters.ProfileFields.LastName |
-                    VkNet.Enums.Filters.ProfileFields.Nickname |
-                    VkNet.Enums.Filters.ProfileFields.Domain |
-                    VkNet.Enums.Filters.ProfileFields.Photo50 |
-                    VkNet.Enums.Filters.ProfileFields.Photo400Orig |
-                    VkNet.Enums.Filters.ProfileFields.Sex |
-                    VkNet.Enums.Filters.ProfileFields.Blacklisted)).FirstOrDefault();
-                if (user == null)
-                    return null;
-
-                vkUser = VkUsers.FromUser(user);
-                await _context.VkUsers.AddAsync(vkUser);
-                await _context.SaveChangesAsync();
-            }
-
-            subscriber = new Subscribers()
-            {
-                IdVkUser = vkUser.IdVk,
-                IdGroup = idGroup,
-                DtAdd = DateTime.UtcNow
-            };
-            await _context.Subscribers.AddAsync(subscriber);
-            await _context.SaveChangesAsync();
-
-            return subscriber;
-        }
     }
 }

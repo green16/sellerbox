@@ -103,29 +103,34 @@ namespace SellerBox.Common.Helpers
             if (keyboard != null)
                 keyboard.OneTime = true;
             string nbspString = new string(new char[] { (char)160 });
-            if (isImageFirst && attachments != null && attachments.Any())
+
+            var mediaAttachments = (attachments != null && attachments.Any()) ? attachments : null;
+
+            if (!isImageFirst || mediaAttachments == null)
             {
                 await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
                 {
                     UserIds = ids,
-                    Message = nbspString,
-                    Attachments = attachments.Any() ? attachments : null
+                    Message = string.IsNullOrEmpty(text) ? nbspString : text,
+                    Attachments = mediaAttachments,
+                    Keyboard = keyboard
                 });
-                if (!string.IsNullOrEmpty(text) || keyboard != null)
-                    await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
-                    {
-                        UserIds = ids,
-                        Message = string.IsNullOrEmpty(text) ? nbspString : text,
-                        Keyboard = keyboard
-                    });
                 return;
             }
 
             await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
             {
                 UserIds = ids,
+                Message = nbspString,
+                Attachments = attachments
+            });
+            if (string.IsNullOrEmpty(text) && keyboard == null)
+                return;
+
+            await vkApi.Messages.SendToUserIdsAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+            {
+                UserIds = ids,
                 Message = string.IsNullOrEmpty(text) ? nbspString : text,
-                Attachments = (!attachments?.Any() ?? false) ? null : attachments,
                 Keyboard = keyboard
             });
         }
