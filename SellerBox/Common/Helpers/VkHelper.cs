@@ -25,6 +25,8 @@ namespace SellerBox.Common.Helpers
 
         public static async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long idVkUser)
         {
+            if (idVkUser <= 0)
+                return null;
             var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
             if (subscriber != null)
                 return subscriber;

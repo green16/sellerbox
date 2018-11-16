@@ -29,8 +29,6 @@ namespace SellerBox
         {
             services.AddOptions();
 
-            System.Console.WriteLine("ConnectionString = " + Configuration.GetConnectionString("default"));
-
             services.AddSingleton(Configuration);
 
             services.AddEntityFrameworkSqlServer()
