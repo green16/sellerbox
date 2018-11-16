@@ -39,13 +39,10 @@ namespace SellerBox.Common.Schedulers
             if (await IsPassedCallbackMessage(context, message))
                 return;
             var innerMessage = VkNet.Model.Message.FromJson(new VkNet.Utils.VkResponse(message.Object));
-
-            if (!innerMessage.UserId.HasValue || innerMessage.UserId.Value <= 0)
-                return;
-
+            
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId);
             if (subscriber == null)
                 return;
 
@@ -142,7 +139,7 @@ namespace SellerBox.Common.Schedulers
 
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId);
             if (subscriber == null)
                 return;
 
@@ -166,7 +163,7 @@ namespace SellerBox.Common.Schedulers
 
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.UserId);
             if (subscriber == null)
                 return;
 
@@ -206,7 +203,7 @@ namespace SellerBox.Common.Schedulers
 
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, newPost.FromId.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, newPost.FromId);
             if (subscriber == null)
                 return;
 
@@ -246,7 +243,7 @@ namespace SellerBox.Common.Schedulers
 
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, repost.FromId.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, repost.FromId);
             if (subscriber == null)
                 return;
 
@@ -308,7 +305,7 @@ namespace SellerBox.Common.Schedulers
 
             var vkPoolService = serviceProvider.GetService<VkPoolService>();
 
-            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.IdUser.Value);
+            var subscriber = await VkHelper.CreateSubscriber(context, vkPoolService, message.IdGroup, innerMessage.IdUser);
             if (subscriber == null)
                 return;
 

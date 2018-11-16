@@ -23,15 +23,15 @@ namespace SellerBox.Common.Helpers
             return null;
         }
 
-        public static async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long idVkUser)
+        public static async Task<Subscribers> CreateSubscriber(DatabaseContext _context, VkPoolService _vkPoolService, long idGroup, long? idVkUser)
         {
-            if (idVkUser <= 0)
+            if (!idVkUser.HasValue || idVkUser.Value <= 0)
                 return null;
-            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser);
+            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.IdGroup == idGroup && x.IdVkUser == idVkUser.Value);
             if (subscriber != null)
                 return subscriber;
 
-            var vkUser = await _context.VkUsers.FirstOrDefaultAsync(x => x.IdVk == idVkUser);
+            var vkUser = await _context.VkUsers.FirstOrDefaultAsync(x => x.IdVk == idVkUser.Value);
             if (vkUser == null)
             {
                 try
@@ -40,7 +40,7 @@ namespace SellerBox.Common.Helpers
                     if (vkApi == null)
                         return null;
 
-                    var users = await vkApi.Users.GetAsync(new long[] { idVkUser }, VkNet.Enums.Filters.ProfileFields.BirthDate |
+                    var users = await vkApi.Users.GetAsync(new long[] { idVkUser.Value }, VkNet.Enums.Filters.ProfileFields.BirthDate |
                         VkNet.Enums.Filters.ProfileFields.City |
                         VkNet.Enums.Filters.ProfileFields.Country |
                         VkNet.Enums.Filters.ProfileFields.FirstName |
