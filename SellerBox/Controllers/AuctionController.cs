@@ -5,13 +5,11 @@ using SellerBox.Common;
 using SellerBox.Common.Services;
 using SellerBox.Models.Database;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using VkNet;
-using VkNet.Enums.Filters;
-using VkNet.Model;
-using VkNet.Model.RequestParams;
+using SellerBox.ViewModels.Auction;
 
 namespace SellerBox.Controllers
 {
@@ -22,7 +20,7 @@ namespace SellerBox.Controllers
         private readonly UserHelperService _userHelperService;
         private readonly IConfiguration _configuration;
 
-        public AuctionController(IConfiguration configuration, DatabaseContext context, UserHelperService userHelperService, VkPoolService vkPoolService)
+        public AuctionController(IConfiguration configuration, DatabaseContext context, UserHelperService userHelperService)
         {
             _configuration = configuration;
             _context = context;
@@ -32,7 +30,26 @@ namespace SellerBox.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return View(_context.Auctions);
+            var auctionList = _context.Auctions.ToList();
+            List<AuctionViewModel> auctionViewModels = new List<AuctionViewModel>();
+            foreach (var auction in auctionList)
+            {
+                AuctionViewModel auctionVM = new AuctionViewModel
+                {
+                    Name = auction.Name,
+                    Description = auction.Description,
+                    StartPrice = auction.StartPrice,
+                    PriceStep = auction.PriceStep,
+                    MaxPrice = auction.MaxPrice,
+                    StartDate = auction.StartDate,
+                    EndDate = auction.EndDate,
+                    IdPost = auction.IdPost,
+                    MaxCommentsCount = auction.MaxCommentsCount,
+                    Id = auction.Id
+                };
+                auctionViewModels.Add(auctionVM);
+            }
+            return View(auctionViewModels);
         }
 
         [HttpGet]
@@ -42,10 +59,26 @@ namespace SellerBox.Controllers
             ViewBag.OwnerId = _userHelperService.GetSelectedGroup(User).Key * -1;
             return View();
         }
-
+        
         [HttpPost]
-        public async Task<IActionResult> Create(Auction auction)
+        public async Task<IActionResult> Create(AuctionViewModel auctionView)
         {
+            Auction auction = new Auction
+            {
+                CurrentPrice = auctionView.StartPrice,
+                Description = auctionView.Description,
+                EndDate = auctionView.EndDate,
+                IdPost = auctionView.IdPost,
+                MaxCommentsCount = auctionView.MaxCommentsCount,
+                MaxPrice = auctionView.MaxPrice,
+                Name = auctionView.Name,
+                PriceStep = auctionView.PriceStep,
+                StartDate = auctionView.StartDate,
+                StartPrice = auctionView.StartPrice,
+                IsActive = auctionView.StartDate >= DateTime.Now && DateTime.Now < auctionView.EndDate,
+                IdCreator = await _context.GroupAdmins.FirstOrDefaultAsync(a => a.IdUser == _userHelperService.GetUserId(User))
+            };
+            
             await _context.Auctions.AddAsync(auction);
             _context.SaveChanges();
             return RedirectToAction(nameof(Index));
@@ -61,25 +94,60 @@ namespace SellerBox.Controllers
             if (auction == null)
                 return RedirectToAction(nameof(Index));
 
-            return View(auction);
+            AuctionViewModel auctionViewModel = new AuctionViewModel
+            {
+                Description = auction.Description,
+                EndDate = auction.EndDate,
+                IdPost = auction.IdPost,
+                MaxCommentsCount = auction.MaxCommentsCount,
+                MaxPrice = auction.MaxPrice,
+                Name = auction.Name,
+                PriceStep = auction.PriceStep,
+                StartDate = auction.StartDate,
+                StartPrice = auction.StartPrice,
+                Id = auction.Id
+            };
+            
+            ViewBag.AppId = _configuration.GetValue<ulong>("VkApplicationId");
+            ViewBag.OwnerId = _userHelperService.GetSelectedGroup(User).Key * -1;
+            
+            return View(auctionViewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Guid id, [Bind] Auction auction)
+        public async Task<IActionResult> Edit(Guid id, [Bind] AuctionViewModel auctionViewModel)
         {
-            if (id != auction.Id)
+            if (id != auctionViewModel.Id)
             {
                 return NotFound();
             }
-
+            
             if (ModelState.IsValid)
             {
+                Auction auction = new Auction
+                {
+                    Id =  auctionViewModel.Id,
+                    Name = auctionViewModel.Name,
+                    Description = auctionViewModel.Description,
+                    StartPrice = auctionViewModel.StartPrice,
+                    CurrentPrice = auctionViewModel.StartPrice,
+                    PriceStep = auctionViewModel.PriceStep,
+                    MaxPrice = auctionViewModel.MaxPrice,
+                    MaxCommentsCount = auctionViewModel.MaxCommentsCount,
+                    StartDate = auctionViewModel.StartDate,
+                    EndDate = auctionViewModel.EndDate,
+                    IsActive = auctionViewModel.StartDate >= DateTime.Now && DateTime.Now < auctionViewModel.EndDate,
+                    IdPost = auctionViewModel.IdPost,
+                    IdCreator = await _context.GroupAdmins.FirstOrDefaultAsync(a =>
+                        a.IdUser == _userHelperService.GetUserId(User))
+                };
                 _context.Auctions.Update(auction);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(auction);
+            return View(auctionViewModel);
         }
 
         [HttpGet]
@@ -89,7 +157,24 @@ namespace SellerBox.Controllers
             if (auction == null)
                 return NotFound();
 
-            return View(auction);
+            AuctionViewModel auctionViewModel = new AuctionViewModel
+            {
+                Description = auction.Description,
+                EndDate = auction.EndDate,
+                IdPost = auction.IdPost,
+                MaxCommentsCount = auction.MaxCommentsCount,
+                MaxPrice = auction.MaxPrice,
+                Name = auction.Name,
+                PriceStep = auction.PriceStep,
+                StartDate = auction.StartDate,
+                StartPrice = auction.StartPrice,
+                Id = auction.Id
+            };
+            
+            ViewBag.AppId = _configuration.GetValue<ulong>("VkApplicationId");
+            ViewBag.OwnerId = _userHelperService.GetSelectedGroup(User).Key * -1;
+            
+            return View(auctionViewModel);
         }
 
         [HttpPost, ActionName("Delete")]

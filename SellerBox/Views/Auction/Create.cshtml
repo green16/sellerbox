@@ -1,7 +1,9 @@
-﻿@model SellerBox.Models.Database.Auction
+﻿@model SellerBox.ViewModels.Auction.AuctionViewModel
 
 @section styles {
     <script src="//vk.com/js/api/openapi.js?159" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" type="text/css" />
+   
 }
 @section scripts {
     <script type="text/javascript">
@@ -9,13 +11,17 @@
             apiId: @ViewBag.AppId
         });
     </script>
+    <script src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script src="~/lib/site/Auction/datatime.js"></script>
 }
 
 @{
     ViewBag.Title = "Создание аукциона";
 }
 
-<h2>Создание аукциона</h2>
+ 
 <form id="auction" asp-antiforgery="true" asp-action="Create" method="post">
     <div asp-validation-summary="All" class="text-danger"></div>
     <div class="input-group-prepend">
@@ -28,7 +34,7 @@
     </div>
     <div class="input-group-prepend">
         <label asp-for="StartDate" class="input-group-text"></label>
-        <input asp-for="StartDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now">
+        <input id="startDate" asp-for="StartDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now">
         <div class="input-group-append">
             <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
                 <img src="~/images/Calendar.png" />
@@ -41,7 +47,7 @@
     </div>
     <div class="input-group-prepend">
         <label asp-for="EndDate" class="input-group-text"></label>
-        <input asp-for="EndDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now.AddDays(1)" >
+        <input id="endDate" asp-for="EndDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now.AddDays(1)" >
         <div class="input-group-append">
             <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
                 <img src="~/images/Calendar.png" />
@@ -76,6 +82,7 @@
         </div>
     </div>
     -->
+    <input type="hidden" id="idPost" name="idPost" />
     <input id="btnpost" type="button" value="Опубликовать" class="btn btn-primary" onclick="auth()" />
     <input type="submit" value="Сохранить" class="btn btn-success" />
 </form>
@@ -92,9 +99,7 @@
     function Wall() {
         //var fromgroup = $(document).getElementById("IsAdmin").checked ? 1 : 0;
         var title = document.getElementById("name").value;
-        console.log("title ", title);
         var description = document.getElementById("description").value;
-        console.log("description ", description);
         var startprice = document.getElementById("startprice").value;
         var pricestep = document.getElementById("pricestep").value;
         var maxprice = document.getElementById("maxprice").value;
@@ -113,6 +118,7 @@
             },
             function(r) {
                 if (r.response) {
+                    document.getElementById("idPost").value = r.response.post_id;
                 }
             });
     }

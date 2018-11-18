@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SellerBox.Models.Database.Auction>
+﻿@model IEnumerable<SellerBox.ViewModels.Auction.AuctionViewModel>
 @{
     ViewBag.Title = "Аукцион";
     Layout = "_Layout";
@@ -6,10 +6,8 @@
 @if (!Model.Any())
 {
     <h5>В данный момент аукционов нету</h5>
-    
-    <a asp-action="Create">Создать аукцион</a>
 }
-
+<a asp-action="Create">Создать аукцион</a>
 <table class="table-bordered">
     <tr>
         <td>Наименование аукциона</td>

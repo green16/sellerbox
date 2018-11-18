@@ -1,40 +1,75 @@
-﻿@model SellerBox.Models.Database.Auction
+﻿@model SellerBox.ViewModels.Auction.AuctionViewModel
+
+@section styles {
+    <script src="//vk.com/js/api/openapi.js?159" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" type="text/css" />
+}
+@section scripts {
+    <script type="text/javascript">
+        VK.init({
+            apiId: @ViewBag.AppId
+        });
+    </script>
+    <script src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script src="~/lib/site/Auction/datatime.js"></script>
+}
+
 @{
     ViewBag.Title = "Редактирование аукциона";
 }
+<h2>Изменение аукциона</h2>
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="IdPost"/>
             <div class="form-group">
                 <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
+                <input id="name" asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
+                <input id="description" asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="StartDate" class="control-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
+                <input id="startDate" asp-for="StartDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now">
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                        <img src="~/images/Calendar.png" />
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                        <img src="~/images/Close.png" />
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label asp-for="EndDate" class="control-label"></label>
-                <input asp-for="EndDate" class="form-control" />
-                <span asp-validation-for="EndDate" class="text-danger"></span>
+                <input id="endDate" asp-for="EndDate" type="text" style="background-color: white" class="form-control" placeholder="Выберите дату и время.." data-input value="@DateTime.Now.AddDays(1)" >
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-success form-control" title="toggle" data-toggle>
+                        <img src="~/images/Calendar.png" />
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary form-control" title="clear" data-clear>
+                        <img src="~/images/Close.png" />
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label asp-for="StartPrice" class="control-label"></label>
-                <input asp-for="StartPrice" class="form-control" />
+                <input id="startprice" asp-for="StartPrice" class="form-control" />
                 <span asp-validation-for="StartPrice" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="PriceStep" class="control-label"></label>
-                <input asp-for="PriceStep" class="form-control" />
+                <input id="pricestep" asp-for="PriceStep" class="form-control" />
                 <span asp-validation-for="PriceStep" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -44,11 +79,12 @@
             </div>
             <div class="form-group">
                 <label asp-for="MaxCommentsCount" class="control-label"></label>
-                <input asp-for="MaxCommentsCount" class="form-control" />
+                <input id="maxprice" asp-for="MaxCommentsCount" class="form-control" />
                 <span asp-validation-for="MaxCommentsCount" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <input type="submit" value="Сохранить изменения" class="btn btn-primary" />
+                <!--<input id="btnpost" type="button" value="Опубликовать" class="btn btn-primary" onclick="auth()" />-->
+                <input type="submit" value="Сохранить изменения" class="btn btn-success"/>
             </div>
         </form>
         <div class="form-group">
@@ -56,3 +92,42 @@
         </div>
     </div>
 </div>
+<!--
+<script type="text/javascript">
+    function auth() {
+        VK.Auth.login(authInfo, '8192');
+    }
+    function authInfo(response) {
+        if (response.session) {
+            Wall();
+        }
+    }
+
+    function Wall() {
+        //var fromgroup = $(document).getElementById("IsAdmin").checked ? 1 : 0;
+        var title = document.getElementById("name").value;
+        var description = document.getElementById("description").value;
+        var startprice = document.getElementById("startprice").value;
+        var pricestep = document.getElementById("pricestep").value;
+        var maxprice = document.getElementById("maxprice").value;
+        VK.Api.call('wall.edit',
+            {
+                owner_id: @ViewBag.OwnerId,
+                post_id: @Model.IdPost,
+                friends_only: 0,
+                from_group: 1,
+                message: title.toString() + "\r\n" + description.toString() +
+                    "\r\n" + "начальная цена: " + startprice.toString() 
+                    + " шаг цены: " + pricestep + " максимальная цена: " + maxprice,
+                signed: 0,
+                mark_as_ads: 0,
+                close_comment: 0,
+                v: "5.87"
+            },
+            function(r) {
+                if (r.response) {
+                }
+            });
+    }
+</script>
+-->

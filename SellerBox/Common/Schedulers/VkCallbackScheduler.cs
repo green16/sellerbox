@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using VkNet.Model.RequestParams;
 
 namespace SellerBox.Common.Schedulers
 {
@@ -398,7 +399,7 @@ namespace SellerBox.Common.Schedulers
                             });
 
                             await _context.SaveChangesAsync();
-
+ 
                             break;
                         }
                     case "wall_reply_new":
@@ -406,6 +407,61 @@ namespace SellerBox.Common.Schedulers
                             if (await IsPassedCallbackMessage(_context, message))
                                 continue;
 
+                            var rate = decimal.Parse(message.Object["text"].ToString());
+                            var auction = _context.Auctions.Include(x=>x.IdCreator).FirstOrDefault(x => x.IdCreator.IdGroup == message.IdGroup);
+                            var user = _context.Users.FirstOrDefault(x => x.Id == auction.IdCreator.IdUser);
+                            var vkApi = await _vkPoolService.GetUserVkApi(user.IdVk);
+                            /*int count = auction.MaxCommentsCount;
+                            if (auction.MaxCommentsCount > 100) count = 100;
+                            if (auction.MaxCommentsCount < 10) count = 10;
+                            var comments = vkApi.Wall.GetComments(new WallGetCommentsParams
+                            {
+                                OwnerId = -auction.IdCreator.IdGroup,
+                                PostId = auction.IdPost,
+                                Count = count
+                            });
+                            if (comments.Count >= auction.MaxCommentsCount)
+                            {
+                                auction.IsActive = false;
+                                break;
+                            }*/
+                            if (auction.CurrentPrice + auction.PriceStep <= rate)
+                            {
+                                auction.CurrentPrice = rate;
+                                _context.Auctions.Update(auction);
+
+                                if (rate == auction.MaxPrice)
+                                {
+                                    //сообщение что пользователь победил
+                                    vkApi.Wall.CreateComment(new WallCreateCommentParams
+                                    {
+                                        OwnerId = user.IdVk,
+                                        FromGroup = 1,
+                                        Message = "Поздравляем, вы выиграли",
+                                        PostId = auction.IdPost
+                                    });
+                                    auction.IsActive = false;
+                                    //Выкупили товар, дальше ничего делать не надо
+                                    break;
+                                }
+                                //сообщение о том что ставка принята
+                                vkApi.Wall.CreateComment(new WallCreateCommentParams
+                                {
+                                    OwnerId = user.IdVk,
+                                    FromGroup = 1,
+                                    Message = $"Ваша ставка принята",
+                                    PostId = auction.IdPost
+                                });
+                            }
+                            //сообщение о том что ставка не принята
+                            vkApi.Wall.CreateComment(new WallCreateCommentParams
+                            {
+                                OwnerId = user.IdVk,
+                                FromGroup = 1,
+                                Message = "Ваша ставка не принята",
+                                PostId = auction.IdPost
+                            });
+                            
                             break;
                         }
                     case "wall_reply_edit":
